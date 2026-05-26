@@ -27,8 +27,17 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     const trialExpired = org?.trial_ends_at
       ? new Date(org.trial_ends_at) < new Date()
       : false
-    // TODO (billing): also check subscriptions.status once Paddle is integrated
-    isReadOnly = trialExpired && org?.plan === 'start'
+
+    const { data: sub } = await supabase
+      .from('subscriptions')
+      .select('status')
+      .eq('org_id', orgId)
+      .maybeSingle()
+
+    const hasActiveSubscription =
+      sub?.status === 'active' || sub?.status === 'trialing'
+
+    isReadOnly = trialExpired && !hasActiveSubscription
   }
 
   return (
