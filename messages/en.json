@@ -1,0 +1,26 @@
+{
+  "common": {
+    "appName": "Smengo",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "back": "Back",
+    "next": "Next",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "nav": {
+    "dashboard": "Schedule",
+    "employees": "Employees",
+    "departments": "Departments",
+    "settings": "Settings"
+  },
+  "billing": {
+    "upgrade": "Upgrade plan",
+    "trialBanner": "Trial: {days} days remaining",
+    "trialExpired": "Your trial has ended. Upgrade to continue."
+  }
+}
