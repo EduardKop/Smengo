@@ -2,6 +2,20 @@ import { createServerClient } from '@supabase/ssr'
 import { type NextRequest, NextResponse } from 'next/server'
 import type { Database } from '@/supabase/types'
 
+/** Paths that don't require authentication. */
+const PUBLIC_PREFIXES = ['/login', '/register', '/auth/', '/invite/']
+
+/** App paths that require authentication (but not necessarily an org). */
+const APP_PREFIXES = ['/dashboard', '/onboarding', '/settings', '/employees', '/departments']
+
+function isPublic(pathname: string): boolean {
+  return pathname === '/' || PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))
+}
+
+function isApp(pathname: string): boolean {
+  return APP_PREFIXES.some((p) => pathname.startsWith(p))
+}
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
@@ -24,16 +38,54 @@ export async function updateSession(request: NextRequest) {
     },
   )
 
-  // Refresh session — IMPORTANT: do not add any logic between createClient and getUser
+  // IMPORTANT: do not add any logic between createClient and getUser
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Protect (app) routes
-  if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
+  const { pathname } = request.nextUrl
+
+  // Unauthenticated user trying to access app routes → /login
+  if (!user && isApp(pathname)) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
+  }
+
+  // Authenticated user on login/register → /dashboard
+  if (user && (pathname === '/login' || pathname === '/register')) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/dashboard'
+    return NextResponse.redirect(url)
+  }
+
+  // For authenticated app routes (excluding /onboarding): ensure active_org_id cookie.
+  // Only query the DB when the cookie is missing — RLS guards actual data access.
+  if (user && isApp(pathname) && !pathname.startsWith('/onboarding')) {
+    const hasOrgCookie = Boolean(request.cookies.get('active_org_id')?.value)
+
+    if (!hasOrgCookie) {
+      const { data: membership } = await supabase
+        .from('memberships')
+        .select('org_id')
+        .eq('user_id', user.id)
+        .limit(1)
+        .single()
+
+      if (!membership) {
+        // New user with no org → onboarding
+        const url = request.nextUrl.clone()
+        url.pathname = '/onboarding'
+        return NextResponse.redirect(url)
+      }
+
+      supabaseResponse.cookies.set('active_org_id', membership.org_id, {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 30,
+      })
+    }
   }
 
   return supabaseResponse

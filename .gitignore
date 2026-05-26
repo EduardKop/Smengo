@@ -42,3 +42,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# supabase local CLI state — contains project refs and DB connection strings
+supabase/.temp/
+
+# supabase local temp files
+supabase/.temp/
