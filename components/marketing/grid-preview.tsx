@@ -33,6 +33,7 @@ export type GridPreviewLabels = {
   statusLate: string
   statusWorkFull: string
   showTimesLabel: string
+  mergedLabel: string
   days: { mon: string; tue: string; wed: string; thu: string; fri: string; sat: string; sun: string }
   projectsBtn: string
   telegramBtn: string
@@ -48,6 +49,8 @@ export type GridPreviewLabels = {
   projectClose: string
   projects: Record<ProjectKey, { name: string; desc: string; tag: string }>
   months: [string, string, string, string, string]
+  colOffDays: string
+  colWorkHrs: string
 }
 
 const DAYS_DEMO = [
@@ -75,17 +78,17 @@ type EmpDef = {
 }
 
 const BASE_EMPLOYEES: EmpDef[] = [
-  { dept: 'sales', name: 'Anna Petrov',   tg: '@anna_p',   pIdx: 1, s: 'WW-WWWWWWVV-WWWW',  shift: 'day'   },
-  { dept: 'sales', name: 'Mark Sidorov',  tg: '@mark_sid', pIdx: 2, s: 'WWWWWWSSWW--WWWW',  shift: 'night' },
-  { dept: 'sales', name: 'Kate Volkova',  tg: '@kate_v',   pIdx: 3, s: 'VVWWWWWWWWW-DDW-',  shift: 'day'   },
-  { dept: 'ops',   name: 'Ivan Melnikov', tg: '@ivan_m',   pIdx: 1, s: 'WWWWWWWWWWWWWWW',   shift: 'night' },
-  { dept: 'ops',   name: 'Daria Kos',     tg: '@daria_k',  pIdx: 2, s: 'WW--VVVWWWW-WW-W',  shift: 'day'   },
-  { dept: 'ops',   name: 'Alex Novikov',  tg: '@alex_nov', pIdx: 3, s: 'WWWWWWWWWWWLWWW-',  shift: 'day'   },
-  { dept: 'support',   name: 'Olga Romanenko', tg: '@olga_r',  pIdx: 4, s: 'WWWWWWVWWWWVWWW',  shift: 'day'   },
-  { dept: 'support',   name: 'Pavel Yurov',    tg: '@pavel_y', pIdx: 5, s: 'WWWWWWWWWWWWWWW',  shift: 'night' },
-  { dept: 'marketing', name: 'Yulia Lebed',    tg: '@yulia_l', pIdx: 4, s: 'VVWWWWWWWWWWWWW',  shift: 'day'   },
-  { dept: 'marketing', name: 'Roma Karpov',    tg: '@roma_k',  pIdx: 6, s: 'WWWWWWWWWLWWWWW',  shift: 'day'   },
-  { dept: 'design',    name: 'Lera Tarasova',  tg: '@lera_t',  pIdx: 5, s: 'WWWWWVVVWWWWWWW',  shift: 'night' },
+  { dept: 'sales', name: 'Anna Petrov',   tg: '@anna_p',   pIdx: 1, s: 'DWWWWWDDWWWWWDW',  shift: 'day'   },
+  { dept: 'sales', name: 'Mark Sidorov',  tg: '@mark_sid', pIdx: 2, s: 'DWWDWWWWWDWWWWD',  shift: 'night' },
+  { dept: 'sales', name: 'Kate Volkova',  tg: '@kate_v',   pIdx: 3, s: 'DWWWDWWWWWDDWWW',  shift: 'day'   },
+  { dept: 'ops',   name: 'Ivan Melnikov', tg: '@ivan_m',   pIdx: 1, s: 'DWDWWWWWWDWWDWW',  shift: 'night' },
+  { dept: 'ops',   name: 'Daria Kos',     tg: '@daria_k',  pIdx: 2, s: 'DWWWWDWWWWWDWDW',  shift: 'day'   },
+  { dept: 'ops',   name: 'Alex Novikov',  tg: '@alex_nov', pIdx: 3, s: 'DWWWWWWDDWWLWWD',  shift: 'day'   },
+  { dept: 'support',   name: 'Olga Romanenko', tg: '@olga_r',  pIdx: 4, s: 'DWWWDWWWWDWWWDW',  shift: 'day'   },
+  { dept: 'support',   name: 'Pavel Yurov',    tg: '@pavel_y', pIdx: 5, s: 'DWWWWWDWWWWWDDW',  shift: 'night' },
+  { dept: 'marketing', name: 'Yulia Lebed',    tg: '@yulia_l', pIdx: 4, s: 'DWWDWWWWWWDWWWD',  shift: 'day'   },
+  { dept: 'marketing', name: 'Roma Karpov',    tg: '@roma_k',  pIdx: 6, s: 'DWWWWDDWWLWWDWW',  shift: 'day'   },
+  { dept: 'design',    name: 'Lera Tarasova',  tg: '@lera_t',  pIdx: 5, s: 'DWDWWWWWDWWWWDW',  shift: 'night' },
 ]
 
 const PROJECT_CYCLES: Record<string, ProjectKey[]> = {
@@ -121,6 +124,7 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
   const [contrast, setContrast] = useState(true)
   const [strongWeekend, setStrongWeekend] = useState(false)
   const [showTimes, setShowTimes] = useState(false)
+  const [merged, setMerged] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [showTelegram, setShowTelegram] = useState(false)
   const [monthIdx, setMonthIdx] = useState(2) // May
@@ -194,7 +198,6 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
   const monthOffset = (monthIdx - 2) * 3
 
   const allEmps = [...BASE_EMPLOYEES, ...demoEmps]
-  const visibleEmps = deptFilter === 'all' ? allEmps : allEmps.filter((e) => e.dept === deptFilter)
 
   function statusOf(name: string, dayIdx: number, base: string): Status {
     const key = `${name}-${dayIdx}-${monthIdx}`
@@ -232,6 +235,7 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
       tg,
       pIdx: ((idx % 6) + 1) as 1 | 2 | 3 | 4 | 5 | 6,
       s: template.s,
+      shift: template.shift,
     }])
     showToast(labels.toastAdded)
   }
@@ -325,6 +329,7 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
               <SettingRow label="High contrast" value={contrast} onChange={setContrast} />
               <SettingRow label="Highlight weekends" value={strongWeekend} onChange={setStrongWeekend} />
               <SettingRow label={labels.showTimesLabel} value={showTimes} onChange={setShowTimes} />
+              <SettingRow label={labels.mergedLabel} value={merged} onChange={setMerged} />
             </div>
           )}
         </div>
@@ -494,6 +499,7 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
             labels={labels}
             showTelegram={showTelegram}
             showTimes={showTimes}
+            merged={merged}
             editMode={editMode}
             onToggleProjects={() => setShowTelegram((v) => !v)}
             onProjectClick={(name, pIdx) =>
@@ -515,6 +521,7 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
             chipFg={chipFg}
             weekendBg={weekendBg}
             showTimes={showTimes}
+            merged={merged}
             showTelegram={showTelegram}
             onToggleProjects={() => setShowTelegram((v) => !v)}
             onProjectClick={(name, pIdx) =>
@@ -723,7 +730,7 @@ function SettingRow({
 /* ── Detail / Extended mode ────────────────────────────────────── */
 function DetailGrid({
   mode, groups, statusOf, labels, chipLbl, chipLblFull, chipBg, chipFg, weekendBg,
-  showTimes, showTelegram, onToggleProjects, onProjectClick, editMode, onCellEdit,
+  showTimes, merged, showTelegram, onToggleProjects, onProjectClick, editMode, onCellEdit,
 }: {
   mode: Mode
   groups: { key: string; name: string; min?: number; rows: EmpDef[] }[]
@@ -735,6 +742,7 @@ function DetailGrid({
   chipFg: (c: Exclude<Status, '-'>) => string
   weekendBg: string
   showTimes: boolean
+  merged: boolean
   showTelegram: boolean
   onToggleProjects: () => void
   onProjectClick: (name: string, pIdx: number) => void
@@ -803,19 +811,27 @@ function DetailGrid({
                 </th>
               )
             })}
+            <th style={{ width: 40, minWidth: 40, padding: '4px 6px', textAlign: 'center', background: 'var(--grid-cell)', color: 'var(--muted-foreground)', fontSize: 9, fontWeight: 600, borderLeft: '2px solid var(--border)', whiteSpace: 'nowrap' }}>
+              {labels.colOffDays}
+            </th>
+            <th style={{ width: 48, minWidth: 48, padding: '4px 6px', textAlign: 'center', background: 'var(--grid-cell)', color: 'var(--muted-foreground)', fontSize: 9, fontWeight: 600, borderLeft: '1px solid var(--border)', whiteSpace: 'nowrap' }}>
+              {labels.colWorkHrs}
+            </th>
           </tr>
         </thead>
         <tbody>
           {groups.flatMap((dept, di) => [
             <tr key={`dept-${dept.key}-${di}`}>
               <td
-                colSpan={DAYS_DEMO.length + 1}
                 style={{
+                  position: 'sticky', left: 0, zIndex: 6,
                   padding: '4px 10px',
                   background: 'var(--grid-dept-bg)',
+                  width: nameColW, minWidth: nameColW,
                   fontSize: 10, fontWeight: 600,
                   color: 'var(--grid-dept-fg)',
                   textTransform: 'uppercase', letterSpacing: '0.05em',
+                  whiteSpace: 'nowrap',
                 }}
               >
                 ▸ {dept.name}
@@ -825,6 +841,7 @@ function DetailGrid({
                   </span>
                 )}
               </td>
+              <td colSpan={DAYS_DEMO.length + 2} style={{ background: 'var(--grid-dept-bg)' }} />
             </tr>,
             ...dept.rows.map((emp, ei) => (
               <tr key={`${dept.key}-${ei}`} style={{ borderBottom: '1px solid var(--grid-row-divider)' }}>
@@ -855,7 +872,49 @@ function DetailGrid({
                     </button>
                   </div>
                 </td>
-                {DAYS_DEMO.map((d, ci) => {
+                {merged ? (() => {
+                  type Run = { code: Status | undefined; indices: number[] }
+                  const runs: Run[] = []
+                  DAYS_DEMO.forEach((_d, ci) => {
+                    const code = statusOf(emp.name, ci, emp.s)
+                    const last = runs[runs.length - 1]
+                    if (last && last.code === code) { last.indices.push(ci) }
+                    else { runs.push({ code, indices: [ci] }) }
+                  })
+                  return runs.map((run, ri) => {
+                    const { code, indices } = run
+                    const span = indices.length
+                    const isOff = code === '-' || code === undefined
+                    const allWkd = indices.every(i => { const d = DAYS_DEMO[i]; return d.k === 'sat' || d.k === 'sun' })
+                    const raw = code as Exclude<Status, '-'>
+                    return (
+                      <td key={`run-${ri}`} colSpan={span} style={{ padding: rowPad, textAlign: 'center', background: allWkd ? weekendBg : 'var(--grid-cell)' }}>
+                        {!isOff && (isExt ? (
+                          <div style={{
+                            display: 'flex', flexDirection: 'column', alignItems: 'stretch',
+                            background: chipBg(raw), color: chipFg(raw),
+                            padding: '5px 7px', borderRadius: 5,
+                            fontSize: 10, fontWeight: 600, lineHeight: 1.15, textAlign: 'left',
+                          }}>
+                            <span style={{ fontSize: code === 'W' && showTimes ? 9 : 10.5, fontWeight: 600 }}>
+                              {code === 'W' ? workLabel(emp) : chipLblFull[raw]}
+                            </span>
+                          </div>
+                        ) : (
+                          <div style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            background: chipBg(raw), color: chipFg(raw),
+                            padding: '1px 5px', borderRadius: 3,
+                            fontSize: code === 'W' && showTimes ? 8 : 9.5,
+                            fontWeight: 500, whiteSpace: 'nowrap',
+                          }}>
+                            {code === 'W' ? workLabel(emp) : chipLbl[raw]}
+                          </div>
+                        ))}
+                      </td>
+                    )
+                  })
+                })() : DAYS_DEMO.map((d, ci) => {
                   const raw = statusOf(emp.name, ci, emp.s)
                   const isWkd = d.k === 'sat' || d.k === 'sun'
                   const isOff = raw === '-' || raw === undefined
@@ -915,6 +974,25 @@ function DetailGrid({
                     </td>
                   )
                 })}
+                {(() => {
+                  let off = 0, work = 0
+                  DAYS_DEMO.forEach((_d, ci) => {
+                    const s = statusOf(emp.name, ci, emp.s)
+                    if (s === 'V' || s === 'S' || s === 'D') off++
+                    else if (s === 'W' || s === 'L') work++
+                  })
+                  const hrs = work * (emp.shift === 'night' ? 13 : 10)
+                  return (
+                    <>
+                      <td style={{ borderLeft: '2px solid var(--border)', width: 40, minWidth: 40, textAlign: 'center', background: 'var(--grid-cell)', padding: '4px 2px' }}>
+                        <span style={{ fontSize: 10, color: 'var(--muted-foreground)', fontWeight: 600 }}>{off || '—'}</span>
+                      </td>
+                      <td style={{ borderLeft: '1px solid var(--border)', width: 48, minWidth: 48, textAlign: 'center', background: 'var(--grid-cell)', padding: '4px 2px' }}>
+                        <span style={{ fontSize: 10, color: 'var(--foreground)', fontWeight: 600 }}>{hrs > 0 ? `${hrs}h` : '—'}</span>
+                      </td>
+                    </>
+                  )
+                })()}
               </tr>
             )),
           ])}
@@ -927,7 +1005,7 @@ function DetailGrid({
 /* ── Compact mode ──────────────────────────────────────────────── */
 function CompactGrid({
   groups, statusOf, weekendBg, chipBg, chipFg, labels,
-  showTimes, showTelegram, editMode, onToggleProjects, onProjectClick, onCellEdit,
+  showTimes, merged, showTelegram, editMode, onToggleProjects, onProjectClick, onCellEdit,
 }: {
   groups: { key: string; name: string; min?: number; rows: EmpDef[] }[]
   statusOf: (name: string, dayIdx: number, base: string) => Status
@@ -936,6 +1014,7 @@ function CompactGrid({
   chipFg: (c: Exclude<Status, '-'>) => string
   labels: GridPreviewLabels
   showTimes: boolean
+  merged: boolean
   showTelegram: boolean
   editMode: boolean
   onToggleProjects: () => void
@@ -991,23 +1070,32 @@ function CompactGrid({
                 </th>
               )
             })}
+            <th style={{ width: 40, minWidth: 40, padding: '4px 4px', textAlign: 'center', background: 'var(--grid-cell)', color: 'var(--muted-foreground)', fontSize: 9, fontWeight: 600, borderLeft: '2px solid var(--border)', whiteSpace: 'nowrap' }}>
+              {labels.colOffDays}
+            </th>
+            <th style={{ width: 46, minWidth: 46, padding: '4px 4px', textAlign: 'center', background: 'var(--grid-cell)', color: 'var(--muted-foreground)', fontSize: 9, fontWeight: 600, borderLeft: '1px solid var(--border)', whiteSpace: 'nowrap' }}>
+              {labels.colWorkHrs}
+            </th>
           </tr>
         </thead>
         <tbody>
           {groups.flatMap((dept, di) => [
             <tr key={`dept-${dept.key}-${di}`}>
               <td
-                colSpan={MONTH_DEMO.length + 1}
                 style={{
+                  position: 'sticky', left: 0, zIndex: 6,
                   padding: '3px 10px',
                   background: 'var(--grid-dept-bg)',
+                  width: 168, minWidth: 168,
                   fontSize: 9.5, fontWeight: 600,
                   color: 'var(--grid-dept-fg)',
                   textTransform: 'uppercase', letterSpacing: '0.05em',
+                  whiteSpace: 'nowrap',
                 }}
               >
                 ▸ {dept.name}
               </td>
+              <td colSpan={MONTH_DEMO.length + 2} style={{ background: 'var(--grid-dept-bg)' }} />
             </tr>,
             ...dept.rows.map((emp, ei) => (
               <tr key={`${dept.key}-${ei}`} style={{ borderBottom: '1px solid var(--grid-row-divider)' }}>
@@ -1040,7 +1128,49 @@ function CompactGrid({
                     </button>
                   </div>
                 </td>
-                {MONTH_DEMO.map((d, ci) => {
+                {merged ? (() => {
+                  type Run = { code: Status | undefined; indices: number[] }
+                  const runs: Run[] = []
+                  MONTH_DEMO.forEach((_d, ci) => {
+                    const code = statusOf(emp.name, ci % 15, emp.s)
+                    const last = runs[runs.length - 1]
+                    if (last && last.code === code) { last.indices.push(ci) }
+                    else { runs.push({ code, indices: [ci] }) }
+                  })
+                  return runs.map((run, ri) => {
+                    const { code, indices } = run
+                    const span = indices.length
+                    const isOff = code === '-' || code === undefined
+                    const allWkd = indices.every(i => { const d = MONTH_DEMO[i]; return d.k === 'sat' || d.k === 'sun' })
+                    return (
+                      <td
+                        key={`run-${ri}`}
+                        colSpan={span}
+                        style={{
+                          padding: '2px 1px',
+                          background: allWkd ? weekendBg : 'var(--grid-cell)',
+                        }}
+                      >
+                        {!isOff && (
+                          <div style={{
+                            background: chipBg(code as Exclude<Status, '-'>),
+                            color: chipFg(code as Exclude<Status, '-'>),
+                            borderRadius: 4,
+                            fontSize: code === 'W' && showTimes ? 7.5 : 9,
+                            fontWeight: 600,
+                            padding: '3px 4px',
+                            lineHeight: 1.1,
+                            textAlign: 'center',
+                          }}>
+                            {code === 'W' && showTimes
+                              ? (emp.shift === 'night' ? '19–8' : '9–19')
+                              : code}
+                          </div>
+                        )}
+                      </td>
+                    )
+                  })
+                })() : MONTH_DEMO.map((d, ci) => {
                   const code = statusOf(emp.name, ci % 15, emp.s)
                   const isWkd = d.k === 'sat' || d.k === 'sun'
                   const isOff = code === '-' || code === undefined
@@ -1080,6 +1210,25 @@ function CompactGrid({
                     </td>
                   )
                 })}
+                {(() => {
+                  let off = 0, work = 0
+                  MONTH_DEMO.forEach((_d, ci) => {
+                    const s = statusOf(emp.name, ci % 15, emp.s)
+                    if (s === 'V' || s === 'S' || s === 'D') off++
+                    else if (s === 'W' || s === 'L') work++
+                  })
+                  const hrs = work * (emp.shift === 'night' ? 13 : 10)
+                  return (
+                    <>
+                      <td style={{ borderLeft: '2px solid var(--border)', width: 40, minWidth: 40, textAlign: 'center', background: 'var(--grid-cell)', padding: '2px 2px' }}>
+                        <span style={{ fontSize: 9, color: 'var(--muted-foreground)', fontWeight: 600 }}>{off || '—'}</span>
+                      </td>
+                      <td style={{ borderLeft: '1px solid var(--border)', width: 46, minWidth: 46, textAlign: 'center', background: 'var(--grid-cell)', padding: '2px 2px' }}>
+                        <span style={{ fontSize: 9, color: 'var(--foreground)', fontWeight: 600 }}>{hrs > 0 ? `${hrs}h` : '—'}</span>
+                      </td>
+                    </>
+                  )
+                })()}
               </tr>
             )),
           ])}

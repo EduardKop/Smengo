@@ -10,10 +10,13 @@ function isLocale(v: string): v is Locale {
   return (LOCALES as ReadonlyArray<string>).includes(v)
 }
 
-export async function setLocaleAction(locale: string) {
+/**
+ * Persist locale preference: cookie (1 year) + profile row if signed in.
+ * Does NOT navigate — caller handles navigation (URL switch via next-intl router).
+ */
+export async function setLocaleCookieAction(locale: string) {
   if (!isLocale(locale)) return
 
-  // Persist locale in cookie (read by middleware on next request)
   const cookieStore = await cookies()
   cookieStore.set('NEXT_LOCALE', locale, {
     path: '/',
@@ -21,7 +24,6 @@ export async function setLocaleAction(locale: string) {
     sameSite: 'lax',
   })
 
-  // If logged in, also save preference to profile (§5.1 priority 2)
   const supabase = await createClient()
   const {
     data: { user },

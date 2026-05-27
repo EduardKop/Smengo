@@ -1,22 +1,50 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { getTranslations } from 'next-intl/server'
+import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { Check, Info, Minus } from 'lucide-react'
+import { routing, type Locale } from '@/i18n/routing'
 
 export const revalidate = 3600
 
-export async function generateMetadata(): Promise<Metadata> {
+const SITE_URL = 'https://smengo.com'
+
+function localizedUrl(locale: string, path = ''): string {
+  if (locale === routing.defaultLocale) return `${SITE_URL}${path}`
+  return `${SITE_URL}/${locale}${path}`
+}
+
+const OG_LOCALE: Record<string, string> = { ru: 'ru_RU', uk: 'uk_UA', en: 'en_US' }
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: Locale }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'marketing.seo' })
+
+  const canonical = localizedUrl(locale, '/pricing')
+  const languages: Record<string, string> = {}
+  for (const l of routing.locales) languages[l] = localizedUrl(l, '/pricing')
+  languages['x-default'] = localizedUrl(routing.defaultLocale, '/pricing')
+
   return {
-    title: 'Цены — Smengo',
-    description:
-      'Простые цены без сюрпризов. Старт бесплатно, Команда $29, Бизнес $79 в месяц. 14 дней бесплатно, без карты.',
-    alternates: {
-      canonical: 'https://smengo.com/pricing',
-    },
+    title: t('pricingTitle'),
+    description: t('pricingDescription'),
+    alternates: { canonical, languages },
     openGraph: {
-      title: 'Цены — Smengo',
-      description: 'Старт бесплатно / Команда $29 / Бизнес $79. 14 дней бесплатно.',
+      title: t('ogPricingTitle'),
+      description: t('ogPricingDescription'),
       type: 'website',
+      url: canonical,
+      siteName: 'Smengo',
+      locale: OG_LOCALE[locale] ?? 'en_US',
+      alternateLocale: routing.locales.filter((l) => l !== locale).map((l) => OG_LOCALE[l]),
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: t('ogPricingTitle'),
+      description: t('ogPricingDescription'),
     },
   }
 }
@@ -125,7 +153,13 @@ const FEATURE_KEYS: FeatureKey[] = [
   'feature_support',
 ]
 
-export default async function PricingPage() {
+export default async function PricingPage({
+  params,
+}: {
+  params: Promise<{ locale: Locale }>
+}) {
+  const { locale } = await params
+  setRequestLocale(locale)
   const t = await getTranslations('pricing')
 
   return (

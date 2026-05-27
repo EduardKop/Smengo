@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import Link from 'next/link'
 import PostHogProvider from '@/components/providers/posthog-provider'
 import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
@@ -48,9 +49,9 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       {isReadOnly && (
         <div className="sticky top-0 z-50 w-full bg-destructive px-4 py-2 text-center text-sm font-medium text-destructive-foreground">
             {t('trialExpired')}{' '}
-            <a href="/settings/billing" className="underline">
+            <Link href="/settings/billing" className="underline">
               {t('goToBilling')}
-            </a>
+            </Link>
           </div>
       )}
       {children}

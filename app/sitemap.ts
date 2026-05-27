@@ -1,14 +1,31 @@
-import { MetadataRoute } from 'next'
+import type { MetadataRoute } from 'next'
+import { routing } from '@/i18n/routing'
 
 const BASE_URL = 'https://smengo.com'
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const pages = ['', '/pricing']
+function urlFor(locale: string, path: string): string {
+  if (locale === routing.defaultLocale) return `${BASE_URL}${path}`
+  return `${BASE_URL}/${locale}${path}`
+}
 
-  return pages.map((path) => ({
-    url: `${BASE_URL}${path}`,
-    lastModified: new Date(),
-    changeFrequency: path === '' ? 'weekly' : 'monthly',
-    priority: path === '' ? 1 : 0.8,
-  }))
+export default function sitemap(): MetadataRoute.Sitemap {
+  const paths: Array<{ path: string; priority: number; changeFrequency: 'weekly' | 'monthly' }> = [
+    { path: '', priority: 1.0, changeFrequency: 'weekly' },
+    { path: '/pricing', priority: 0.8, changeFrequency: 'monthly' },
+  ]
+
+  return paths.flatMap(({ path, priority, changeFrequency }) =>
+    routing.locales.map((locale) => {
+      const languages: Record<string, string> = {}
+      for (const l of routing.locales) languages[l] = urlFor(l, path)
+      languages['x-default'] = urlFor(routing.defaultLocale, path)
+      return {
+        url: urlFor(locale, path),
+        lastModified: new Date(),
+        changeFrequency,
+        priority,
+        alternates: { languages },
+      }
+    })
+  )
 }

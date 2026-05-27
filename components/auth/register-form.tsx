@@ -6,11 +6,9 @@ import { registerAction, loginWithGoogleAction } from '@/lib/actions/auth'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 
-interface Props {}
-
 const initialState = undefined
 
-export function RegisterForm(_props: Props) {
+export function RegisterForm() {
   const t = useTranslations('auth')
   const [state, action, pending] = useActionState(registerAction, initialState)
 

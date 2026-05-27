@@ -35,6 +35,7 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
 
   useEffect(() => {
     const t = getInitial()
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage unavailable in SSR; must hydrate after mount
     setTheme(t)
     apply(t)
     setMounted(true)

@@ -1,30 +1,52 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { getTranslations } from 'next-intl/server'
+import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { Check } from 'lucide-react'
 import { FaqAccordion } from '@/components/marketing/faq-accordion'
 import { GridPreview, type GridPreviewLabels } from '@/components/marketing/grid-preview'
+import { routing, type Locale } from '@/i18n/routing'
 
 export const revalidate = 3600
 
-export async function generateMetadata(): Promise<Metadata> {
+const SITE_URL = 'https://smengo.com'
+
+function localizedUrl(locale: string, path = ''): string {
+  if (locale === routing.defaultLocale) return `${SITE_URL}${path}`
+  return `${SITE_URL}/${locale}${path}`
+}
+
+const OG_LOCALE: Record<string, string> = { ru: 'ru_RU', uk: 'uk_UA', en: 'en_US' }
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: Locale }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'marketing.seo' })
+
+  const canonical = localizedUrl(locale)
+  const languages: Record<string, string> = {}
+  for (const l of routing.locales) languages[l] = localizedUrl(l)
+  languages['x-default'] = localizedUrl(routing.defaultLocale)
+
   return {
-    title: 'Smengo — умный планировщик смен для команд',
-    description:
-      'Замените Excel умным планировщиком. Весь график команды в одном grid-виде. Алерты покрытия, роли, экспорт. 14 дней бесплатно.',
-    alternates: {
-      canonical: 'https://smengo.com',
-      languages: {
-        ru: 'https://smengo.com',
-        uk: 'https://smengo.com',
-        en: 'https://smengo.com',
-      },
-    },
+    title: t('landingTitle'),
+    description: t('landingDescription'),
+    alternates: { canonical, languages },
     openGraph: {
-      title: 'Smengo — умный планировщик смен',
-      description: 'Весь график команды в одном взгляде. Замените Excel.',
+      title: t('ogLandingTitle'),
+      description: t('ogLandingDescription'),
       type: 'website',
-      locale: 'ru_RU',
+      url: canonical,
+      siteName: 'Smengo',
+      locale: OG_LOCALE[locale] ?? 'en_US',
+      alternateLocale: routing.locales.filter((l) => l !== locale).map((l) => OG_LOCALE[l]),
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: t('ogLandingTitle'),
+      description: t('ogLandingDescription'),
     },
   }
 }
@@ -43,7 +65,13 @@ const jsonLd = {
   ],
 }
 
-export default async function LandingPage() {
+export default async function LandingPage({
+  params,
+}: {
+  params: Promise<{ locale: Locale }>
+}) {
+  const { locale } = await params
+  setRequestLocale(locale)
   const t = await getTranslations('marketing')
   const tg = await getTranslations('marketing.gridMockup')
 
@@ -77,6 +105,7 @@ export default async function LandingPage() {
     statusLate: tg('statusLate'),
     statusWorkFull: tg('statusWorkFull'),
     showTimesLabel: tg('showTimesLabel'),
+    mergedLabel: tg('mergedLabel'),
     days: {
       mon: tg('days.mon'), tue: tg('days.tue'), wed: tg('days.wed'),
       thu: tg('days.thu'), fri: tg('days.fri'), sat: tg('days.sat'), sun: tg('days.sun'),
@@ -102,7 +131,22 @@ export default async function LandingPage() {
       p6: { name: tg('p6Name'), desc: tg('p6Desc'), tag: tg('p6Tag') },
     },
     months: [tg('m1'), tg('m2'), tg('m3'), tg('m4'), tg('m5')],
+    colOffDays: tg('colOffDays'),
+    colWorkHrs: tg('colWorkHrs'),
   }
+
+  const industries = [
+    t('proof.ind_restaurants'), t('proof.ind_retail'), t('proof.ind_warehouses'),
+    t('proof.ind_callcenters'), t('proof.ind_clinics'), t('proof.ind_hotels'),
+    t('proof.ind_beauty'), t('proof.ind_security'), t('proof.ind_manufacturing'),
+    t('proof.ind_delivery'), t('proof.ind_fitness'), t('proof.ind_gasstations'),
+    t('proof.ind_arbitrage'), t('proof.ind_sales'),
+  ]
+  const roles = [
+    t('proof.role_founders'), t('proof.role_ceo'), t('proof.role_coo'),
+    t('proof.role_ops'), t('proof.role_hr'), t('proof.role_shiftleads'),
+    t('proof.role_office'), t('proof.role_pm'),
+  ]
 
   return (
     <>
@@ -112,8 +156,76 @@ export default async function LandingPage() {
       />
 
       {/* ── HERO ──────────────────────────────────────────────── */}
-      <section className="bg-background px-4 pb-0 pt-16 sm:px-6 sm:pt-24">
-        <div className="mx-auto max-w-[1100px]">
+      <section className="relative bg-background px-4 pb-0 pt-16 sm:px-6 sm:pt-24">
+        {/* Decorative: discarded spreadsheet → smengo grid — xl screens only */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none hidden xl:block"
+          style={{ position: 'absolute', left: 'calc(50% - 600px)', top: 88, zIndex: 1 }}
+        >
+          <svg width="700" height="640" viewBox="0 0 700 640" fill="none" overflow="visible" xmlns="http://www.w3.org/2000/svg">
+            <defs />
+
+            {/* Hand-drawn green marker spreadsheet — tilted, cartoony */}
+            <g transform="translate(110 115) scale(0.52) rotate(-15 65 80)" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" fill="none">
+              <g stroke="#23A566">
+                {/* removed page outline */}
+              </g>
+              <g stroke="var(--foreground)">
+                {/* Inner grid box — rounded cartoony rectangle */}
+                <path d="M 32 72 C 50 68, 80 70, 102 74 C 104 95, 103 118, 100 135 C 78 138, 50 137, 27 133 C 25 110, 27 88, 32 72 Z" />
+                {/* Vertical divider */}
+                <path d="M 66 73 C 64 90, 65 115, 65 134" />
+                {/* Horizontal dividers */}
+                <path d="M 30 90 C 50 87, 80 90, 102 89" />
+                <path d="M 28 113 C 50 110, 80 114, 101 112" />
+              </g>
+              {/* Google wordmark in brand colors */}
+              <text x="28" y="42" fontSize="20" fontWeight="700" fontFamily="'Product Sans', Arial, sans-serif" stroke="none">
+                <tspan fill="#4285F4">G</tspan>
+                <tspan fill="#EA4335">o</tspan>
+                <tspan fill="#FBBC04">o</tspan>
+                <tspan fill="#4285F4">g</tspan>
+                <tspan fill="#34A853">l</tspan>
+                <tspan fill="#EA4335">e</tspan>
+              </text>
+            </g>
+
+            {/* Hand-drawn arrow — short arc pointing down into the grid */}
+            <path
+              d="M 162 210 C 140 290, 175 382, 215 444"
+              stroke="#d97757"
+              strokeWidth="4"
+              strokeLinecap="round"
+              fill="none"
+            />
+            {/* Arrowhead — symmetric wings, detached from stroke */}
+            <path
+              d="M 193 431 L 215 444 L 225 428"
+              stroke="#d97757"
+              strokeWidth="4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fill="none"
+            />
+
+            {/* Handwritten ironic label */}
+            <text
+              x="130"
+              y="350"
+              fill="#d97757"
+              fontSize="30"
+              fontWeight="700"
+              textAnchor="end"
+              transform="rotate(-6 130 350)"
+              style={{ fontFamily: 'var(--font-handwriting), "Caveat", cursive' }}
+            >
+              {t('hero.handwrittenNote')}
+            </text>
+          </svg>
+        </div>
+
+        <div className="relative mx-auto max-w-[1100px]" style={{ zIndex: 2 }}>
           <div className="text-center">
             <span
               className="mb-5 inline-block rounded-full px-3.5 py-1 text-[12.5px] font-medium tracking-wider"
@@ -129,7 +241,7 @@ export default async function LandingPage() {
             </h1>
             <p
               className="mx-auto mt-5 text-[17px] leading-[1.65] text-muted-foreground"
-              style={{ maxWidth: 500 }}
+              style={{ maxWidth: 500, whiteSpace: 'pre-line' }}
             >
               {t('hero.sub')}
             </p>
@@ -159,27 +271,113 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* ── PROOF BAR ─────────────────────────────────────────── */}
+      {/* ── PROOF BAR ────────────────────────────────────────── */}
       <section
-        className="border-y border-border px-4 sm:px-6"
-        style={{ background: 'var(--surface)', padding: '42px 0' }}
+        className="overflow-hidden border-y border-border"
+        style={{ background: 'var(--surface)', padding: '40px 0' }}
       >
-        <div className="mx-auto max-w-[1100px] px-4 sm:px-6">
-          <p
-            className="mb-5 text-center text-[11.5px] font-medium uppercase"
-            style={{ letterSpacing: '0.07em', color: 'var(--subtle)' }}
-          >
-            {t('proof.label')}
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-8">
-            {[82, 96, 70, 108, 88, 74].map((w, i) => (
-              <div
-                key={i}
-                style={{ width: w, height: 18, borderRadius: 4, background: 'var(--muted)', opacity: 0.75 }}
-              />
+        <p
+          className="mb-5 text-center text-[11px] font-semibold uppercase"
+          style={{ letterSpacing: '0.1em', color: 'var(--subtle)' }}
+        >
+          {t('proof.label')}
+        </p>
+
+        {/* Industries — forward */}
+        <div style={{
+          overflow: 'hidden',
+          maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
+        }}>
+          <div className="smengo-proof-fwd">
+            {[0, 1, 2, 3].map((d) => (
+              <span key={d} aria-hidden={d > 0} className="smengo-proof-copy">
+                {industries.map((item, i) => (
+                  <span key={i} className="smengo-proof-item">
+                    <span className="smengo-proof-ind">{item}</span>
+                    <span className="smengo-proof-dot">·</span>
+                  </span>
+                ))}
+              </span>
             ))}
           </div>
         </div>
+
+        {/* Roles — reverse */}
+        <div style={{
+          overflow: 'hidden',
+          marginTop: 10,
+          maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
+        }}>
+          <div className="smengo-proof-rev">
+            {[0, 1, 2, 3].map((d) => (
+              <span key={d} aria-hidden={d > 0} className="smengo-proof-copy">
+                {roles.map((item, i) => (
+                  <span key={i} className="smengo-proof-item">
+                    <span className="smengo-proof-role">{item}</span>
+                    <span className="smengo-proof-dot-sm">·</span>
+                  </span>
+                ))}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <style>{`
+          .smengo-proof-fwd,
+          .smengo-proof-rev {
+            display: inline-flex;
+            align-items: center;
+            white-space: nowrap;
+          }
+          .smengo-proof-fwd { animation: smengo-scroll 120s linear infinite; }
+          .smengo-proof-rev { animation: smengo-scroll 100s linear infinite reverse; }
+          .smengo-proof-copy {
+            display: inline-flex;
+            align-items: center;
+            flex-shrink: 0;
+          }
+          .smengo-proof-item {
+            display: inline-flex;
+            align-items: center;
+          }
+          .smengo-proof-ind {
+            font-family: var(--font-serif, Georgia, serif);
+            font-size: 19px;
+            font-weight: 500;
+            letter-spacing: -0.01em;
+            color: var(--foreground);
+          }
+          .smengo-proof-role {
+            font-size: 12.5px;
+            font-weight: 500;
+            letter-spacing: 0.01em;
+            color: var(--muted-foreground);
+          }
+          .smengo-proof-dot {
+            margin: 0 18px;
+            font-size: 17px;
+            color: var(--accent);
+            opacity: 0.35;
+            line-height: 1;
+          }
+          .smengo-proof-dot-sm {
+            margin: 0 13px;
+            font-size: 12px;
+            color: var(--subtle);
+            opacity: 0.45;
+            line-height: 1;
+          }
+          @keyframes smengo-scroll {
+            from { transform: translateX(0); }
+            to   { transform: translateX(-50%); }
+          }
+          @media (prefers-reduced-motion: reduce) {
+            .smengo-proof-fwd,
+            .smengo-proof-rev { animation: none; }
+          }
+        `}</style>
       </section>
 
       {/* ── HOW IT WORKS ──────────────────────────────────────── */}
@@ -275,36 +473,49 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* ── CTA BAND ──────────────────────────────────────────── */}
+      {/* ── CTA BAND ─────────────────────────────────────────── */}
       <section
         className="px-4 sm:px-6"
         style={{
           background: 'var(--zone)',
           borderTop: '1px solid var(--border)',
           borderBottom: '1px solid var(--border)',
-          paddingTop: 60,
-          paddingBottom: 60,
+          paddingTop: 44,
+          paddingBottom: 44,
         }}
       >
-        <div className="mx-auto max-w-2xl text-center">
-          <h2
-            className="font-serif font-semibold text-foreground"
-            style={{ fontSize: 'clamp(26px, 3vw, 34px)', letterSpacing: '-0.02em', lineHeight: 1.2 }}
-          >
-            {t('band.title')}
-          </h2>
-          <p
-            className="mx-auto mt-3 text-[15px] leading-[1.6] text-muted-foreground"
-            style={{ maxWidth: 480 }}
-          >
-            {t('band.sub')}
-          </p>
-          <Link
-            href="/register"
-            className="mt-6 inline-flex items-center gap-2 rounded-lg bg-accent px-[24px] py-[12px] text-sm font-medium text-white shadow-sm transition-colors hover:bg-[var(--accent-hover)]"
-          >
-            {t('band.cta')}
-          </Link>
+        <div className="mx-auto flex max-w-[1100px] flex-col items-center gap-6 md:flex-row md:gap-0">
+          <div className="flex-1 text-center md:text-left">
+            <h2
+              className="font-serif font-semibold text-foreground"
+              style={{ fontSize: 'clamp(20px, 2.4vw, 26px)', letterSpacing: '-0.02em', lineHeight: 1.2 }}
+            >
+              {t('band.title')}
+            </h2>
+            <p className="mt-1.5 text-[13.5px] leading-[1.55] text-muted-foreground">
+              {t('band.sub')}
+            </p>
+          </div>
+
+          <div className="hidden self-stretch md:block md:mx-8" style={{ width: 1, background: 'var(--border)' }} />
+
+          <div className="flex shrink-0 items-center gap-5">
+            <div className="flex items-baseline gap-2.5">
+              <span
+                className="font-serif font-semibold"
+                style={{ fontSize: 48, letterSpacing: '-0.03em', lineHeight: 1, color: 'var(--accent)' }}
+              >
+                {t('band.statBig')}
+              </span>
+              <div>
+                <p className="text-[12.5px] font-medium leading-[1.3] text-foreground">{t('band.statLabel')}</p>
+                <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--subtle)' }}>
+                  {t('band.statGrowth')}
+                </p>
+              </div>
+            </div>
+            <BandSparkline />
+          </div>
         </div>
       </section>
 
@@ -472,7 +683,32 @@ function PlanCard({
   )
 }
 
-/* ── Feature SVG illustrations (theme-aware via CSS vars) ────── */
+
+function BandSparkline() {
+  const pts = [12, 18, 22, 35, 48, 70, 92, 118, 160, 220, 300, 410]
+  const max = Math.max(...pts)
+  const w = 160, h = 56
+  const sx = w / (pts.length - 1)
+  const coords = pts.map((v, i) => [i * sx, h - (v / max) * (h - 6) - 2])
+  const path = coords.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ')
+  const area = `${path} L ${w} ${h} L 0 ${h} Z`
+  const last = coords[coords.length - 1]
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} fill="none" style={{ flexShrink: 0 }}>
+      <defs>
+        <linearGradient id="bs-fill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.22" />
+          <stop offset="100%" stopColor="var(--accent)" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={area} fill="url(#bs-fill)" />
+      <path d={path} stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx={last[0]} cy={last[1]} r="3.5" fill="var(--accent)" />
+      <circle cx={last[0]} cy={last[1]} r="7" fill="var(--accent)" opacity="0.18" />
+    </svg>
+  )
+}
+
 function FeatureSvg({ n }: { n: number }) {
   // n=1 — chip grid
   if (n === 1) return (

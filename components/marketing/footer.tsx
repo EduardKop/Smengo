@@ -1,6 +1,6 @@
-import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
 import { LocaleSwitcher } from '@/components/locale-switcher'
+import { Link } from '@/i18n/routing'
 
 export async function MarketingFooter() {
   const t = await getTranslations('marketing.footer')

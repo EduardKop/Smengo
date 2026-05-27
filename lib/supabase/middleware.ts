@@ -2,15 +2,8 @@ import { createServerClient } from '@supabase/ssr'
 import { type NextRequest, NextResponse } from 'next/server'
 import type { Database } from '@/supabase/types'
 
-/** Paths that don't require authentication. */
-const PUBLIC_PREFIXES = ['/login', '/register', '/auth/', '/invite/']
-
 /** App paths that require authentication (but not necessarily an org). */
 const APP_PREFIXES = ['/dashboard', '/onboarding', '/settings', '/employees', '/departments']
-
-function isPublic(pathname: string): boolean {
-  return pathname === '/' || PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))
-}
 
 function isApp(pathname: string): boolean {
   return APP_PREFIXES.some((p) => pathname.startsWith(p))

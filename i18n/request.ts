@@ -1,18 +1,10 @@
 import { getRequestConfig } from 'next-intl/server'
-import { headers } from 'next/headers'
+import { hasLocale } from 'next-intl'
+import { routing } from './routing'
 
-const LOCALES = ['ru', 'uk', 'en'] as const
-type Locale = (typeof LOCALES)[number]
-
-function isValidLocale(value: string): value is Locale {
-  return (LOCALES as ReadonlyArray<string>).includes(value)
-}
-
-export default getRequestConfig(async () => {
-  // Locale is resolved by middleware and forwarded via the x-locale header.
-  const headersList = await headers()
-  const raw = headersList.get('x-locale') ?? 'ru'
-  const locale: Locale = isValidLocale(raw) ? raw : 'ru'
+export default getRequestConfig(async ({ requestLocale }) => {
+  const requested = await requestLocale
+  const locale = hasLocale(routing.locales, requested) ? requested : routing.defaultLocale
 
   return {
     locale,
