@@ -72,5 +72,95 @@
     "timezone": "Timezone",
     "language": "Interface language",
     "createButton": "Create company"
+  },
+  "marketing": {
+    "nav": {
+      "product": "Product",
+      "pricing": "Pricing",
+      "login": "Sign in",
+      "start": "Start free"
+    },
+    "hero": {
+      "badge": "Shift scheduler for growing teams",
+      "headline": "Your whole team schedule\nat a glance",
+      "subheadline": "Replace spreadsheets with a smart scheduler. See who's working, who's on leave, and where coverage gaps are — at a glance, no calls needed.",
+      "cta": "Start free",
+      "ctaHint": "14 days, no card",
+      "demo": "See how it works"
+    },
+    "pain": {
+      "title": "Sound familiar?",
+      "item1": "Your manager sends an updated Excel file in chat — nobody knows if it's the latest version",
+      "item2": "Coverage gaps show up at the last minute, not a week before",
+      "item3": "To find out who's working Saturday, you have to call or message someone"
+    },
+    "features": {
+      "title": "One grid, the full picture",
+      "subtitle": "Smengo shows the whole month at once: employees as rows, days as columns.",
+      "f1Title": "Monthly grid view",
+      "f1Desc": "Employees in rows, days in columns. Each day's status shown in color. Everything visible at once.",
+      "f2Title": "Coverage alerts",
+      "f2Desc": "The system highlights days when a shift is below the minimum needed. No more last-minute surprises.",
+      "f3Title": "Roles & departments",
+      "f3Desc": "Managers see only their departments. Owners see everything. Permissions set without IT help.",
+      "f4Title": "PDF/PNG export",
+      "f4Desc": "Share the schedule in one click — for printing, in chat, or in a management presentation."
+    },
+    "testimonials": {
+      "title": "What teams say",
+      "q1": "Used to spend 2 hours making the schedule, now it takes 15 minutes. And conflicts are visible ahead of time.",
+      "q1Author": "Anna, HR manager, retail chain of 80 people",
+      "q2": "Finally stopped working through a shared Excel file. Now everyone sees their own department.",
+      "q2Author": "Dmitry, COO, call center"
+    },
+    "cta": {
+      "title": "Try Smengo free",
+      "subtitle": "14 days of full access, no credit card. Set up in 5 minutes.",
+      "button": "Start free",
+      "hint": "Already have an account?"
+    },
+    "footer": {
+      "product": "Product",
+      "pricing": "Pricing",
+      "privacy": "Privacy policy",
+      "terms": "Terms of service",
+      "rights": "All rights reserved."
+    }
+  },
+  "pricing": {
+    "title": "Simple, transparent pricing",
+    "subtitle": "14 days free on any plan. No credit card.",
+    "monthly": "/ month",
+    "recommended": "Most popular",
+    "trialNote": "14 days free",
+    "startTrial": "Start free",
+    "planStart": "Start",
+    "planTeam": "Team",
+    "planBusiness": "Business",
+    "employees": "employees",
+    "upTo": "up to {n}",
+    "unlimited": "Unlimited",
+    "groups": "groups",
+    "managers": "manager",
+    "managersPlural": "managers",
+    "managersMany": "managers",
+    "featuresTitle": "Features",
+    "feature_grid": "Monthly grid view",
+    "feature_export": "PDF / PNG export",
+    "feature_alerts": "Coverage alerts",
+    "feature_analytics": "Attendance analytics",
+    "feature_telegram": "Telegram bot (v2)",
+    "feature_portal": "Employee portal",
+    "feature_api": "API access",
+    "feature_support": "Priority support",
+    "faqTitle": "Frequently asked questions",
+    "faq1q": "Do I need a credit card for the trial?",
+    "faq1a": "No. 14 days of full access without a card. After that, choose a plan or stay on limited read-only access.",
+    "faq2q": "Can I change my plan later?",
+    "faq2a": "Yes, anytime from the Billing section. Upgrades are prorated; downgrades take effect next cycle.",
+    "faq3q": "What happens to my data if I cancel?",
+    "faq3a": "Your data is kept. You switch to read-only mode — you can export schedules at any time.",
+    "faq4q": "Any discounts for large teams?",
+    "faq4a": "For teams over 300 people, contact us and we'll work out custom terms."
   }
 }
