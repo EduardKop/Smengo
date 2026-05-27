@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import type { ReactElement } from 'react'
 import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
 import { Check } from 'lucide-react'
@@ -59,60 +58,72 @@ export default async function LandingPage() {
       />
 
       {/* ── HERO ──────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden px-4 pb-16 pt-16 sm:px-6 sm:pb-24 sm:pt-24">
-        <div
-          className="pointer-events-none absolute inset-0 -z-10"
-          style={{
-            background:
-              'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(217,119,87,0.09) 0%, transparent 70%)',
-          }}
-        />
-        <div className="mx-auto max-w-3xl text-center">
-          <span className="mb-5 inline-block rounded-full border border-accent/30 bg-accent/5 px-3 py-1 text-xs font-medium uppercase tracking-wider text-accent">
-            {t('hero.tag')}
-          </span>
-          <h1
-            className="font-serif font-bold leading-[1.15] tracking-tight text-foreground"
-            style={{ fontSize: 'clamp(2.2rem, 5vw, 3.5rem)' }}
-          >
-            {t('hero.headline')}
-          </h1>
-          <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-muted-foreground">
-            {t('hero.sub')}
-          </p>
-          <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-            <Link
-              href="/register"
-              className="inline-flex items-center gap-2 rounded-[--radius-sm] bg-accent px-6 py-3 text-base font-semibold text-white shadow-sm transition-colors hover:bg-[--accent-hover]"
+      <section className="bg-background px-4 pb-0 pt-16 sm:px-6 sm:pt-24">
+        <div className="mx-auto max-w-[1100px]">
+          <div className="text-center">
+            <span
+              className="mb-5 inline-block rounded-full px-3 py-1 text-xs font-medium tracking-wider"
+              style={{ background: 'rgba(217,119,87,0.1)', color: 'var(--accent)' }}
             >
-              {t('hero.cta1')}
-            </Link>
-            <Link
-              href="#how"
-              className="inline-flex items-center gap-2 rounded-[--radius-sm] border border-border bg-card px-6 py-3 text-base font-medium text-foreground transition-colors hover:bg-muted/60"
+              {t('hero.tag')}
+            </span>
+            <h1
+              className="font-serif font-bold leading-[1.15] tracking-tight text-foreground"
+              style={{ fontSize: 'clamp(2.2rem, 5vw, 3.5rem)' }}
             >
-              {t('hero.cta2')}
-            </Link>
+              {t('hero.headline')}
+            </h1>
+            <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-muted-foreground">
+              {t('hero.sub')}
+            </p>
+            <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+              <Link
+                href="/register"
+                className="inline-flex items-center gap-2 rounded-[--radius-sm] bg-accent px-6 py-3 text-base font-semibold text-white shadow-sm transition-colors hover:bg-[--accent-hover]"
+                style={{ '--accent-hover': '#C45D3D' } as React.CSSProperties}
+              >
+                {t('hero.cta1')} →
+              </Link>
+              <Link
+                href="#how"
+                className="inline-flex items-center gap-2 rounded-[--radius-sm] border border-border bg-background px-6 py-3 text-base font-medium text-foreground transition-colors hover:bg-muted/60"
+              >
+                {t('hero.cta2')}
+              </Link>
+            </div>
+            <p className="mt-3 text-sm text-muted-foreground">{t('hero.note')}</p>
           </div>
-          <p className="mt-3 text-sm text-muted-foreground">{t('hero.note')}</p>
-        </div>
 
-        {/* Grid preview */}
-        <div className="mx-auto mt-14 max-w-5xl">
-          <GridPreview />
+          {/* Grid preview — flush to bottom of hero */}
+          <div className="mt-14 overflow-hidden">
+            <GridPreview />
+          </div>
         </div>
       </section>
 
       {/* ── PROOF BAR ─────────────────────────────────────────── */}
-      <section className="border-y border-border bg-muted/30 px-4 py-5 sm:px-6">
-        <p className="text-center text-sm text-muted-foreground">{t('proof.label')}</p>
+      <section className="border-y border-border bg-white px-4 py-8 sm:px-6">
+        <div className="mx-auto max-w-[1100px]">
+          <p className="mb-5 text-center text-sm text-muted-foreground">{t('proof.label')}</p>
+          <div className="flex flex-wrap items-center justify-center gap-8">
+            {[82, 96, 70, 108, 88, 74].map((w, i) => (
+              <div
+                key={i}
+                style={{ width: w, height: 18, borderRadius: 4, background: '#C9C5BA', opacity: 0.55 }}
+              />
+            ))}
+          </div>
+        </div>
       </section>
 
       {/* ── HOW IT WORKS ──────────────────────────────────────── */}
       <section id="how" className="bg-background px-4 py-20 sm:px-6">
-        <div className="mx-auto max-w-4xl">
+        <div className="mx-auto max-w-[1100px]">
           <div className="mb-12 text-center">
-            <span className="mb-3 inline-block rounded-full border border-accent/30 bg-accent/5 px-3 py-1 text-xs font-medium uppercase tracking-wider text-accent">
+            <span
+              className="mb-3 inline-block rounded-full px-3 py-1 text-xs font-medium tracking-wider"
+              style={{ background: 'rgba(217,119,87,0.1)', color: 'var(--accent)' }}
+            >
               {t('how.tag')}
             </span>
             <h2 className="mt-3 font-serif text-3xl font-bold text-foreground sm:text-4xl">
@@ -122,7 +133,10 @@ export default async function LandingPage() {
           <div className="grid gap-8 sm:grid-cols-3">
             {([1, 2, 3] as const).map((step) => (
               <div key={step} className="flex flex-col items-start gap-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-base font-bold text-white">
+                <div
+                  className="flex h-10 w-10 items-center justify-center rounded-full text-base font-bold"
+                  style={{ background: 'rgba(217,119,87,0.12)', color: 'var(--accent)' }}
+                >
                   {step}
                 </div>
                 <div>
@@ -140,10 +154,13 @@ export default async function LandingPage() {
       </section>
 
       {/* ── FEATURES ──────────────────────────────────────────── */}
-      <section id="features" className="bg-card px-4 py-20 sm:px-6">
-        <div className="mx-auto max-w-5xl">
+      <section id="features" className="bg-white px-4 py-20 sm:px-6">
+        <div className="mx-auto max-w-[1100px]">
           <div className="mb-12 text-center">
-            <span className="mb-3 inline-block rounded-full border border-accent/30 bg-accent/5 px-3 py-1 text-xs font-medium uppercase tracking-wider text-accent">
+            <span
+              className="mb-3 inline-block rounded-full px-3 py-1 text-xs font-medium tracking-wider"
+              style={{ background: 'rgba(217,119,87,0.1)', color: 'var(--accent)' }}
+            >
               {t('features.tag')}
             </span>
             <h2 className="mt-3 font-serif text-3xl font-bold text-foreground sm:text-4xl">
@@ -155,14 +172,31 @@ export default async function LandingPage() {
               ))}
             </h2>
           </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {/* Hairline separator grid */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: 1,
+              background: 'var(--border)',
+              borderRadius: 'var(--radius)',
+              overflow: 'hidden',
+            }}
+          >
             {([1, 2, 3, 4, 5, 6] as const).map((n) => (
-              <div
-                key={n}
-                className="rounded-[--radius] border border-border bg-background p-6 shadow-[var(--shadow-sm)] transition-shadow hover:shadow-[var(--shadow-md)]"
-              >
-                <FeatureIcon n={n} />
-                <h3 className="mb-2 mt-4 font-semibold text-foreground">
+              <div key={n} style={{ background: '#fff', padding: '28px 24px' }}>
+                <div
+                  style={{
+                    height: 76,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: 16,
+                  }}
+                >
+                  <FeatureSvg n={n} />
+                </div>
+                <h3 className="mb-2 font-semibold text-foreground">
                   {t(`features.f${n}Title` as Parameters<typeof t>[0])}
                 </h3>
                 <p className="text-sm leading-relaxed text-muted-foreground">
@@ -175,7 +209,10 @@ export default async function LandingPage() {
       </section>
 
       {/* ── CTA BAND ──────────────────────────────────────────── */}
-      <section className="bg-muted/40 px-4 py-16 sm:px-6">
+      <section
+        className="px-4 py-16 sm:px-6"
+        style={{ background: '#EDEBE3', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}
+      >
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="font-serif text-2xl font-bold text-foreground sm:text-3xl">
             {t('band.title')}
@@ -183,7 +220,8 @@ export default async function LandingPage() {
           <p className="mx-auto mt-3 max-w-md text-muted-foreground">{t('band.sub')}</p>
           <Link
             href="/register"
-            className="mt-6 inline-flex items-center gap-2 rounded-[--radius-sm] bg-accent px-6 py-3 text-base font-semibold text-white shadow-sm transition-colors hover:bg-[--accent-hover]"
+            className="mt-6 inline-flex items-center gap-2 rounded-[--radius-sm] bg-accent px-7 py-3.5 text-base font-semibold text-white shadow-sm transition-colors hover:bg-[--accent-hover]"
+            style={{ '--accent-hover': '#C45D3D' } as React.CSSProperties}
           >
             {t('band.cta')}
           </Link>
@@ -192,9 +230,12 @@ export default async function LandingPage() {
 
       {/* ── PRICING ───────────────────────────────────────────── */}
       <section id="pricing" className="bg-background px-4 py-20 sm:px-6">
-        <div className="mx-auto max-w-5xl">
+        <div className="mx-auto max-w-[1100px]">
           <div className="mb-12 text-center">
-            <span className="mb-3 inline-block rounded-full border border-accent/30 bg-accent/5 px-3 py-1 text-xs font-medium uppercase tracking-wider text-accent">
+            <span
+              className="mb-3 inline-block rounded-full px-3 py-1 text-xs font-medium tracking-wider"
+              style={{ background: 'rgba(217,119,87,0.1)', color: 'var(--accent)' }}
+            >
               {t('plans.tag')}
             </span>
             <h2 className="mt-3 font-serif text-3xl font-bold text-foreground sm:text-4xl">
@@ -262,8 +303,8 @@ export default async function LandingPage() {
       </section>
 
       {/* ── FAQ ───────────────────────────────────────────────── */}
-      <section className="bg-card px-4 py-20 sm:px-6">
-        <div className="mx-auto max-w-5xl">
+      <section className="bg-white px-4 py-20 sm:px-6">
+        <div className="mx-auto max-w-[1100px]">
           <FaqAccordion tag={t('faq.tag')} title={t('faq.title')} items={faqItems} />
         </div>
       </section>
@@ -298,18 +339,21 @@ function PlanCard({
       className={`relative flex flex-col rounded-[--radius] border p-6 ${
         highlighted
           ? 'border-accent bg-accent/5 shadow-[var(--shadow-md)]'
-          : 'border-border bg-card shadow-[var(--shadow-sm)]'
+          : 'border-border bg-white shadow-[var(--shadow-sm)]'
       }`}
     >
       {badge && (
-        <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-accent px-3 py-0.5 text-xs font-semibold text-white">
+        <span
+          className="absolute left-1/2 -translate-x-1/2 rounded-b-lg bg-accent px-3 py-0.5 text-xs font-semibold text-white"
+          style={{ top: -1 }}
+        >
           {badge}
         </span>
       )}
       <div className="mb-4">
         <h3 className="font-semibold text-foreground">{name}</h3>
         <div className="mt-2 flex items-baseline gap-1">
-          <span className="text-3xl font-bold text-foreground">{price}</span>
+          <span className="font-serif text-4xl font-bold text-foreground">{price}</span>
           <span className="text-sm text-muted-foreground">{period}</span>
         </div>
         <p className="mt-1 text-sm text-muted-foreground">{desc}</p>
@@ -329,6 +373,7 @@ function PlanCard({
             ? 'bg-accent text-white hover:bg-[--accent-hover]'
             : 'border border-border bg-background text-foreground hover:bg-muted/60'
         }`}
+        style={{ '--accent-hover': '#C45D3D' } as React.CSSProperties}
       >
         {cta}
       </Link>
@@ -336,201 +381,401 @@ function PlanCard({
   )
 }
 
-/* ── Feature icon (inline SVG per feature slot) ─────────────── */
-function FeatureIcon({ n }: { n: number }) {
-  const cls = 'h-8 w-8 text-accent'
-  const icons: Record<number, ReactElement> = {
-    1: (
-      <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
-        <rect x="3" y="3" width="7" height="7" rx="1" />
-        <rect x="14" y="3" width="7" height="7" rx="1" />
-        <rect x="3" y="14" width="7" height="7" rx="1" />
-        <rect x="14" y="14" width="7" height="7" rx="1" />
-      </svg>
-    ),
-    2: (
-      <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
-        <path d="M4 6h16M7 12h10M10 18h4" strokeLinecap="round" />
-      </svg>
-    ),
-    3: (
-      <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
-        <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
-    4: (
-      <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
-        <circle cx="12" cy="12" r="3" />
-        <path d="M12 2v3m0 14v3M2 12h3m14 0h3m-3.34-6.66-2.12 2.12M7.46 16.54l-2.12 2.12m0-14.14 2.12 2.12m7.08 7.08 2.12 2.12" strokeLinecap="round" />
-      </svg>
-    ),
-    5: (
-      <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
-        <circle cx="12" cy="12" r="10" />
-        <path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20" strokeLinecap="round" />
-      </svg>
-    ),
-    6: (
-      <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
-        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" strokeLinecap="round" />
-        <circle cx="9" cy="7" r="4" />
-        <path d="M23 21v-2a4 4 0 00-3-3.87m-4-12a4 4 0 010 7.75" strokeLinecap="round" />
-      </svg>
-    ),
-  }
-  return icons[n]
+/* ── Feature SVG illustrations ───────────────────────────────── */
+function FeatureSvg({ n }: { n: number }) {
+  if (n === 1) return (
+    <svg width="120" height="60" viewBox="0 0 120 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {(['#E8F5F1','#FDF3E3','#E8F5F1','#FCECEA','#E8F5F1','#F3F4F6','#E8F5F1','#FDF3E3','#F9EFF9','#E8F5F1','#FCECEA','#E8F5F1','#F3F4F6','#E8F5F1','#E8F5F1'] as const).map((c, j) => (
+        <rect key={j} x={4 + (j % 5) * 23} y={4 + Math.floor(j / 5) * 19} width={19} height={15} rx="3" fill={c} />
+      ))}
+    </svg>
+  )
+  if (n === 2) return (
+    <svg width="120" height="60" viewBox="0 0 120 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {([['#3B9B7F', 62], ['#E8A04C', 48], ['#9CA3AF', 56]] as const).map(([c, w], i) => (
+        <g key={i}>
+          <rect x="8" y={8 + i * 17} width="104" height="13" rx="4" fill="#EDEBE3" />
+          <circle cx="18" cy={14.5 + i * 17} r="4" fill={c} />
+          <rect x="28" y={12 + i * 17} width={w} height="4" rx="2" fill="#C9C5BA" />
+        </g>
+      ))}
+    </svg>
+  )
+  if (n === 3) return (
+    <svg width="120" height="60" viewBox="0 0 120 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="8" y="8" width="104" height="44" rx="7" fill="#FFF5F5" stroke="#D4604A" strokeWidth="1" />
+      <circle cx="26" cy="30" r="9" fill="#FCECEA" stroke="#D4604A" strokeWidth="1.4" />
+      <rect x="25" y="24" width="2" height="8" rx="1" fill="#D4604A" />
+      <rect x="25" y="33.5" width="2" height="2" rx="1" fill="#D4604A" />
+      <rect x="42" y="25" width="56" height="3" rx="1.5" fill="#E0DDD4" />
+      <rect x="42" y="31" width="40" height="3" rx="1.5" fill="#E0DDD4" />
+    </svg>
+  )
+  if (n === 4) return (
+    <svg width="120" height="60" viewBox="0 0 120 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {([['#E8F5F1', '#3B9B7F', 54], ['#FDF3E3', '#E8A04C', 40], ['#F9EFF9', '#C77DC0', 62]] as const).map(([bg, c, w], i) => (
+        <g key={i}>
+          <rect x="8" y={8 + i * 17} width={w + 24} height="13" rx="6" fill={bg} />
+          <rect x="16" y={12 + i * 17} width="8" height="5" rx="2.5" fill={c} />
+          <rect x="30" y={12.5 + i * 17} width={w - 8} height="4" rx="2" fill={c} opacity="0.35" />
+        </g>
+      ))}
+    </svg>
+  )
+  if (n === 5) return (
+    <svg width="120" height="60" viewBox="0 0 120 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="6" y="8" width="50" height="44" rx="7" fill="#EDEBE3" />
+      {([0, 1, 2] as const).map((i) => (
+        <rect key={i} x="14" y={18 + i * 12} width={([34, 26, 30] as const)[i]} height="4" rx="2" fill="#C9C5BA" />
+      ))}
+      <rect x="64" y="8" width="50" height="44" rx="7" fill="#F5F4EF" stroke="#E0DDD4" strokeWidth="1" />
+      {([0, 1, 2] as const).map((i) => (
+        <rect key={i} x="72" y={18 + i * 12} width={([28, 36, 24] as const)[i]} height="4" rx="2" fill="#C9C5BA" />
+      ))}
+    </svg>
+  )
+  // n === 6
+  return (
+    <svg width="120" height="60" viewBox="0 0 120 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {([['#D97757', 36], ['#3B9B7F', 46], ['#9CA3AF', 38]] as const).map(([c, w], i) => (
+        <g key={i}>
+          <circle cx="20" cy={15 + i * 18} r="6" fill="#EDEBE3" />
+          <circle cx="20" cy={13 + i * 18} r="3" fill="#C9C5BA" />
+          <rect x="32" y={12 + i * 18} width={w} height="4" rx="2" fill="#C9C5BA" />
+          <rect x="88" y={11 + i * 18} width="24" height="8" rx="4" fill={c} opacity="0.22" />
+        </g>
+      ))}
+    </svg>
+  )
 }
 
-/* ── Grid preview (hardcoded demo data) ────────────────────── */
+/* ── Grid preview ─────────────────────────────────────────────── */
+const DAYS_DEMO = [
+  { n: 1, d: 'Thu' }, { n: 2, d: 'Fri' }, { n: 3, d: 'Sat' }, { n: 4, d: 'Sun' },
+  { n: 5, d: 'Mon' }, { n: 6, d: 'Tue' }, { n: 7, d: 'Wed' }, { n: 8, d: 'Thu' },
+  { n: 9, d: 'Fri' }, { n: 10, d: 'Sat' }, { n: 11, d: 'Sun' }, { n: 12, d: 'Mon' },
+  { n: 13, d: 'Tue' }, { n: 14, d: 'Wed' }, { n: 15, d: 'Thu' },
+]
+const TODAY_COL = 9
+const WKND = new Set([3, 4, 10, 11])
+const SALES_ALERT = new Set([7, 8])
+
 type Status = 'W' | 'V' | 'S' | 'D' | 'L'
 
-const STATUS_META: Record<Status, { color: string; label: string }> = {
-  W: { color: 'var(--st-work)', label: 'Work' },
-  V: { color: 'var(--st-vacation)', label: 'Vacation' },
-  S: { color: 'var(--st-sick)', label: 'Sick' },
-  D: { color: 'var(--st-dayoff)', label: 'Day off' },
-  L: { color: 'var(--st-late)', label: 'Late' },
+const CHIP_META: Record<Status, { lbl: string; c: string; bg: string }> = {
+  W: { lbl: 'Work', c: '#2E8A6A', bg: '#E8F5F1' },
+  V: { lbl: 'Vac',  c: '#C07825', bg: '#FDF3E3' },
+  S: { lbl: 'Sick', c: '#B84030', bg: '#FCECEA' },
+  D: { lbl: 'Off',  c: '#7A8290', bg: '#F3F4F6' },
+  L: { lbl: 'Late', c: '#9E5A97', bg: '#F9EFF9' },
 }
 
-const TODAY_COL = 9
-const WEEKENDS = new Set([3, 4, 10, 11])
-
-const DEPTS: { name: string; min: number; employees: { name: string; row: Status[] }[] }[] = [
+const GRID_DEPTS = [
   {
-    name: 'Sales',
-    min: 3,
-    employees: [
-      { name: 'Anna K.',  row: ['W','W','D','D','W','W','V','V','W','D','D','W','W','W','W'] },
-      { name: 'Boris M.', row: ['W','W','D','D','W','W','V','V','W','D','D','W','L','W','W'] },
-      { name: 'Carla F.', row: ['W','W','D','D','W','W','S','W','W','D','D','W','W','W','W'] },
+    name: 'Sales', min: 3,
+    rows: [
+      { name: 'Anna Petrov',   s: 'WWWWWWWWWVVWWWW' },
+      { name: 'Mark Sidorov',  s: 'WWWWWWSSWWWWWWW' },
+      { name: 'Kate Volkova',  s: 'VVWWWWWWWWWWDDW' },
     ],
   },
   {
-    name: 'Operations',
-    min: 2,
-    employees: [
-      { name: 'Dmitri V.', row: ['W','W','D','D','W','W','W','W','W','D','D','W','W','W','W'] },
-      { name: 'Eva S.',    row: ['W','V','D','D','W','W','W','W','W','D','D','W','W','W','W'] },
-      { name: 'Filip K.',  row: ['W','W','D','D','W','W','W','W','W','D','D','W','W','W','W'] },
+    name: 'Operations', min: 2,
+    rows: [
+      { name: 'Ivan Melnikov', s: 'WWWWWWWWWWWWWWW' },
+      { name: 'Daria Kos',     s: 'WWWWVVVWWWWWWWW' },
+      { name: 'Alex Novikov',  s: 'WWWWWWWWWWWLWWW' },
     ],
   },
 ]
 
-function coverageOk(deptIdx: number, dayIdx: number): boolean {
-  const dept = DEPTS[deptIdx]
-  if (WEEKENDS.has(dayIdx + 1)) return true
-  const count = dept.employees.filter((e) => e.row[dayIdx] === 'W' || e.row[dayIdx] === 'L').length
-  return count >= dept.min
-}
-
 function GridPreview() {
-  const DAYS = Array.from({ length: 15 }, (_, i) => i + 1)
-
   return (
-    <div className="overflow-hidden rounded-[--radius] border border-border bg-white shadow-[var(--shadow-md)]">
-      {/* Window chrome */}
-      <div className="flex items-center gap-1.5 border-b border-border bg-muted/30 px-4 py-2.5">
-        <div className="h-2.5 w-2.5 rounded-full bg-red-400/60" />
-        <div className="h-2.5 w-2.5 rounded-full bg-yellow-400/60" />
-        <div className="h-2.5 w-2.5 rounded-full bg-green-400/60" />
-        <span className="ml-2 text-xs text-muted-foreground">smengo — May 2026</span>
-      </div>
+    <div style={{ position: 'relative' }}>
+      <div
+        style={{
+          background: '#fff',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius) var(--radius) 0 0',
+          overflow: 'hidden',
+          boxShadow: '0 2px 6px rgba(31,30,28,.04), 0 12px 48px rgba(31,30,28,.08)',
+        }}
+      >
+        {/* Chrome bar */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '10px 14px',
+            background: '#F7F6F2',
+            borderBottom: '1px solid var(--border)',
+          }}
+        >
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#F0C2C2' }} />
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#F0DFB0' }} />
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#B5DBCA' }} />
+          <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--muted-foreground)', fontWeight: 500 }}>
+            smengo · May 2026
+          </span>
+        </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-xs">
-          <thead>
-            <tr className="border-b border-border">
-              <th
-                className="sticky left-0 z-10 bg-muted/40 px-3 py-2 text-left text-[11px] font-medium text-muted-foreground"
-                style={{ minWidth: 110 }}
-              >
-                Employee
-              </th>
-              {DAYS.map((d) => (
+        {/* App topbar */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 12px',
+            borderBottom: '1px solid var(--border)',
+            background: '#fff',
+            flexWrap: 'wrap',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+              background: '#F5F4EF',
+              borderRadius: 6,
+              padding: '4px 8px',
+              fontSize: 11,
+              fontWeight: 500,
+              color: 'var(--foreground)',
+            }}
+          >
+            <span>‹</span>
+            <span>May 2026</span>
+            <span>›</span>
+          </div>
+          <div
+            style={{
+              background: '#F5F4EF',
+              borderRadius: 6,
+              padding: '4px 8px',
+              fontSize: 11,
+              color: 'var(--muted-foreground)',
+            }}
+          >
+            All departments ▾
+          </div>
+          <div style={{ flex: 1 }} />
+          <div
+            style={{
+              background: '#F5F4EF',
+              borderRadius: 6,
+              padding: '4px 8px',
+              fontSize: 11,
+              color: 'var(--muted-foreground)',
+            }}
+          >
+            Export
+          </div>
+          <div
+            style={{
+              background: 'var(--accent)',
+              borderRadius: 6,
+              padding: '4px 8px',
+              fontSize: 11,
+              fontWeight: 600,
+              color: '#fff',
+            }}
+          >
+            + Add employee
+          </div>
+        </div>
+
+        {/* Grid table */}
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: 11 }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--border)' }}>
                 <th
-                  key={d}
-                  className="py-2 text-center text-[11px]"
                   style={{
-                    minWidth: 28,
-                    fontWeight: d === TODAY_COL ? 600 : 400,
-                    background: d === TODAY_COL
-                      ? 'rgba(217,119,87,0.12)'
-                      : WEEKENDS.has(d)
-                      ? 'rgba(0,0,0,0.025)'
-                      : undefined,
-                    color: d === TODAY_COL ? 'var(--accent)' : 'var(--muted-foreground)',
+                    position: 'sticky',
+                    left: 0,
+                    zIndex: 10,
+                    background: '#fff',
+                    padding: '6px 10px',
+                    width: 148,
+                    minWidth: 148,
+                    textAlign: 'left',
+                    fontWeight: 500,
+                    color: 'var(--muted-foreground)',
+                    fontSize: 10,
                   }}
                 >
-                  {d}
+                  Employee
                 </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {DEPTS.flatMap((dept, di) => [
-              <tr key={`dept-${di}`}>
-                <td
-                  colSpan={16}
-                  className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider"
-                  style={{ background: 'var(--bg-subtle,#EDEBE3)', color: 'var(--text-muted,#6B6862)' }}
-                >
-                  {dept.name} · min {dept.min}
-                </td>
-              </tr>,
-              ...dept.employees.map((emp, ei) => (
-                <tr key={`${di}-${ei}`} className={ei % 2 === 0 ? '' : 'bg-muted/10'}>
-                  <td className="sticky left-0 z-10 bg-white px-3 py-1 font-medium text-foreground">
-                    {emp.name}
-                  </td>
-                  {emp.row.map((status, ci) => (
-                    <td
-                      key={ci}
-                      className="px-0.5 py-1 text-center"
+                {DAYS_DEMO.map((d) => {
+                  const isToday = d.n === TODAY_COL
+                  const isWkd = WKND.has(d.n)
+                  return (
+                    <th
+                      key={d.n}
                       style={{
-                        background:
-                          ci + 1 === TODAY_COL ? 'rgba(217,119,87,0.06)' : undefined,
+                        width: 52,
+                        minWidth: 44,
+                        padding: '4px 2px',
+                        textAlign: 'center',
+                        background: isToday
+                          ? 'rgba(217,119,87,0.09)'
+                          : isWkd
+                          ? '#FAFAF8'
+                          : '#fff',
+                        color: isToday ? 'var(--accent)' : 'var(--muted-foreground)',
+                        position: 'relative',
                       }}
                     >
-                      {WEEKENDS.has(ci + 1) ? (
+                      {isToday && (
                         <div
-                          className="mx-auto h-5 w-5 rounded-sm"
-                          style={{ background: STATUS_META.D.color, opacity: 0.25 }}
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            height: 2,
+                            background: 'var(--accent)',
+                          }}
                         />
-                      ) : (
-                        <div
-                          className="relative mx-auto h-5 w-5 rounded-sm"
-                          style={{ background: STATUS_META[status].color, opacity: 0.85 }}
-                        >
-                          {!coverageOk(di, ci) && (status === 'V' || status === 'S') && (
-                            <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-red-500" />
-                          )}
-                        </div>
                       )}
+                      <div style={{ fontWeight: isToday ? 700 : 500, fontSize: 11 }}>{d.n}</div>
+                      <div style={{ fontSize: 9, opacity: 0.65 }}>{d.d}</div>
+                    </th>
+                  )
+                })}
+              </tr>
+            </thead>
+            <tbody>
+              {GRID_DEPTS.flatMap((dept, di) => [
+                <tr key={`dept-${di}`}>
+                  <td
+                    colSpan={DAYS_DEMO.length + 1}
+                    style={{
+                      padding: '4px 10px',
+                      background: '#EDEBE3',
+                      fontSize: 10,
+                      fontWeight: 600,
+                      color: '#6B6862',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                    }}
+                  >
+                    ▸ {dept.name}
+                    <span style={{ marginLeft: 8, opacity: 0.6, fontWeight: 400, textTransform: 'none' }}>
+                      · min {dept.min}/day
+                    </span>
+                  </td>
+                </tr>,
+                ...dept.rows.map((emp, ei) => (
+                  <tr key={`${di}-${ei}`} style={{ borderBottom: '1px solid #F0EDE5' }}>
+                    <td
+                      style={{
+                        position: 'sticky',
+                        left: 0,
+                        zIndex: 5,
+                        background: '#fff',
+                        padding: '4px 10px',
+                        fontWeight: 500,
+                        color: 'var(--foreground)',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {emp.name}
                     </td>
-                  ))}
-                </tr>
-              )),
-            ])}
-          </tbody>
-        </table>
+                    {DAYS_DEMO.map((d, ci) => {
+                      const code = emp.s[ci] as Status
+                      const isWkd = WKND.has(d.n)
+                      const isToday = d.n === TODAY_COL
+                      const isAlert = dept.name === 'Sales' && SALES_ALERT.has(d.n) && !isWkd
+                      const chip = CHIP_META[code]
+                      return (
+                        <td
+                          key={d.n}
+                          style={{
+                            padding: '3px 2px',
+                            textAlign: 'center',
+                            background: isAlert
+                              ? '#FFF5F5'
+                              : isToday
+                              ? 'rgba(217,119,87,0.04)'
+                              : isWkd
+                              ? '#FAFAF8'
+                              : '#fff',
+                            position: 'relative',
+                          }}
+                        >
+                          {isAlert && (
+                            <div
+                              style={{
+                                position: 'absolute',
+                                bottom: 0,
+                                left: 2,
+                                right: 2,
+                                height: 2,
+                                background: '#D4604A',
+                                borderRadius: 1,
+                              }}
+                            />
+                          )}
+                          {isWkd ? (
+                            <span style={{ fontSize: 9, color: '#D0CDC5' }}>—</span>
+                          ) : chip ? (
+                            <div
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                background: chip.bg,
+                                color: chip.c,
+                                padding: '1px 5px',
+                                borderRadius: 3,
+                                fontSize: 9.5,
+                                fontWeight: 500,
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {chip.lbl}
+                            </div>
+                          ) : null}
+                        </td>
+                      )
+                    })}
+                  </tr>
+                )),
+              ])}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Alert strip */}
+        <div
+          style={{
+            padding: '7px 12px',
+            background: '#FFF5F5',
+            borderTop: '1px solid #F8D0CC',
+          }}
+        >
+          <span style={{ fontSize: 11, fontWeight: 500, color: '#D4604A' }}>
+            ⚠ Coverage alert: Sales · Wed 7, Thu 8 — below minimum of 3
+          </span>
+        </div>
       </div>
 
-      {/* Alert strip */}
-      <div className="border-t border-red-200 bg-red-50/60 px-4 py-2">
-        <span className="text-xs font-medium text-red-600">
-          ⚠ Coverage alert: Sales — days 7, 8 (below minimum of 3)
-        </span>
-      </div>
-
-      {/* Legend */}
-      <div className="flex flex-wrap gap-4 border-t border-border bg-muted/20 px-4 py-2.5">
-        {(['W', 'V', 'S', 'D', 'L'] as Status[]).map((s) => (
-          <div key={s} className="flex items-center gap-1.5">
-            <div className="h-3 w-3 rounded-sm" style={{ background: STATUS_META[s].color }} />
-            <span className="text-[11px] text-muted-foreground">{STATUS_META[s].label}</span>
-          </div>
-        ))}
-      </div>
+      {/* Right edge fade */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          bottom: 0,
+          width: 80,
+          background: 'linear-gradient(to right, transparent, var(--background))',
+          pointerEvents: 'none',
+          borderRadius: '0 var(--radius) var(--radius) 0',
+        }}
+      />
     </div>
   )
 }
+

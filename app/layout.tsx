@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Inter, Lora, Geist } from 'next/font/google'
+import { Inter, Source_Serif_4, Geist } from 'next/font/google'
 import './globals.css'
 import { cn } from "@/lib/utils"
 import { NextIntlClientProvider } from 'next-intl'
@@ -13,7 +13,7 @@ const inter = Inter({
   display: 'swap',
 })
 
-const lora = Lora({
+const sourceSerif = Source_Serif_4({
   variable: '--font-lora',
   subsets: ['latin', 'cyrillic'],
   display: 'swap',
@@ -33,7 +33,7 @@ export default async function RootLayout({
   const messages = await getMessages()
 
   return (
-    <html lang={locale} className={cn("h-full", "antialiased", inter.variable, lora.variable, "font-sans", geist.variable)}>
+    <html lang={locale} className={cn("h-full", "antialiased", inter.variable, sourceSerif.variable, "font-sans", geist.variable)}>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <NextIntlClientProvider messages={messages} locale={locale}>
           {children}

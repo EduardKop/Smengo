@@ -80,7 +80,8 @@
       "pricing": "Ціни",
       "login": "Увійти",
       "start": "Почати безкоштовно",
-      "how": "Як працює"
+      "how": "Як працює",
+      "feat": "Можливості"
     },
     "hero": {
       "badge": "Планувальник змін для команд СНД",
@@ -144,7 +145,10 @@
       "company": "Компанія",
       "companyAbout": "Про нас",
       "companyBlog": "Блог",
-      "companyContact": "Контакти"
+      "companyContact": "Контакти",
+      "productChangelog": "Changelog",
+      "productRoadmap": "Roadmap",
+      "legalRefund": "Політика повернення"
     },
     "gridMockup": {
       "title": "Графік команди",

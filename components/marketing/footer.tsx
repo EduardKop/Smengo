@@ -39,6 +39,12 @@ export async function MarketingFooter() {
               <Link href="/pricing" className="text-sm text-muted-foreground hover:text-foreground">
                 {t('productPricing')}
               </Link>
+              <Link href="/changelog" className="text-sm text-muted-foreground hover:text-foreground">
+                {t('productChangelog')}
+              </Link>
+              <Link href="/roadmap" className="text-sm text-muted-foreground hover:text-foreground">
+                {t('productRoadmap')}
+              </Link>
             </div>
 
             {/* Company */}
@@ -62,11 +68,14 @@ export async function MarketingFooter() {
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 {t('legal')}
               </span>
+              <Link href="/terms" className="text-sm text-muted-foreground hover:text-foreground">
+                {t('terms')}
+              </Link>
               <Link href="/privacy" className="text-sm text-muted-foreground hover:text-foreground">
                 {t('privacy')}
               </Link>
-              <Link href="/terms" className="text-sm text-muted-foreground hover:text-foreground">
-                {t('terms')}
+              <Link href="/refund" className="text-sm text-muted-foreground hover:text-foreground">
+                {t('legalRefund')}
               </Link>
             </div>
           </div>

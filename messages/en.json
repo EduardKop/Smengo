@@ -80,7 +80,8 @@
       "pricing": "Pricing",
       "login": "Sign in",
       "start": "Start free",
-      "how": "How it works"
+      "how": "How it works",
+      "feat": "Features"
     },
     "hero": {
       "badge": "Shift scheduler for growing teams",
@@ -144,7 +145,10 @@
       "company": "Company",
       "companyAbout": "About",
       "companyBlog": "Blog",
-      "companyContact": "Contact"
+      "companyContact": "Contact",
+      "productChangelog": "Changelog",
+      "productRoadmap": "Roadmap",
+      "legalRefund": "Refund policy"
     },
     "gridMockup": {
       "title": "Team schedule",

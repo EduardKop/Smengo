@@ -31,7 +31,7 @@ export function MarketingHeader() {
             href="/#features"
             className="text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
-            {t('product')}
+            {t('feat')}
           </Link>
           <Link
             href="/pricing"
@@ -84,7 +84,7 @@ export function MarketingHeader() {
               className="rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
               onClick={() => setMobileOpen(false)}
             >
-              {t('product')}
+              {t('feat')}
             </Link>
             <Link
               href="/pricing"

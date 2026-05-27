@@ -80,7 +80,8 @@
       "pricing": "Цены",
       "login": "Войти",
       "start": "Начать бесплатно",
-      "how": "Как работает"
+      "how": "Как работает",
+      "feat": "Возможности"
     },
     "hero": {
       "badge": "Планировщик смен для команд СНГ",
@@ -144,7 +145,10 @@
       "company": "Компания",
       "companyAbout": "О нас",
       "companyBlog": "Блог",
-      "companyContact": "Контакты"
+      "companyContact": "Контакты",
+      "productChangelog": "Changelog",
+      "productRoadmap": "Roadmap",
+      "legalRefund": "Политика возврата"
     },
     "gridMockup": {
       "title": "График команды",
