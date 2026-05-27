@@ -1,29 +1,26 @@
 'use client'
 
 import { useActionState } from 'react'
+import { useTranslations } from 'next-intl'
 import { resetPasswordAction } from '@/lib/actions/auth'
 import { Button } from '@/components/ui/button'
-import type { AuthMessages } from '@/lib/i18n'
-
-interface Props {
-  t: AuthMessages
-}
 
 const initialState = undefined
 
-export function ResetPasswordForm({ t }: Props) {
+export function ResetPasswordForm() {
+  const t = useTranslations('auth')
   const [state, action, pending] = useActionState(resetPasswordAction, initialState)
 
   return (
     <div className="w-full max-w-sm space-y-6 rounded-xl border bg-card p-8 shadow-sm">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{t.resetPasswordTitle}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t('resetPasswordTitle')}</h1>
       </div>
 
       <form action={action} className="space-y-4">
         <div className="space-y-1">
           <label htmlFor="password" className="text-sm font-medium">
-            {t.newPassword}
+            {t('newPassword')}
           </label>
           <input
             id="password"
@@ -45,7 +42,7 @@ export function ResetPasswordForm({ t }: Props) {
         )}
 
         <Button type="submit" className="w-full" disabled={pending}>
-          {pending ? t.loading : t.resetPasswordButton}
+          {pending ? t('loading') : t('resetPasswordButton')}
         </Button>
       </form>
     </div>

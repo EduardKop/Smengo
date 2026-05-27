@@ -8,25 +8,13 @@ export function isLocale(value: string): value is Locale {
   return (SUPPORTED_LOCALES as ReadonlyArray<string>).includes(value)
 }
 
+/** Read current locale from cookie. Cookie name matches middleware: NEXT_LOCALE. */
 export async function getLocale(): Promise<Locale> {
   const cookieStore = await cookies()
-  const value = cookieStore.get('locale')?.value ?? 'ru'
+  // Support both cookie names during transition
+  const value =
+    cookieStore.get('NEXT_LOCALE')?.value ??
+    cookieStore.get('locale')?.value ??
+    'ru'
   return isLocale(value) ? value : 'ru'
 }
-
-type RuMessages = typeof import('../messages/ru.json')
-
-export async function getDict(locale: Locale): Promise<RuMessages> {
-  switch (locale) {
-    case 'uk':
-      return (await import('../messages/uk.json')) as unknown as RuMessages
-    case 'en':
-      return (await import('../messages/en.json')) as unknown as RuMessages
-    default:
-      return await import('../messages/ru.json')
-  }
-}
-
-export type Messages = RuMessages
-export type AuthMessages = RuMessages['auth']
-export type OnboardingMessages = RuMessages['onboarding']

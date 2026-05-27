@@ -1,27 +1,24 @@
 'use client'
 
 import { useActionState } from 'react'
+import { useTranslations } from 'next-intl'
 import { forgotPasswordAction } from '@/lib/actions/auth'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import type { AuthMessages } from '@/lib/i18n'
-
-interface Props {
-  t: AuthMessages
-}
 
 const initialState = undefined
 
-export function ForgotPasswordForm({ t }: Props) {
+export function ForgotPasswordForm() {
+  const t = useTranslations('auth')
   const [state, action, pending] = useActionState(forgotPasswordAction, initialState)
 
   if (state?.message === 'sent') {
     return (
       <div className="w-full max-w-sm space-y-4 rounded-xl border bg-card p-8 shadow-sm text-center">
-        <h2 className="text-xl font-semibold">{t.forgotPasswordSent}</h2>
-        <p className="text-sm text-muted-foreground">{t.forgotPasswordSentHint}</p>
+        <h2 className="text-xl font-semibold">{t('forgotPasswordSent')}</h2>
+        <p className="text-sm text-muted-foreground">{t('forgotPasswordSentHint')}</p>
         <Link href="/login" className="block text-sm text-foreground underline underline-offset-4">
-          {t.backToLogin}
+          {t('backToLogin')}
         </Link>
       </div>
     )
@@ -30,14 +27,14 @@ export function ForgotPasswordForm({ t }: Props) {
   return (
     <div className="w-full max-w-sm space-y-6 rounded-xl border bg-card p-8 shadow-sm">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{t.forgotPasswordTitle}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t.forgotPasswordHint}</p>
+        <h1 className="text-2xl font-semibold tracking-tight">{t('forgotPasswordTitle')}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{t('forgotPasswordHint')}</p>
       </div>
 
       <form action={action} className="space-y-4">
         <div className="space-y-1">
           <label htmlFor="email" className="text-sm font-medium">
-            {t.email}
+            {t('email')}
           </label>
           <input
             id="email"
@@ -60,13 +57,13 @@ export function ForgotPasswordForm({ t }: Props) {
         )}
 
         <Button type="submit" className="w-full" disabled={pending}>
-          {pending ? t.loading : t.forgotPasswordButton}
+          {pending ? t('loading') : t('forgotPasswordButton')}
         </Button>
       </form>
 
       <p className="text-center text-sm">
         <Link href="/login" className="text-muted-foreground hover:text-foreground underline underline-offset-4">
-          {t.backToLogin}
+          {t('backToLogin')}
         </Link>
       </p>
     </div>

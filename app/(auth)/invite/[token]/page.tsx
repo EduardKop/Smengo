@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { getDict, getLocale } from '@/lib/i18n'
 import { InviteAcceptForm } from '@/components/auth/invite-accept-form'
 
 export default async function InvitePage({
@@ -12,7 +11,6 @@ export default async function InvitePage({
 
   const supabase = await createClient()
 
-  // Validate that the invitation exists and is not expired/accepted
   const { data: invitation } = await supabase
     .from('invitations')
     .select('email, role, expires_at, accepted_at, organizations(name)')
@@ -27,8 +25,6 @@ export default async function InvitePage({
     redirect('/login?error=expired_invite')
   }
 
-  const locale = await getLocale()
-  const dict = await getDict(locale)
   const orgName =
     invitation.organizations && !Array.isArray(invitation.organizations)
       ? invitation.organizations.name
@@ -36,7 +32,6 @@ export default async function InvitePage({
 
   return (
     <InviteAcceptForm
-      t={dict.auth}
       token={token}
       email={invitation.email}
       orgName={orgName}

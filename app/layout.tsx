@@ -1,7 +1,9 @@
 import type { Metadata } from 'next'
 import { Inter, Lora, Geist } from 'next/font/google'
 import './globals.css'
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils"
+import { NextIntlClientProvider } from 'next-intl'
+import { getMessages, getLocale } from 'next-intl/server'
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
@@ -22,14 +24,21 @@ export const metadata: Metadata = {
   description: 'Team schedule planning for modern companies',
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const locale = await getLocale()
+  const messages = await getMessages()
+
   return (
-    <html lang="ru" className={cn("h-full", "antialiased", inter.variable, lora.variable, "font-sans", geist.variable)}>
-      <body className="min-h-full flex flex-col bg-background text-foreground">{children}</body>
+    <html lang={locale} className={cn("h-full", "antialiased", inter.variable, lora.variable, "font-sans", geist.variable)}>
+      <body className="min-h-full flex flex-col bg-background text-foreground">
+        <NextIntlClientProvider messages={messages} locale={locale}>
+          {children}
+        </NextIntlClientProvider>
+      </body>
     </html>
   )
 }

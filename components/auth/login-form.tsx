@@ -1,19 +1,19 @@
 'use client'
 
 import { useActionState, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { loginAction, sendMagicLinkAction, loginWithGoogleAction } from '@/lib/actions/auth'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import type { AuthMessages } from '@/lib/i18n'
 
 interface Props {
-  t: AuthMessages
   urlError?: string
 }
 
 const initialState = undefined
 
-export function LoginForm({ t, urlError }: Props) {
+export function LoginForm({ urlError }: Props) {
+  const t = useTranslations('auth')
   const [mode, setMode] = useState<'password' | 'magic'>('password')
   const [passwordState, passwordAction, passwordPending] = useActionState(loginAction, initialState)
   const [magicState, magicAction, magicPending] = useActionState(sendMagicLinkAction, initialState)
@@ -21,13 +21,13 @@ export function LoginForm({ t, urlError }: Props) {
   if (magicState?.message === 'check_email') {
     return (
       <div className="w-full max-w-sm space-y-4 rounded-xl border bg-card p-8 shadow-sm text-center">
-        <h2 className="text-xl font-semibold">{t.magicLinkSent}</h2>
-        <p className="text-sm text-muted-foreground">{t.magicLinkSentHint}</p>
+        <h2 className="text-xl font-semibold">{t('magicLinkSent')}</h2>
+        <p className="text-sm text-muted-foreground">{t('magicLinkSentHint')}</p>
         <button
           onClick={() => setMode('password')}
           className="text-sm text-foreground underline underline-offset-4"
         >
-          {t.backToLogin}
+          {t('backToLogin')}
         </button>
       </div>
     )
@@ -36,7 +36,7 @@ export function LoginForm({ t, urlError }: Props) {
   return (
     <div className="w-full max-w-sm space-y-6 rounded-xl border bg-card p-8 shadow-sm">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{t.loginTitle}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t('loginTitle')}</h1>
       </div>
 
       {/* Tab switcher */}
@@ -50,7 +50,7 @@ export function LoginForm({ t, urlError }: Props) {
               : 'text-muted-foreground hover:text-foreground'
           }`}
         >
-          {t.passwordTab}
+          {t('passwordTab')}
         </button>
         <button
           type="button"
@@ -61,7 +61,7 @@ export function LoginForm({ t, urlError }: Props) {
               : 'text-muted-foreground hover:text-foreground'
           }`}
         >
-          {t.magicLinkTab}
+          {t('magicLinkTab')}
         </button>
       </div>
 
@@ -74,7 +74,7 @@ export function LoginForm({ t, urlError }: Props) {
         <form action={passwordAction} className="space-y-4">
           <div className="space-y-1">
             <label htmlFor="email" className="text-sm font-medium">
-              {t.email}
+              {t('email')}
             </label>
             <input
               id="email"
@@ -93,13 +93,13 @@ export function LoginForm({ t, urlError }: Props) {
           <div className="space-y-1">
             <div className="flex items-center justify-between">
               <label htmlFor="password" className="text-sm font-medium">
-                {t.password}
+                {t('password')}
               </label>
               <Link
                 href="/forgot-password"
                 className="text-xs text-muted-foreground hover:text-foreground"
               >
-                {t.forgotPassword}
+                {t('forgotPassword')}
               </Link>
             </div>
             <input
@@ -122,14 +122,14 @@ export function LoginForm({ t, urlError }: Props) {
           )}
 
           <Button type="submit" className="w-full" disabled={passwordPending}>
-            {passwordPending ? t.loading : t.loginButton}
+            {passwordPending ? t('loading') : t('loginButton')}
           </Button>
         </form>
       ) : (
         <form action={magicAction} className="space-y-4">
           <div className="space-y-1">
             <label htmlFor="magic-email" className="text-sm font-medium">
-              {t.email}
+              {t('email')}
             </label>
             <input
               id="magic-email"
@@ -140,7 +140,7 @@ export function LoginForm({ t, urlError }: Props) {
               className="w-full rounded-md border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               placeholder="you@company.com"
             />
-            <p className="text-xs text-muted-foreground">{t.magicLinkHint}</p>
+            <p className="text-xs text-muted-foreground">{t('magicLinkHint')}</p>
             {magicState?.errors?.email && (
               <p className="text-xs text-destructive">{magicState.errors.email[0]}</p>
             )}
@@ -153,7 +153,7 @@ export function LoginForm({ t, urlError }: Props) {
           )}
 
           <Button type="submit" className="w-full" disabled={magicPending}>
-            {magicPending ? t.loading : t.magicLinkButton}
+            {magicPending ? t('loading') : t('magicLinkButton')}
           </Button>
         </form>
       )}
@@ -163,21 +163,21 @@ export function LoginForm({ t, urlError }: Props) {
           <span className="w-full border-t" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card px-2 text-muted-foreground">{t.orContinueWith}</span>
+          <span className="bg-card px-2 text-muted-foreground">{t('orContinueWith')}</span>
         </div>
       </div>
 
       <form action={loginWithGoogleAction}>
         <Button type="submit" variant="outline" className="w-full gap-2">
           <GoogleIcon />
-          {t.googleButton}
+          {t('googleButton')}
         </Button>
       </form>
 
       <p className="text-center text-sm text-muted-foreground">
-        {t.noAccount}{' '}
+        {t('noAccount')}{' '}
         <Link href="/register" className="font-medium text-foreground underline underline-offset-4">
-          {t.registerLink}
+          {t('registerLink')}
         </Link>
       </p>
     </div>

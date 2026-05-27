@@ -1,12 +1,11 @@
 'use client'
 
 import { useActionState } from 'react'
+import { useTranslations } from 'next-intl'
 import { createOrgAction } from '@/lib/actions/org'
 import { Button } from '@/components/ui/button'
-import type { OnboardingMessages } from '@/lib/i18n'
 
 interface Props {
-  t: OnboardingMessages
   userEmail: string
 }
 
@@ -27,20 +26,21 @@ const TIMEZONES = [
   'Europe/Tallinn',
 ]
 
-export function CreateOrgForm({ t, userEmail }: Props) {
+export function CreateOrgForm({ userEmail }: Props) {
+  const t = useTranslations('onboarding')
   const [state, action, pending] = useActionState(createOrgAction, initialState)
 
   return (
     <div className="w-full max-w-md space-y-6 rounded-xl border bg-card p-8 shadow-sm">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{t.title}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t.subtitle}</p>
+        <h1 className="text-2xl font-semibold tracking-tight">{t('title')}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{t('subtitle')}</p>
       </div>
 
       <form action={action} className="space-y-4">
         <div className="space-y-1">
           <label htmlFor="name" className="text-sm font-medium">
-            {t.orgName}
+            {t('orgName')}
           </label>
           <input
             id="name"
@@ -48,7 +48,7 @@ export function CreateOrgForm({ t, userEmail }: Props) {
             type="text"
             required
             className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            placeholder={t.orgNamePlaceholder}
+            placeholder={t('orgNamePlaceholder')}
           />
           {state?.errors?.name && (
             <p className="text-xs text-destructive">{state.errors.name[0]}</p>
@@ -57,7 +57,7 @@ export function CreateOrgForm({ t, userEmail }: Props) {
 
         <div className="space-y-1">
           <label htmlFor="billing_email" className="text-sm font-medium">
-            {t.billingEmail}
+            {t('billingEmail')}
           </label>
           <input
             id="billing_email"
@@ -74,7 +74,7 @@ export function CreateOrgForm({ t, userEmail }: Props) {
 
         <div className="space-y-1">
           <label htmlFor="timezone" className="text-sm font-medium">
-            {t.timezone}
+            {t('timezone')}
           </label>
           <select
             id="timezone"
@@ -92,7 +92,7 @@ export function CreateOrgForm({ t, userEmail }: Props) {
 
         <div className="space-y-1">
           <label htmlFor="locale" className="text-sm font-medium">
-            {t.language}
+            {t('language')}
           </label>
           <select
             id="locale"
@@ -113,7 +113,7 @@ export function CreateOrgForm({ t, userEmail }: Props) {
         )}
 
         <Button type="submit" className="w-full" disabled={pending}>
-          {pending ? '...' : t.createButton}
+          {pending ? '...' : t('createButton')}
         </Button>
       </form>
     </div>

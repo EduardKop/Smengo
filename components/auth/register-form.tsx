@@ -1,25 +1,24 @@
 'use client'
 
 import { useActionState } from 'react'
+import { useTranslations } from 'next-intl'
 import { registerAction, loginWithGoogleAction } from '@/lib/actions/auth'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import type { AuthMessages } from '@/lib/i18n'
 
-interface Props {
-  t: AuthMessages
-}
+interface Props {}
 
 const initialState = undefined
 
-export function RegisterForm({ t }: Props) {
+export function RegisterForm(_props: Props) {
+  const t = useTranslations('auth')
   const [state, action, pending] = useActionState(registerAction, initialState)
 
   if (state?.message === 'check_email') {
     return (
       <div className="w-full max-w-sm space-y-4 rounded-xl border bg-card p-8 shadow-sm text-center">
-        <h2 className="text-xl font-semibold">{t.checkEmail}</h2>
-        <p className="text-sm text-muted-foreground">{t.checkEmailHint}</p>
+        <h2 className="text-xl font-semibold">{t('checkEmail')}</h2>
+        <p className="text-sm text-muted-foreground">{t('checkEmailHint')}</p>
       </div>
     )
   }
@@ -27,14 +26,14 @@ export function RegisterForm({ t }: Props) {
   return (
     <div className="w-full max-w-sm space-y-6 rounded-xl border bg-card p-8 shadow-sm">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{t.registerTitle}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t.registerSubtitle}</p>
+        <h1 className="text-2xl font-semibold tracking-tight">{t('registerTitle')}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{t('registerSubtitle')}</p>
       </div>
 
       <form action={action} className="space-y-4">
         <div className="space-y-1">
           <label htmlFor="full_name" className="text-sm font-medium">
-            {t.fullName}
+            {t('fullName')}
           </label>
           <input
             id="full_name"
@@ -43,7 +42,7 @@ export function RegisterForm({ t }: Props) {
             required
             autoComplete="name"
             className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            placeholder={t.fullNamePlaceholder}
+            placeholder={t('fullNamePlaceholder')}
           />
           {state?.errors?.full_name && (
             <p className="text-xs text-destructive">{state.errors.full_name[0]}</p>
@@ -52,7 +51,7 @@ export function RegisterForm({ t }: Props) {
 
         <div className="space-y-1">
           <label htmlFor="email" className="text-sm font-medium">
-            {t.email}
+            {t('email')}
           </label>
           <input
             id="email"
@@ -70,7 +69,7 @@ export function RegisterForm({ t }: Props) {
 
         <div className="space-y-1">
           <label htmlFor="password" className="text-sm font-medium">
-            {t.password}
+            {t('password')}
           </label>
           <input
             id="password"
@@ -92,7 +91,7 @@ export function RegisterForm({ t }: Props) {
         )}
 
         <Button type="submit" className="w-full" disabled={pending}>
-          {pending ? t.loading : t.registerButton}
+          {pending ? t('loading') : t('registerButton')}
         </Button>
       </form>
 
@@ -101,21 +100,21 @@ export function RegisterForm({ t }: Props) {
           <span className="w-full border-t" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card px-2 text-muted-foreground">{t.orContinueWith}</span>
+          <span className="bg-card px-2 text-muted-foreground">{t('orContinueWith')}</span>
         </div>
       </div>
 
       <form action={loginWithGoogleAction}>
         <Button type="submit" variant="outline" className="w-full gap-2">
           <GoogleIcon />
-          {t.googleButton}
+          {t('googleButton')}
         </Button>
       </form>
 
       <p className="text-center text-sm text-muted-foreground">
-        {t.hasAccount}{' '}
+        {t('hasAccount')}{' '}
         <Link href="/login" className="font-medium text-foreground underline underline-offset-4">
-          {t.loginLink}
+          {t('loginLink')}
         </Link>
       </p>
     </div>
