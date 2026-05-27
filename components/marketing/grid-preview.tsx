@@ -82,17 +82,17 @@ type EmpDef = {
 }
 
 const BASE_EMPLOYEES: EmpDef[] = [
-  { dept: 'sales', name: 'Anna Petrov',   tg: '@anna_p',   pIdx: 1, s: 'DWWWWWDDWWWWWDW',  shift: 'day'   },
-  { dept: 'sales', name: 'Mark Sidorov',  tg: '@mark_sid', pIdx: 2, s: 'DWWDWWWWWDWWWWD',  shift: 'night' },
-  { dept: 'sales', name: 'Kate Volkova',  tg: '@kate_v',   pIdx: 3, s: 'DWWWDWWWWWDDWWW',  shift: 'day'   },
-  { dept: 'ops',   name: 'Ivan Melnikov', tg: '@ivan_m',   pIdx: 1, s: 'DWDWWWWWWDWWDWW',  shift: 'night' },
-  { dept: 'ops',   name: 'Daria Kos',     tg: '@daria_k',  pIdx: 2, s: 'DWWWWDWWWWWDWDW',  shift: 'day'   },
-  { dept: 'ops',   name: 'Alex Novikov',  tg: '@alex_nov', pIdx: 3, s: 'DWWWWWWDDWWLWWD',  shift: 'day'   },
-  { dept: 'support',   name: 'Olga Romanenko', tg: '@olga_r',  pIdx: 4, s: 'DWWWDWWWWDWWWDW',  shift: 'day'   },
-  { dept: 'support',   name: 'Pavel Yurov',    tg: '@pavel_y', pIdx: 5, s: 'DWWWWWDWWWWWDDW',  shift: 'night' },
-  { dept: 'marketing', name: 'Yulia Lebed',    tg: '@yulia_l', pIdx: 4, s: 'DWWDWWWWWWDWWWD',  shift: 'day'   },
-  { dept: 'marketing', name: 'Roma Karpov',    tg: '@roma_k',  pIdx: 6, s: 'DWWWWDDWWLWWDWW',  shift: 'day'   },
-  { dept: 'design',    name: 'Lera Tarasova',  tg: '@lera_t',  pIdx: 5, s: 'DWDWWWWWDWWWWDW',  shift: 'night' },
+  { dept: 'sales', name: 'Anna Petrov',   tg: '@example',   pIdx: 1, s: 'DWWWWWDDWWWWWDW',  shift: 'day'   },
+  { dept: 'sales', name: 'Mark Sidorov',  tg: '@example',   pIdx: 2, s: 'DWWDWWWWWDWWWWD',  shift: 'night' },
+  { dept: 'sales', name: 'Kate Volkova',  tg: '@example',   pIdx: 3, s: 'DWWWDWWWWWDDWWW',  shift: 'day'   },
+  { dept: 'ops',   name: 'Ivan Melnikov', tg: '@example',   pIdx: 1, s: 'DWDWWWWWWDWWDWW',  shift: 'night' },
+  { dept: 'ops',   name: 'Daria Kos',     tg: '@example',   pIdx: 2, s: 'DWWWWDWWWWWDWDW',  shift: 'day'   },
+  { dept: 'ops',   name: 'Alex Novikov',  tg: '@example',   pIdx: 3, s: 'DWWWWWWDDWWLWWD',  shift: 'day'   },
+  { dept: 'support',   name: 'Olga Romanenko', tg: '@example',   pIdx: 4, s: 'DWWWDWWWWDWWWDW',  shift: 'day'   },
+  { dept: 'support',   name: 'Pavel Yurov',    tg: '@example',   pIdx: 5, s: 'DWWWWWDWWWWWDDW',  shift: 'night' },
+  { dept: 'marketing', name: 'Yulia Lebed',    tg: '@example',   pIdx: 4, s: 'DWWDWWWWWWDWWWD',  shift: 'day'   },
+  { dept: 'marketing', name: 'Roma Karpov',    tg: '@example',   pIdx: 6, s: 'DWWWWDDWWLWWDWW',  shift: 'day'   },
+  { dept: 'design',    name: 'Lera Tarasova',  tg: '@example',   pIdx: 5, s: 'DWDWWWWWDWWWWDW',  shift: 'night' },
 ]
 
 const PROJECT_CYCLES: Record<string, ProjectKey[]> = {
