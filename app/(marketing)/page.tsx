@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { getTranslations } from 'next-intl/server'
+import { getTranslations, getLocale } from 'next-intl/server'
 import {
   LayoutGrid,
   Bell,
@@ -50,6 +50,8 @@ const jsonLd = {
 
 export default async function LandingPage() {
   const t = await getTranslations('marketing')
+  const tPricing = await getTranslations('pricing')
+  const locale = await getLocale()
 
   const features = [
     {
@@ -134,7 +136,16 @@ export default async function LandingPage() {
 
         {/* Grid mockup */}
         <div className="mx-auto mt-16 max-w-5xl">
-          <GridMockup />
+          <GridMockup
+            title={`${t('gridMockup.title')} — ${new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(new Date())}`}
+            employeeLabel={t('gridMockup.employee')}
+            statusLabels={{
+              0: t('gridMockup.dayoff'),
+              1: t('gridMockup.work'),
+              2: t('gridMockup.vacation'),
+              3: t('gridMockup.sick'),
+            }}
+          />
         </div>
       </section>
 
@@ -218,30 +229,30 @@ export default async function LandingPage() {
       <section className="px-4 py-20 sm:px-6">
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="font-serif text-3xl font-bold text-foreground sm:text-4xl">
-            Простые цены
+            {t('pricingPreview.title')}
           </h2>
           <p className="mx-auto mt-4 max-w-lg text-muted-foreground">
-            Начните с 14-дневного бесплатного триала. Выберите план когда будете готовы.
+            {t('pricingPreview.subtitle')}
           </p>
           <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <div className="flex items-center gap-2 rounded-[--radius] border border-border bg-card px-5 py-3 text-sm">
               <CheckCircle2 className="h-4 w-4 text-accent" />
-              <span><strong>Старт</strong> — $29/мес</span>
+              <span><strong>{tPricing('planStart')}</strong> — $29/{tPricing('monthly')}</span>
             </div>
             <div className="flex items-center gap-2 rounded-[--radius] border-2 border-accent bg-accent/5 px-5 py-3 text-sm font-medium">
               <CheckCircle2 className="h-4 w-4 text-accent" />
-              <span><strong>Команда</strong> — $79/мес</span>
+              <span><strong>{tPricing('planTeam')}</strong> — $79/{tPricing('monthly')}</span>
             </div>
             <div className="flex items-center gap-2 rounded-[--radius] border border-border bg-card px-5 py-3 text-sm">
               <CheckCircle2 className="h-4 w-4 text-accent" />
-              <span><strong>Бизнес</strong> — $149/мес</span>
+              <span><strong>{tPricing('planBusiness')}</strong> — $149/{tPricing('monthly')}</span>
             </div>
           </div>
           <Link
             href="/pricing"
             className="mt-6 inline-flex items-center gap-1 text-sm font-medium text-accent hover:underline"
           >
-            Сравнить все планы <ChevronRight className="h-4 w-4" />
+            {t('pricingPreview.compare')} <ChevronRight className="h-4 w-4" />
           </Link>
         </div>
       </section>
@@ -262,7 +273,7 @@ export default async function LandingPage() {
               <ChevronRight className="h-4 w-4" />
             </Link>
             <Link href="/login" className="text-sm text-muted-foreground hover:text-foreground">
-              {t('cta.hint')} <span className="underline">Войти</span>
+              {t('cta.hint')} <span className="underline">{t('nav.login')}</span>
             </Link>
           </div>
         </div>
@@ -272,14 +283,22 @@ export default async function LandingPage() {
 }
 
 /* ── Inline grid mockup (SVG-based, no external images) ── */
-function GridMockup() {
+function GridMockup({
+  title,
+  employeeLabel,
+  statusLabels,
+}: {
+  title: string
+  employeeLabel: string
+  statusLabels: Record<number, string>
+}) {
   const days = Array.from({ length: 31 }, (_, i) => i + 1)
   const employees = [
-    { name: 'Иван С.', statuses: [1,1,1,0,0,1,1,1,1,0,0,1,1,2,1,0,0,1,1,1,3,0,0,1,1,1,1,0,0,1,1] },
-    { name: 'Мария К.', statuses: [1,1,0,0,1,1,1,1,0,0,1,1,1,1,0,0,1,1,1,2,0,0,1,1,1,1,0,0,3,1,1] },
-    { name: 'Алексей П.', statuses: [0,0,1,1,1,1,0,0,1,1,1,1,3,0,0,1,1,1,1,0,0,1,1,1,2,0,0,1,1,1,1] },
-    { name: 'Ольга Н.', statuses: [1,1,1,1,0,0,1,1,1,3,0,0,1,1,1,1,0,0,1,1,1,1,0,0,2,1,1,1,0,0,1] },
-    { name: 'Дмитрий В.', statuses: [1,0,0,1,1,1,1,2,0,0,1,1,1,1,0,0,1,1,1,1,3,0,0,1,1,0,0,1,1,1,1] },
+    { name: 'Ivan S.', statuses: [1,1,1,0,0,1,1,1,1,0,0,1,1,2,1,0,0,1,1,1,3,0,0,1,1,1,1,0,0,1,1] },
+    { name: 'Maria K.', statuses: [1,1,0,0,1,1,1,1,0,0,1,1,1,1,0,0,1,1,1,2,0,0,1,1,1,1,0,0,3,1,1] },
+    { name: 'Alex P.', statuses: [0,0,1,1,1,1,0,0,1,1,1,1,3,0,0,1,1,1,1,0,0,1,1,1,2,0,0,1,1,1,1] },
+    { name: 'Olga N.', statuses: [1,1,1,1,0,0,1,1,1,3,0,0,1,1,1,1,0,0,1,1,1,1,0,0,2,1,1,1,0,0,1] },
+    { name: 'Dmitri V.', statuses: [1,0,0,1,1,1,1,2,0,0,1,1,1,1,0,0,1,1,1,1,3,0,0,1,1,0,0,1,1,1,1] },
   ]
   // 0=dayoff, 1=work, 2=vacation, 3=sick
   const colors: Record<number, string> = {
@@ -293,7 +312,7 @@ function GridMockup() {
     <div className="overflow-hidden rounded-[--radius-lg] border border-border shadow-[var(--shadow-md)]">
       {/* Header */}
       <div className="flex items-center justify-between bg-card px-4 py-3 border-b border-border">
-        <span className="font-semibold text-sm text-foreground">График команды — Июнь 2025</span>
+        <span className="font-semibold text-sm text-foreground">{title}</span>
         <div className="flex gap-2">
           <div className="h-3 w-3 rounded-full bg-st-sick opacity-60" style={{ background: 'var(--st-sick)' }} />
           <div className="h-3 w-3 rounded-full" style={{ background: 'var(--st-vacation)' }} />
@@ -306,7 +325,7 @@ function GridMockup() {
           <thead>
             <tr className="border-b border-border">
               <th className="sticky left-0 z-10 bg-muted/60 px-3 py-2 text-left text-xs font-medium text-muted-foreground min-w-[100px]">
-                Сотрудник
+                {employeeLabel}
               </th>
               {days.map((d) => (
                 <th
@@ -342,15 +361,10 @@ function GridMockup() {
 
       {/* Legend */}
       <div className="flex flex-wrap gap-4 bg-muted/30 border-t border-border px-4 py-2.5">
-        {[
-          { color: 'var(--st-work)', label: 'Работает' },
-          { color: 'var(--st-vacation)', label: 'Отпуск' },
-          { color: 'var(--st-sick)', label: 'Больничный' },
-          { color: 'var(--st-dayoff)', label: 'Выходной' },
-        ].map(({ color, label }) => (
-          <div key={label} className="flex items-center gap-1.5">
-            <div className="h-3 w-3 rounded-sm" style={{ background: color }} />
-            <span className="text-xs text-muted-foreground">{label}</span>
+        {([1, 2, 3, 0] as const).map((s) => (
+          <div key={s} className="flex items-center gap-1.5">
+            <div className="h-3 w-3 rounded-sm" style={{ background: colors[s] }} />
+            <span className="text-xs text-muted-foreground">{statusLabels[s]}</span>
           </div>
         ))}
       </div>

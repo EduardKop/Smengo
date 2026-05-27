@@ -3,6 +3,7 @@ import PostHogProvider from '@/components/providers/posthog-provider'
 import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const supabase = await createClient()
@@ -11,6 +12,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   } = await supabase.auth.getUser()
 
   if (!user) redirect('/login')
+
+  const t = await getTranslations('billing')
 
   // Trial / paywall check — readable by all org members via org_select RLS
   const cookieStore = await cookies()
@@ -44,11 +47,11 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     <PostHogProvider>
       {isReadOnly && (
         <div className="sticky top-0 z-50 w-full bg-destructive px-4 py-2 text-center text-sm font-medium text-destructive-foreground">
-          Пробный период завершён. Обновите план для редактирования.{' '}
-          <a href="/settings/billing" className="underline">
-            Перейти к тарифам
-          </a>
-        </div>
+            {t('trialExpired')}{' '}
+            <a href="/settings/billing" className="underline">
+              {t('goToBilling')}
+            </a>
+          </div>
       )}
       {children}
     </PostHogProvider>

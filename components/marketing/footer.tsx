@@ -15,7 +15,7 @@ export async function MarketingFooter() {
               <span className="text-accent">S</span>mengo
             </Link>
             <p className="mt-2 text-sm text-muted-foreground">
-              {tCommon('appName')} — умный планировщик смен для команд.
+              {tCommon('appName')} — {t('tagline')}
             </p>
           </div>
 
@@ -34,7 +34,7 @@ export async function MarketingFooter() {
             </div>
             <div className="flex flex-col gap-2">
               <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Правовое
+                {t('legal')}
               </span>
               <Link href="/privacy" className="text-sm text-muted-foreground hover:text-foreground">
                 {t('privacy')}

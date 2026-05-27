@@ -21,7 +21,8 @@
   "billing": {
     "upgrade": "Upgrade plan",
     "trialBanner": "Trial: {days} days remaining",
-    "trialExpired": "Your trial has ended. Upgrade to continue."
+    "trialExpired": "Your trial has ended. Upgrade to continue.",
+    "goToBilling": "Go to billing"
   },
   "auth": {
     "loginTitle": "Sign in to Smengo",
@@ -120,11 +121,26 @@
       "hint": "Already have an account?"
     },
     "footer": {
+      "tagline": "Smart shift scheduler for teams.",
       "product": "Product",
       "pricing": "Pricing",
+      "legal": "Legal",
       "privacy": "Privacy policy",
       "terms": "Terms of service",
       "rights": "All rights reserved."
+    },
+    "gridMockup": {
+      "title": "Team schedule",
+      "employee": "Employee",
+      "work": "Working",
+      "vacation": "Vacation",
+      "sick": "Sick leave",
+      "dayoff": "Day off"
+    },
+    "pricingPreview": {
+      "title": "Simple pricing",
+      "subtitle": "Start with a 14-day free trial. Choose a plan when you're ready.",
+      "compare": "Compare all plans"
     }
   },
   "pricing": {
@@ -144,6 +160,9 @@
     "managers": "manager",
     "managersPlural": "managers",
     "managersMany": "managers",
+    "rowEmployees": "Employees",
+    "rowGroups": "Sub-teams",
+    "rowManagers": "Managers",
     "featuresTitle": "Features",
     "feature_grid": "Monthly grid view",
     "feature_export": "PDF / PNG export",
@@ -153,6 +172,8 @@
     "feature_portal": "Employee portal",
     "feature_api": "API access",
     "feature_support": "Priority support",
+    "ctaTitle": "Ready to try?",
+    "ctaSubtitle": "14 days free on any plan. No card needed.",
     "faqTitle": "Frequently asked questions",
     "faq1q": "Do I need a credit card for the trial?",
     "faq1a": "No. 14 days of full access without a card. After that, choose a plan or stay on limited read-only access.",

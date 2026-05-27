@@ -174,27 +174,27 @@ export default async function PricingPage() {
 
             {/* Employees row */}
             <div className="grid grid-cols-4 border-b border-border bg-card hover:bg-muted/20">
-              <div className="px-4 py-3 text-sm text-muted-foreground">Сотрудники</div>
+              <div className="px-4 py-3 text-sm text-muted-foreground">{t('rowEmployees')}</div>
               {PLANS.map((plan) => (
                 <div key={plan.key} className="px-4 py-3 text-center text-sm text-foreground">
-                  до {plan.employees}
+                  {t('upTo', { n: plan.employees })}
                 </div>
               ))}
             </div>
 
             {/* Groups row */}
             <div className="grid grid-cols-4 border-b border-border hover:bg-muted/20">
-              <div className="px-4 py-3 text-sm text-muted-foreground">Суб-отделы</div>
+              <div className="px-4 py-3 text-sm text-muted-foreground">{t('rowGroups')}</div>
               {PLANS.map((plan) => (
                 <div key={plan.key} className="px-4 py-3 text-center text-sm text-foreground">
-                  {plan.groups ? `${plan.groups} группы` : t('unlimited')}
+                  {plan.groups ? `${plan.groups} ${t('groups')}` : t('unlimited')}
                 </div>
               ))}
             </div>
 
             {/* Managers row */}
             <div className="grid grid-cols-4 border-b border-border bg-card hover:bg-muted/20">
-              <div className="px-4 py-3 text-sm text-muted-foreground">Менеджеры</div>
+              <div className="px-4 py-3 text-sm text-muted-foreground">{t('rowManagers')}</div>
               {PLANS.map((plan) => (
                 <div key={plan.key} className="px-4 py-3 text-center text-sm text-foreground">
                   {plan.managers}
@@ -253,16 +253,16 @@ export default async function PricingPage() {
       {/* ── CTA ── */}
       <section className="px-4 py-16 text-center sm:px-6">
         <h2 className="font-serif text-3xl font-bold text-foreground">
-          Готовы попробовать?
+          {t('ctaTitle')}
         </h2>
         <p className="mx-auto mt-3 max-w-md text-muted-foreground">
-          14 дней бесплатно на любом плане. Карта не нужна.
+          {t('ctaSubtitle')}
         </p>
         <Link
           href="/register"
           className="mt-6 inline-flex items-center gap-2 rounded-[--radius-sm] bg-accent px-8 py-3 text-base font-semibold text-white shadow-md transition-colors hover:bg-accent/90"
         >
-          Начать бесплатно
+          {t('startTrial')}
         </Link>
       </section>
     </>
@@ -310,7 +310,7 @@ function PricingCard({
       <ul className="mb-6 flex flex-col gap-2 text-sm text-muted-foreground">
         <li className="flex items-center gap-2">
           <Check className="h-4 w-4 shrink-0 text-accent" />
-          до {plan.employees} {t('employees')}
+          {t('upTo', { n: plan.employees })} {t('employees')}
         </li>
         <li className="flex items-center gap-2">
           <Check className="h-4 w-4 shrink-0 text-accent" />
