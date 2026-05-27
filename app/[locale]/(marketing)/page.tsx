@@ -104,8 +104,12 @@ export default async function LandingPage({
     statusOff: tg('statusOff'),
     statusLate: tg('statusLate'),
     statusWorkFull: tg('statusWorkFull'),
+    displayLabel: tg('displayLabel'),
+    highContrastLabel: tg('highContrastLabel'),
+    highlightWeekendsLabel: tg('highlightWeekendsLabel'),
     showTimesLabel: tg('showTimesLabel'),
     mergedLabel: tg('mergedLabel'),
+    gridLabel: tg('gridLabel'),
     days: {
       mon: tg('days.mon'), tue: tg('days.tue'), wed: tg('days.wed'),
       thu: tg('days.thu'), fri: tg('days.fri'), sat: tg('days.sat'), sun: tg('days.sun'),

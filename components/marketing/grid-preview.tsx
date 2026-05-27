@@ -32,8 +32,12 @@ export type GridPreviewLabels = {
   statusOff: string
   statusLate: string
   statusWorkFull: string
+  displayLabel: string
+  highContrastLabel: string
+  highlightWeekendsLabel: string
   showTimesLabel: string
   mergedLabel: string
+  gridLabel: string
   days: { mon: string; tue: string; wed: string; thu: string; fri: string; sat: string; sun: string }
   projectsBtn: string
   telegramBtn: string
@@ -125,6 +129,7 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
   const [strongWeekend, setStrongWeekend] = useState(false)
   const [showTimes, setShowTimes] = useState(false)
   const [merged, setMerged] = useState(false)
+  const [showGrid, setShowGrid] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [showTelegram, setShowTelegram] = useState(false)
   const [monthIdx, setMonthIdx] = useState(2) // May
@@ -324,12 +329,13 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
               style={{ background: 'var(--surface)' }}
             >
               <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Display
+                {labels.displayLabel}
               </div>
-              <SettingRow label="High contrast" value={contrast} onChange={setContrast} />
-              <SettingRow label="Highlight weekends" value={strongWeekend} onChange={setStrongWeekend} />
+              <SettingRow label={labels.highContrastLabel} value={contrast} onChange={setContrast} />
+              <SettingRow label={labels.highlightWeekendsLabel} value={strongWeekend} onChange={setStrongWeekend} />
               <SettingRow label={labels.showTimesLabel} value={showTimes} onChange={setShowTimes} />
               <SettingRow label={labels.mergedLabel} value={merged} onChange={setMerged} />
+              <SettingRow label={labels.gridLabel} value={showGrid} onChange={setShowGrid} />
             </div>
           )}
         </div>
@@ -500,6 +506,7 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
             showTelegram={showTelegram}
             showTimes={showTimes}
             merged={merged}
+            showGrid={showGrid}
             editMode={editMode}
             onToggleProjects={() => setShowTelegram((v) => !v)}
             onProjectClick={(name, pIdx) =>
@@ -522,6 +529,7 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
             weekendBg={weekendBg}
             showTimes={showTimes}
             merged={merged}
+            showGrid={showGrid}
             showTelegram={showTelegram}
             onToggleProjects={() => setShowTelegram((v) => !v)}
             onProjectClick={(name, pIdx) =>
@@ -730,7 +738,7 @@ function SettingRow({
 /* ── Detail / Extended mode ────────────────────────────────────── */
 function DetailGrid({
   mode, groups, statusOf, labels, chipLbl, chipLblFull, chipBg, chipFg, weekendBg,
-  showTimes, merged, showTelegram, onToggleProjects, onProjectClick, editMode, onCellEdit,
+  showTimes, merged, showGrid, showTelegram, onToggleProjects, onProjectClick, editMode, onCellEdit,
 }: {
   mode: Mode
   groups: { key: string; name: string; min?: number; rows: EmpDef[] }[]
@@ -743,12 +751,14 @@ function DetailGrid({
   weekendBg: string
   showTimes: boolean
   merged: boolean
+  showGrid: boolean
   showTelegram: boolean
   onToggleProjects: () => void
   onProjectClick: (name: string, pIdx: number) => void
   editMode: boolean
   onCellEdit: (name: string, day: number, px: number, py: number) => void
 }) {
+  const [hoveredRun, setHoveredRun] = useState<string | null>(null)
   const dayKey = (k: keyof GridPreviewLabels['days']) => labels.days[k]
   const isExt = mode === 'extended'
   const colW = isExt ? 80 : 52
@@ -887,8 +897,27 @@ function DetailGrid({
                     const isOff = code === '-' || code === undefined
                     const allWkd = indices.every(i => { const d = DAYS_DEMO[i]; return d.k === 'sat' || d.k === 'sun' })
                     const raw = code as Exclude<Status, '-'>
+                    const runKey = `${emp.name}-${ri}`
+                    const isHovered = hoveredRun === runKey
                     return (
-                      <td key={`run-${ri}`} colSpan={span} style={{ padding: rowPad, textAlign: 'center', background: allWkd ? weekendBg : 'var(--grid-cell)' }}>
+                      <td
+                        key={`run-${ri}`}
+                        colSpan={span}
+                        onMouseEnter={() => setHoveredRun(runKey)}
+                        onMouseLeave={() => setHoveredRun(null)}
+                        style={{
+                          padding: rowPad, textAlign: 'center',
+                          position: 'relative',
+                          background: allWkd ? weekendBg : 'var(--grid-cell)',
+                          borderRight: showGrid ? '1px solid var(--border)' : 'none',
+                        }}
+                      >
+                        {isHovered && span > 1 && (
+                          <div style={{
+                            position: 'absolute', inset: 0, pointerEvents: 'none',
+                            backgroundImage: `repeating-linear-gradient(to right, transparent 0, transparent calc(${100 / span}% - 0.5px), var(--border) calc(${100 / span}% - 0.5px), var(--border) calc(${100 / span}%))`,
+                          }} />
+                        )}
                         {!isOff && (isExt ? (
                           <div style={{
                             display: 'flex', flexDirection: 'column', alignItems: 'stretch',
@@ -930,6 +959,7 @@ function DetailGrid({
                         padding: rowPad, textAlign: 'center',
                         background: isWkd ? weekendBg : 'var(--grid-cell)',
                         position: 'relative',
+                        borderRight: showGrid ? '1px solid var(--border)' : 'none',
                         outline: editMode ? '1px dashed var(--accent)' : 'none',
                         outlineOffset: editMode ? -2 : 0,
                         cursor: cellInteractive ? 'pointer' : 'default',
@@ -1005,7 +1035,7 @@ function DetailGrid({
 /* ── Compact mode ──────────────────────────────────────────────── */
 function CompactGrid({
   groups, statusOf, weekendBg, chipBg, chipFg, labels,
-  showTimes, merged, showTelegram, editMode, onToggleProjects, onProjectClick, onCellEdit,
+  showTimes, merged, showGrid, showTelegram, editMode, onToggleProjects, onProjectClick, onCellEdit,
 }: {
   groups: { key: string; name: string; min?: number; rows: EmpDef[] }[]
   statusOf: (name: string, dayIdx: number, base: string) => Status
@@ -1015,12 +1045,14 @@ function CompactGrid({
   labels: GridPreviewLabels
   showTimes: boolean
   merged: boolean
+  showGrid: boolean
   showTelegram: boolean
   editMode: boolean
   onToggleProjects: () => void
   onProjectClick: (name: string, pIdx: number) => void
   onCellEdit: (name: string, day: number, px: number, py: number) => void
 }) {
+  const [hoveredRun, setHoveredRun] = useState<string | null>(null)
   return (
     <div style={{ overflowX: 'auto' }}>
       <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: 10 }}>
@@ -1142,15 +1174,27 @@ function CompactGrid({
                     const span = indices.length
                     const isOff = code === '-' || code === undefined
                     const allWkd = indices.every(i => { const d = MONTH_DEMO[i]; return d.k === 'sat' || d.k === 'sun' })
+                    const runKey = `${emp.name}-${ri}`
+                    const isHovered = hoveredRun === runKey
                     return (
                       <td
                         key={`run-${ri}`}
                         colSpan={span}
+                        onMouseEnter={() => setHoveredRun(runKey)}
+                        onMouseLeave={() => setHoveredRun(null)}
                         style={{
                           padding: '2px 1px',
+                          position: 'relative',
                           background: allWkd ? weekendBg : 'var(--grid-cell)',
+                          borderRight: showGrid ? '1px solid var(--border)' : 'none',
                         }}
                       >
+                        {isHovered && span > 1 && (
+                          <div style={{
+                            position: 'absolute', inset: 0, pointerEvents: 'none',
+                            backgroundImage: `repeating-linear-gradient(to right, transparent 0, transparent calc(${100 / span}% - 0.5px), var(--border) calc(${100 / span}% - 0.5px), var(--border) calc(${100 / span}%))`,
+                          }} />
+                        )}
                         {!isOff && (
                           <div style={{
                             background: chipBg(code as Exclude<Status, '-'>),
@@ -1184,6 +1228,7 @@ function CompactGrid({
                       style={{
                         padding: 2, textAlign: 'center',
                         background: isWkd ? weekendBg : 'var(--grid-cell)',
+                        borderRight: showGrid ? '1px solid var(--border)' : 'none',
                         outline: editMode ? '1px dashed var(--accent)' : 'none',
                         outlineOffset: editMode ? -1 : 0,
                         cursor: editMode ? 'pointer' : 'default',
