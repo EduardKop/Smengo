@@ -12,7 +12,7 @@ import {
   Sparkles,
   CheckCircle2,
   Gift,
-  Globe2,
+  Code2,
 } from 'lucide-react'
 import { FaqAccordion } from '@/components/marketing/faq-accordion'
 import { GridPreview, type GridPreviewLabels } from '@/components/marketing/grid-preview'
@@ -87,7 +87,7 @@ const WHY_ITEMS = [
   { Icon: Sparkles,      titleKey: 'whyus.i7Title', descKey: 'whyus.i7Desc' },
   { Icon: CheckCircle2,  titleKey: 'whyus.i8Title', descKey: 'whyus.i8Desc' },
   { Icon: Gift,          titleKey: 'whyus.i9Title', descKey: 'whyus.i9Desc' },
-  { Icon: Globe2,        titleKey: 'whyus.i10Title', descKey: 'whyus.i10Desc' },
+  { Icon: Code2,        titleKey: 'whyus.i10Title', descKey: 'whyus.i10Desc' },
 ] as const
 
 export default async function LandingPage({
@@ -122,19 +122,26 @@ export default async function LandingPage({
     demoDept: tg('demoDept'),
     minDay: tg.raw('minDay'),
     alert: tg('alert'),
-    allOnShift: tg('allOnShift'),
+    coverageSummary: tg('coverageSummary'),
     statusWork: tg('statusWork'),
     statusVac: tg('statusVac'),
     statusSick: tg('statusSick'),
     statusOff: tg('statusOff'),
-    statusLate: tg('statusLate'),
+    statusUncovered: tg('statusUncovered'),
     statusWorkFull: tg('statusWorkFull'),
+    shiftMorning: tg('shiftMorning'),
+    shiftEvening: tg('shiftEvening'),
+    shiftNight: tg('shiftNight'),
+    shortageBadge: tg('shortageBadge'),
+    shortageLabel: tg('shortageLabel'),
+    hourSuffix: tg('hourSuffix'),
     displayLabel: tg('displayLabel'),
     highContrastLabel: tg('highContrastLabel'),
     highlightWeekendsLabel: tg('highlightWeekendsLabel'),
     showTimesLabel: tg('showTimesLabel'),
     mergedLabel: tg('mergedLabel'),
     gridLabel: tg('gridLabel'),
+    stickyLabel: tg('stickyLabel'),
     days: {
       mon: tg('days.mon'), tue: tg('days.tue'), wed: tg('days.wed'),
       thu: tg('days.thu'), fri: tg('days.fri'), sat: tg('days.sat'), sun: tg('days.sun'),
@@ -159,6 +166,28 @@ export default async function LandingPage({
       p5: { name: tg('p5Name'), desc: tg('p5Desc'), tag: tg('p5Tag') },
       p6: { name: tg('p6Name'), desc: tg('p6Desc'), tag: tg('p6Tag') },
     },
+    roles: {
+      waiter: tg('roles.waiter'),
+      host: tg('roles.host'),
+      barista: tg('roles.barista'),
+      cook: tg('roles.cook'),
+      souschef: tg('roles.souschef'),
+      pastry: tg('roles.pastry'),
+      floormanager: tg('roles.floormanager'),
+      shiftlead: tg('roles.shiftlead'),
+      cashier: tg('roles.cashier'),
+      courier: tg('roles.courier'),
+    },
+    shifts: {
+      morning: tg('shifts.morning'),
+      evening: tg('shifts.evening'),
+      night: tg('shifts.night'),
+      dayoff: tg('shifts.dayoff'),
+      vacation: tg('shifts.vacation'),
+      sick: tg('shifts.sick'),
+      unfilled: tg('shifts.unfilled'),
+    },
+    coverageGap: tg('coverageGap'),
     months: [tg('m1'), tg('m2'), tg('m3'), tg('m4'), tg('m5')],
     colOffDays: tg('colOffDays'),
     colWorkHrs: tg('colWorkHrs'),
@@ -293,8 +322,15 @@ export default async function LandingPage({
             </p>
           </div>
 
-          {/* Grid preview — flush to bottom of hero */}
-          <div className="mt-14 overflow-hidden">
+          {/* Grid preview — breaks out wider than the 1100 hero column */}
+          <div
+            className="mt-14"
+            style={{
+              width: 'min(1560px, calc(100vw - 64px))',
+              marginLeft: 'calc(50% - min(780px, calc(50vw - 32px)))',
+              marginRight: 'calc(50% - min(780px, calc(50vw - 32px)))',
+            }}
+          >
             <GridPreview labels={gridLabels} />
           </div>
         </div>

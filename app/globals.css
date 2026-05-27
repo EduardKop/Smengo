@@ -75,6 +75,11 @@ html {
   --st-dayoff:   #9CA3AF;
   --st-late:     #C77DC0;
   --st-alert:    #D4604A;
+  --st-uncovered: #d97757;
+  --st-work-morning: #3B9B7F;
+  --st-work-evening: #6b8cae;
+  --st-work-night:   #4f4d7a;
+  --st-work-fg: #ffffff;
 
   /* Charts (neutral placeholders) */
   --chart-1: #d97757;
@@ -151,6 +156,10 @@ html {
   --color-st-dayoff:   var(--st-dayoff);
   --color-st-late:     var(--st-late);
   --color-st-alert:    var(--st-alert);
+  --color-st-uncovered: var(--st-uncovered);
+  --color-st-work-morning: var(--st-work-morning);
+  --color-st-work-evening: var(--st-work-evening);
+  --color-st-work-night:   var(--st-work-night);
 
   /* Radius */
   --radius-sm: calc(var(--radius) - 4px);
@@ -221,25 +230,43 @@ body {
   --sidebar-accent-foreground: #e8e7e3;
   --sidebar-border: #242a36;
 
-  /* Grid preview palette (dark) */
+  /* Grid preview palette (dark) — Linear-style */
   --grid-chrome: #161a22;
   --grid-cell: #141821;
-  --grid-weekend: #181d28;
+  --grid-weekend: rgba(255, 255, 255, 0.018);
   --grid-today-head: rgba(217, 119, 87, 0.18);
-  --grid-today-cell: rgba(217, 119, 87, 0.07);
-  --grid-row-divider: #1c2129;
-  --grid-dept-bg: #1a1f29;
-  --grid-dept-fg: #a4a9b3;
-  --grid-empty-fg: #3a4150;
-  --grid-alert-bg: rgba(212, 96, 74, 0.10);
-  --grid-alert-border: rgba(212, 96, 74, 0.35);
+  --grid-today-cell: rgba(217, 119, 87, 0.06);
+  --grid-row-divider: rgba(255, 255, 255, 0.04);
+  --grid-dept-bg: #181c25;
+  --grid-dept-fg: #8b919c;
+  --grid-empty-fg: #353a45;
+  --grid-alert-bg: rgba(212, 96, 74, 0.08);
+  --grid-alert-border: rgba(212, 96, 74, 0.30);
   --grid-alert-fg: #ec8470;
   --grid-pill-bg: #1a1f29;
 
-  /* Status chip palette (dark) */
-  --chip-w-bg: rgba(59, 155, 127, 0.18); --chip-w-fg: #6dccab;
-  --chip-v-bg: rgba(232, 160, 76, 0.18); --chip-v-fg: #f2bb76;
-  --chip-s-bg: rgba(212, 96, 74, 0.18);  --chip-s-fg: #ee8e7a;
-  --chip-d-bg: rgba(156, 163, 175, 0.16); --chip-d-fg: #b6bcc8;
-  --chip-l-bg: rgba(199, 125, 192, 0.18); --chip-l-fg: #d99dd2;
+  /* Grid status colors (dark) — rgba glow, clearly visible on dark surface */
+  --st-uncovered: #ec8470;
+  --st-work-morning: rgba(16, 185, 129, 0.55);
+  --st-work-evening: rgba(59, 130, 246, 0.55);
+  --st-work-night:   rgba(139, 92, 246, 0.58);
+  --st-work-fg: #e4e4e7;
+
+  /* Solid statuses (contrast mode) — same glow approach */
+  --st-work:     rgba(16, 185, 129, 0.55);
+  --st-vacation: rgba(251, 191, 36,  0.32);
+  --st-sick:     rgba(248, 113, 113, 0.30);
+  --st-dayoff:   rgba(148, 163, 184, 0.07);
+  --st-late:     rgba(216, 180, 254, 0.28);
+
+  /* Status chip palette (dark) — Linear-style: subtle tint + colored text */
+  --chip-w-bg: rgba(74, 222, 128, 0.10);  --chip-w-fg: #86efac;
+  --chip-v-bg: rgba(251, 191, 36, 0.10);  --chip-v-fg: #fcd34d;
+  --chip-s-bg: rgba(248, 113, 113, 0.10); --chip-s-fg: #fca5a5;
+  --chip-d-bg: rgba(148, 163, 184, 0.06); --chip-d-fg: #94a3b8;
+  --chip-l-bg: rgba(216, 180, 254, 0.10); --chip-l-fg: #d8b4fe;
 }
+
+
+
+

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, Source_Serif_4, Geist, Caveat } from 'next/font/google'
+import { Inter, Source_Serif_4, Geist, Caveat, Press_Start_2P, VT323 } from 'next/font/google'
 import './globals.css'
 import { cn } from "@/lib/utils"
 import { NextIntlClientProvider } from 'next-intl'
@@ -25,6 +25,20 @@ const caveat = Caveat({
   subsets: ['latin', 'cyrillic'],
   display: 'swap',
   weight: ['500', '700'],
+})
+
+const pressStart = Press_Start_2P({
+  variable: '--font-pixel',
+  subsets: ['latin'],
+  display: 'swap',
+  weight: ['400'],
+})
+
+const vt323 = VT323({
+  variable: '--font-pixel-body',
+  subsets: ['latin'],
+  display: 'swap',
+  weight: ['400'],
 })
 
 export const metadata: Metadata = {
@@ -69,7 +83,7 @@ export default async function RootLayout({
   const messages = await getMessages()
 
   return (
-    <html lang={locale} suppressHydrationWarning className={cn("h-full", "antialiased", inter.variable, sourceSerif.variable, caveat.variable, "font-sans", geist.variable)}>
+    <html lang={locale} suppressHydrationWarning className={cn("h-full", "antialiased", inter.variable, sourceSerif.variable, caveat.variable, "font-sans", geist.variable, pressStart.variable, vt323.variable)}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <script

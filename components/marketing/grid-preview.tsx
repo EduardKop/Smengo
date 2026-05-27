@@ -1,12 +1,25 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { Settings2, Pencil, X, Check, ChevronDown } from 'lucide-react'
+import { useEffect, useRef, useState, type ComponentType } from 'react'
+import {
+  Settings2, Pencil, X, Check, ChevronDown,
+  Sun, Sunset, Moon, TreePalm, Thermometer, AlertCircle, AlertTriangle,
+} from 'lucide-react'
 
-type Status = 'W' | 'V' | 'S' | 'D' | 'L' | '-'
+type Status = 'W' | 'V' | 'S' | 'D' | 'U' | '-'
 type Mode = 'compact' | 'detail' | 'extended'
 type DeptKey = 'all' | 'sales' | 'ops' | 'support' | 'marketing' | 'design'
 type ProjectKey = 'p1' | 'p2' | 'p3' | 'p4' | 'p5' | 'p6'
+type ShiftType = 'morning' | 'evening' | 'night'
+type RoleKey =
+  | 'waiter' | 'host' | 'barista'
+  | 'cook' | 'souschef' | 'pastry'
+  | 'floormanager' | 'shiftlead'
+  | 'cashier' | 'courier'
+type ShiftKey = 'morning' | 'evening' | 'night' | 'dayoff' | 'vacation' | 'sick' | 'unfilled'
+
+// Day index that highlights a coverage gap (Wed, day 14)
+const PROBLEM_DAY_IDX = 13
 
 export type GridPreviewLabels = {
   modeDetail: string
@@ -25,19 +38,26 @@ export type GridPreviewLabels = {
   demoDept: string
   minDay: string
   alert: string
-  allOnShift: string
+  coverageSummary: string
   statusWork: string
   statusVac: string
   statusSick: string
   statusOff: string
-  statusLate: string
+  statusUncovered: string
   statusWorkFull: string
+  shiftMorning: string
+  shiftEvening: string
+  shiftNight: string
+  shortageBadge: string
+  shortageLabel: string
+  hourSuffix: string
   displayLabel: string
   highContrastLabel: string
   highlightWeekendsLabel: string
   showTimesLabel: string
   mergedLabel: string
   gridLabel: string
+  stickyLabel: string
   days: { mon: string; tue: string; wed: string; thu: string; fri: string; sat: string; sun: string }
   projectsBtn: string
   telegramBtn: string
@@ -52,84 +72,107 @@ export type GridPreviewLabels = {
   projectStatus: string
   projectClose: string
   projects: Record<ProjectKey, { name: string; desc: string; tag: string }>
+  roles: Record<RoleKey, string>
+  shifts: Record<ShiftKey, string>
+  coverageGap: string
   months: [string, string, string, string, string]
   colOffDays: string
   colWorkHrs: string
 }
 
-const DAYS_DEMO = [
-  { n: 1, k: 'thu' as const }, { n: 2, k: 'fri' as const }, { n: 3, k: 'sat' as const },
-  { n: 4, k: 'sun' as const }, { n: 5, k: 'mon' as const }, { n: 6, k: 'tue' as const },
-  { n: 7, k: 'wed' as const }, { n: 8, k: 'thu' as const }, { n: 9, k: 'fri' as const },
-  { n: 10, k: 'sat' as const }, { n: 11, k: 'sun' as const }, { n: 12, k: 'mon' as const },
-  { n: 13, k: 'tue' as const }, { n: 14, k: 'wed' as const }, { n: 15, k: 'thu' as const },
-]
 const MONTH_DEMO = Array.from({ length: 31 }, (_, i) => {
   const dayOfWeekIdx = (3 + i) % 7
   const keys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
   return { n: i + 1, k: keys[dayOfWeekIdx] }
 })
 
-type ShiftType = 'day' | 'night'
-
 type EmpDef = {
   dept: Exclude<DeptKey, 'all'>
   name: string
   tg: string
   pIdx: 1 | 2 | 3 | 4 | 5 | 6
+  roleKey: RoleKey
   s: string
   shift: ShiftType
 }
 
+// Schedule strings are 15 chars. Index 13 (=day 14 Wed) is highlighted as a coverage gap.
+// Mix is tuned for realism: ~63% W, ~26% D, ~9% V, ~1% S, ~1% U.
 const BASE_EMPLOYEES: EmpDef[] = [
-  { dept: 'sales', name: 'Anna Petrov',   tg: '@example',   pIdx: 1, s: 'DWWWWWDDWWWWWDW',  shift: 'day'   },
-  { dept: 'sales', name: 'Mark Sidorov',  tg: '@example',   pIdx: 2, s: 'DWWDWWWWWDWWWWD',  shift: 'night' },
-  { dept: 'sales', name: 'Kate Volkova',  tg: '@example',   pIdx: 3, s: 'DWWWDWWWWWDDWWW',  shift: 'day'   },
-  { dept: 'ops',   name: 'Ivan Melnikov', tg: '@example',   pIdx: 1, s: 'DWDWWWWWWDWWDWW',  shift: 'night' },
-  { dept: 'ops',   name: 'Daria Kos',     tg: '@example',   pIdx: 2, s: 'DWWWWDWWWWWDWDW',  shift: 'day'   },
-  { dept: 'ops',   name: 'Alex Novikov',  tg: '@example',   pIdx: 3, s: 'DWWWWWWDDWWLWWD',  shift: 'day'   },
-  { dept: 'support',   name: 'Olga Romanenko', tg: '@example',   pIdx: 4, s: 'DWWWDWWWWDWWWDW',  shift: 'day'   },
-  { dept: 'support',   name: 'Pavel Yurov',    tg: '@example',   pIdx: 5, s: 'DWWWWWDWWWWWDDW',  shift: 'night' },
-  { dept: 'marketing', name: 'Yulia Lebed',    tg: '@example',   pIdx: 4, s: 'DWWDWWWWWWDWWWD',  shift: 'day'   },
-  { dept: 'marketing', name: 'Roma Karpov',    tg: '@example',   pIdx: 6, s: 'DWWWWDDWWLWWDWW',  shift: 'day'   },
-  { dept: 'design',    name: 'Lera Tarasova',  tg: '@example',   pIdx: 5, s: 'DWDWWWWWDWWWWDW',  shift: 'night' },
+  { dept: 'sales',     name: 'Anna Petrov',     tg: '@anna_p',   pIdx: 1, roleKey: 'waiter',       s: 'WWDDWWWWWDDWWW', shift: 'morning' },
+  { dept: 'sales',     name: 'Mark Sidorov',    tg: '@mark_s',   pIdx: 2, roleKey: 'host',         s: 'WWDDWWWWWDDSSW', shift: 'evening' },
+  { dept: 'sales',     name: 'Kate Volkova',    tg: '@kate_v',   pIdx: 1, roleKey: 'barista',      s: 'WWDDWWWWWDDWWW', shift: 'morning' },
+  { dept: 'ops',       name: 'Ivan Melnikov',   tg: '@ivan_m',   pIdx: 3, roleKey: 'cook',         s: 'WWDDWWDDWWDDWW', shift: 'night'   },
+  { dept: 'ops',       name: 'Daria Kos',       tg: '@daria_k',  pIdx: 1, roleKey: 'souschef',     s: 'WWDDWWWWWDDWWU', shift: 'morning' },
+  { dept: 'ops',       name: 'Alex Novikov',    tg: '@alex_n',   pIdx: 2, roleKey: 'pastry',       s: 'WWDDVVVVVVVWWU', shift: 'evening' },
+  { dept: 'support',   name: 'Olga Romanenko',  tg: '@olga_r',   pIdx: 1, roleKey: 'floormanager', s: 'WWDDWWWWWDDWWW', shift: 'morning' },
+  { dept: 'support',   name: 'Pavel Yurov',     tg: '@pavel_y',  pIdx: 6, roleKey: 'shiftlead',    s: 'WWDDWWWWWDDWWW', shift: 'morning' },
+  { dept: 'marketing', name: 'Yulia Lebed',     tg: '@yulia_l',  pIdx: 5, roleKey: 'cashier',      s: 'WWDDWWWWWDDWWW', shift: 'evening' },
+  { dept: 'marketing', name: 'Roma Karpov',     tg: '@roma_k',   pIdx: 5, roleKey: 'cashier',      s: 'WWDDWWWWVVVVVV', shift: 'morning' },
+  { dept: 'design',    name: 'Lera Tarasova',   tg: '@lera_t',   pIdx: 4, roleKey: 'courier',      s: 'WWDDWWWWWDDWWW', shift: 'morning' },
 ]
 
-const PROJECT_CYCLES: Record<string, ProjectKey[]> = {
-  'Anna Petrov':   ['p1', 'p1', 'p2', 'p2', 'p1'],
-  'Mark Sidorov':  ['p3', 'p3', 'p1', 'p3', 'p2'],
-  'Kate Volkova':  ['p4', 'p4', 'p4', 'p1', 'p4'],
-  'Ivan Melnikov': ['p2', 'p1', 'p2', 'p2', 'p1'],
-  'Daria Kos':     ['p4', 'p3', 'p4', 'p4', 'p3'],
-  'Alex Novikov':  ['p1', 'p2', 'p1', 'p3', 'p1'],
-  'Olga Romanenko': ['p5', 'p5', 'p6', 'p5', 'p5'],
-  'Pavel Yurov':    ['p6', 'p5', 'p6', 'p6', 'p5'],
-  'Yulia Lebed':    ['p4', 'p2', 'p4', 'p2', 'p4'],
-  'Roma Karpov':    ['p6', 'p6', 'p2', 'p6', 'p6'],
-  'Lera Tarasova':  ['p5', 'p4', 'p5', 'p5', 'p4'],
-}
-
 function rotateSchedule(s: string, offset: number): string {
-  const padded = (s + 'WWWWWWWWWWWWWWW').slice(0, 15)
-  const o = ((offset % 15) + 15) % 15
+  const padded = (s + 'WWWWWWWWWWWWWW').slice(0, 14)
+  const o = ((offset % 14) + 14) % 14
   return padded.slice(o) + padded.slice(0, o)
 }
 
-function projectFor(name: string, dayIdx: number): ProjectKey {
-  const list = PROJECT_CYCLES[name]
-  if (!list) return 'p1'
-  return list[dayIdx % list.length]
+const STATUS_OPTIONS: Exclude<Status, never>[] = ['W', 'V', 'S', 'D', 'U', '-']
+
+type WorkMeta = {
+  bg: string
+  name: string
+  hours: number
+  window: string
+  Icon: ComponentType<{ size?: number; strokeWidth?: number; style?: React.CSSProperties }>
 }
 
-const STATUS_OPTIONS: Exclude<Status, never>[] = ['W', 'V', 'S', 'D', 'L', '-']
+function workMeta(shift: ShiftType, labels: GridPreviewLabels): WorkMeta {
+  if (shift === 'morning') {
+    return { bg: 'var(--st-work-morning)', name: labels.shiftMorning, hours: 8, window: '09–17', Icon: Sun }
+  }
+  if (shift === 'evening') {
+    return { bg: 'var(--st-work-evening)', name: labels.shiftEvening, hours: 8, window: '14–22', Icon: Sunset }
+  }
+  return { bg: 'var(--st-work-night)', name: labels.shiftNight, hours: 10, window: '22–08', Icon: Moon }
+}
+
+function statusIcon(code: Status): ComponentType<{ size?: number; style?: React.CSSProperties }> | null {
+  if (code === 'V') return TreePalm
+  if (code === 'S') return Thermometer
+  if (code === 'U') return AlertCircle
+  return null
+}
+
+// Dashed orange edge marking the problem column. Applied per-cell so it scrolls naturally.
+function problemColumnStyle(ci: number): React.CSSProperties {
+  if (ci !== PROBLEM_DAY_IDX) return {}
+  return {
+    borderLeft: '1.5px dashed var(--accent)',
+    borderRight: '1.5px dashed var(--accent)',
+    background: 'rgba(217,119,87,0.08)',
+  }
+}
+
+// Tooltip text for a cell — derives from status code + shift type.
+function cellTooltip(code: Status, shift: ShiftType, labels: GridPreviewLabels): string {
+  if (code === 'V') return labels.shifts.vacation
+  if (code === 'S') return labels.shifts.sick
+  if (code === 'D') return labels.shifts.dayoff
+  if (code === 'U') return labels.shifts.unfilled
+  if (code === 'W') return labels.shifts[shift]
+  return ''
+}
 
 export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
   const [mode, setMode] = useState<Mode>('compact')
   const [contrast, setContrast] = useState(true)
   const [strongWeekend, setStrongWeekend] = useState(false)
-  const [showTimes, setShowTimes] = useState(false)
+  const [showTimes, setShowTimes] = useState(true)
   const [merged, setMerged] = useState(false)
   const [showGrid, setShowGrid] = useState(false)
+  const [sticky, setSticky] = useState(true)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [showTelegram, setShowTelegram] = useState(false)
   const [monthIdx, setMonthIdx] = useState(2) // May
@@ -187,13 +230,21 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
   }
 
   function chipBg(code: Exclude<Status, '-'>): string {
+    if (code === 'D') return 'var(--chip-d-bg)'
     if (contrast) {
-      const map = { W: 'var(--st-work)', V: 'var(--st-vacation)', S: 'var(--st-sick)', D: 'var(--st-dayoff)', L: 'var(--st-late)' }
+      const map = {
+        W: 'var(--st-work)',
+        V: 'var(--st-vacation)',
+        S: 'var(--st-sick)',
+        D: 'var(--chip-d-bg)',
+        U: 'var(--st-uncovered)',
+      }
       return map[code]
     }
     return `var(--chip-${code.toLowerCase()}-bg)`
   }
   function chipFg(code: Exclude<Status, '-'>): string {
+    if (code === 'D') return 'var(--chip-d-fg)'
     if (contrast) return '#fff'
     return `var(--chip-${code.toLowerCase()}-fg)`
   }
@@ -217,11 +268,11 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
 
   const CHIP_LBL: Record<Exclude<Status, '-'>, string> = {
     W: labels.statusWork, V: labels.statusVac, S: labels.statusSick,
-    D: labels.statusOff,  L: labels.statusLate,
+    D: labels.statusOff,  U: labels.statusUncovered,
   }
   const CHIP_LBL_FULL: Record<Exclude<Status, '-'>, string> = {
     W: labels.statusWorkFull, V: labels.statusVac, S: labels.statusSick,
-    D: labels.statusOff, L: labels.statusLate,
+    D: labels.statusOff, U: labels.statusUncovered,
   }
 
   function onDeptPick(d: DeptKey) {
@@ -239,6 +290,7 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
       name: `${labels.newEmployee} ${idx}`,
       tg,
       pIdx: ((idx % 6) + 1) as 1 | 2 | 3 | 4 | 5 | 6,
+      roleKey: 'waiter',
       s: template.s,
       shift: template.shift,
     }])
@@ -290,6 +342,7 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
       {/* Top controls: mode toggle + settings */}
       <div className="mb-4 flex items-center justify-center gap-2">
         <div
+          data-mode-pill
           className="inline-flex items-center gap-1 rounded-full border border-border p-1"
           style={{ background: 'var(--grid-pill-bg)' }}
         >
@@ -300,6 +353,7 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
               <button
                 key={m}
                 type="button"
+                data-active={active}
                 onClick={() => setMode(m)}
                 className="rounded-full px-4 py-1.5 text-[12px] font-medium transition-colors"
                 style={{
@@ -336,6 +390,7 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
               <SettingRow label={labels.showTimesLabel} value={showTimes} onChange={setShowTimes} />
               <SettingRow label={labels.mergedLabel} value={merged} onChange={setMerged} />
               <SettingRow label={labels.gridLabel} value={showGrid} onChange={setShowGrid} />
+              <SettingRow label={labels.stickyLabel} value={sticky} onChange={setSticky} />
             </div>
           )}
         </div>
@@ -351,12 +406,13 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
           position: 'relative',
         }}
       >
-        {/* Chrome bar */}
+        {/* Default chrome bar */}
         <div
           style={{
             display: 'flex', alignItems: 'center', gap: 6,
             padding: '10px 14px', background: 'var(--grid-chrome)',
             borderBottom: '1px solid var(--border)',
+            position: 'relative',
           }}
         >
           <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ff5f57' }} />
@@ -367,8 +423,10 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
           </span>
         </div>
 
+
         {/* App topbar */}
         <div
+          data-grid-topbar
           style={{
             display: 'flex', alignItems: 'center', gap: 6,
             padding: '8px 12px', borderBottom: '1px solid var(--border)',
@@ -502,11 +560,13 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
             weekendBg={weekendBg}
             chipBg={chipBg}
             chipFg={chipFg}
+            contrast={contrast}
             labels={labels}
             showTelegram={showTelegram}
             showTimes={showTimes}
             merged={merged}
             showGrid={showGrid}
+            sticky={sticky}
             editMode={editMode}
             onToggleProjects={() => setShowTelegram((v) => !v)}
             onProjectClick={(name, pIdx) =>
@@ -526,10 +586,12 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
             chipLblFull={CHIP_LBL_FULL}
             chipBg={chipBg}
             chipFg={chipFg}
+            contrast={contrast}
             weekendBg={weekendBg}
             showTimes={showTimes}
             merged={merged}
             showGrid={showGrid}
+            sticky={sticky}
             showTelegram={showTelegram}
             onToggleProjects={() => setShowTelegram((v) => !v)}
             onProjectClick={(name, pIdx) =>
@@ -542,26 +604,26 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
           />
         )}
 
-        {/* Success strip (replaces alert) */}
+        {/* Coverage summary strip */}
         <div
           style={{
             display: 'flex', alignItems: 'center', gap: 8,
             padding: '8px 12px',
-            background: contrast ? 'rgba(74, 155, 111, 0.12)' : 'rgba(74, 155, 111, 0.08)',
-            borderTop: '1px solid rgba(74, 155, 111, 0.30)',
+            background: contrast ? 'rgba(224, 155, 58, 0.12)' : 'rgba(224, 155, 58, 0.08)',
+            borderTop: '1px solid rgba(224, 155, 58, 0.30)',
           }}
         >
           <span
             style={{
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               width: 16, height: 16, borderRadius: '50%',
-              background: 'var(--success)', color: '#fff',
+              background: 'var(--warning)', color: '#fff',
             }}
           >
-            <Check style={{ width: 11, height: 11, strokeWidth: 3 }} />
+            <AlertTriangle style={{ width: 10, height: 10, strokeWidth: 2.5 }} />
           </span>
-          <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--success)' }}>
-            {labels.allOnShift}
+          <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--warning)' }}>
+            {labels.coverageSummary}
           </span>
         </div>
 
@@ -737,8 +799,8 @@ function SettingRow({
 
 /* ── Detail / Extended mode ────────────────────────────────────── */
 function DetailGrid({
-  mode, groups, statusOf, labels, chipLbl, chipLblFull, chipBg, chipFg, weekendBg,
-  showTimes, merged, showGrid, showTelegram, onToggleProjects, onProjectClick, editMode, onCellEdit,
+  mode, groups, statusOf, labels, chipLbl, chipLblFull, chipBg, chipFg, contrast, weekendBg,
+  showTimes, merged, showGrid, sticky, showTelegram, onToggleProjects, onProjectClick, editMode, onCellEdit,
 }: {
   mode: Mode
   groups: { key: string; name: string; min?: number; rows: EmpDef[] }[]
@@ -748,10 +810,12 @@ function DetailGrid({
   chipLblFull: Record<Exclude<Status, '-'>, string>
   chipBg: (c: Exclude<Status, '-'>) => string
   chipFg: (c: Exclude<Status, '-'>) => string
+  contrast: boolean
   weekendBg: string
   showTimes: boolean
   merged: boolean
   showGrid: boolean
+  sticky: boolean
   showTelegram: boolean
   onToggleProjects: () => void
   onProjectClick: (name: string, pIdx: number) => void
@@ -761,10 +825,10 @@ function DetailGrid({
   const [hoveredRun, setHoveredRun] = useState<string | null>(null)
   const dayKey = (k: keyof GridPreviewLabels['days']) => labels.days[k]
   const isExt = mode === 'extended'
-  const colW = isExt ? 80 : 52
-  const colMinW = isExt ? 72 : 44
+  const colW = isExt ? 60 : 38
+  const colMinW = isExt ? 52 : 30
   const rowPad = isExt ? '6px 4px' : '3px 2px'
-  const nameColW = isExt ? 168 : 148
+  const nameColW = isExt ? (sticky ? 240 : 168) : (sticky ? 220 : 148)
 
   function workLabel(emp: EmpDef): string {
     if (!showTimes) return isExt ? chipLblFull.W : chipLbl.W
@@ -775,7 +839,7 @@ function DetailGrid({
 
   return (
     <div style={{ overflowX: 'auto' }}>
-      <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: 11 }}>
+      <table style={{ borderCollapse: 'collapse', width: 'max-content', minWidth: '100%', fontSize: 11, tableLayout: 'fixed' }}>
         <thead>
           <tr style={{ borderBottom: '1px solid var(--border)' }}>
             <th
@@ -805,8 +869,9 @@ function DetailGrid({
                 </button>
               </div>
             </th>
-            {DAYS_DEMO.map((d) => {
+            {MONTH_DEMO.map((d, ci) => {
               const isWkd = d.k === 'sat' || d.k === 'sun'
+              const isProblem = ci === PROBLEM_DAY_IDX
               return (
                 <th
                   key={d.n}
@@ -814,10 +879,28 @@ function DetailGrid({
                     width: colW, minWidth: colMinW, padding: '4px 2px', textAlign: 'center',
                     background: isWkd ? weekendBg : 'var(--grid-cell)',
                     color: 'var(--muted-foreground)',
+                    position: 'relative',
+                    ...problemColumnStyle(ci),
                   }}
                 >
                   <div style={{ fontWeight: 500, fontSize: 11 }}>{d.n}</div>
                   <div style={{ fontSize: 9, opacity: 0.65 }}>{dayKey(d.k)}</div>
+                  {isProblem && (
+                    <div
+                      title={labels.shortageLabel}
+                      style={{
+                        marginTop: 2,
+                        display: 'inline-flex', alignItems: 'center', gap: 2,
+                        padding: '1px 4px', borderRadius: 4,
+                        background: 'var(--accent)', color: '#fff',
+                        fontSize: 8.5, fontWeight: 700, lineHeight: 1.1,
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <AlertCircle style={{ width: 8, height: 8 }} />
+                      {labels.shortageBadge}
+                    </div>
+                  )}
                 </th>
               )
             })}
@@ -831,6 +914,7 @@ function DetailGrid({
         </thead>
         <tbody>
           {groups.flatMap((dept, di) => [
+            ...(sticky ? [] : [(
             <tr key={`dept-${dept.key}-${di}`}>
               <td
                 style={{
@@ -851,8 +935,9 @@ function DetailGrid({
                   </span>
                 )}
               </td>
-              <td colSpan={DAYS_DEMO.length + 2} style={{ background: 'var(--grid-dept-bg)' }} />
-            </tr>,
+              <td colSpan={MONTH_DEMO.length + 2} style={{ background: 'var(--grid-dept-bg)' }} />
+            </tr>
+            )]),
             ...dept.rows.map((emp, ei) => (
               <tr key={`${dept.key}-${ei}`} style={{ borderBottom: '1px solid var(--grid-row-divider)' }}>
                 <td
@@ -860,10 +945,25 @@ function DetailGrid({
                     position: 'sticky', left: 0, zIndex: 5,
                     background: 'var(--grid-cell)',
                     padding: '6px 10px', fontWeight: 500,
-                    color: 'var(--foreground)', whiteSpace: 'nowrap',
+                    color: 'var(--foreground)', whiteSpace: 'nowrap', overflow: 'hidden',
                   }}
                 >
                   <div className="flex items-center gap-2">
+                    {sticky && (
+                      <span
+                        style={{
+                          display: 'inline-flex', alignItems: 'center',
+                          padding: '1px 5px', borderRadius: 3,
+                          background: 'var(--grid-dept-bg)',
+                          color: 'var(--grid-dept-fg)',
+                          fontSize: 8.5, fontWeight: 700,
+                          textTransform: 'uppercase', letterSpacing: '0.05em',
+                          whiteSpace: 'nowrap', flexShrink: 0,
+                        }}
+                      >
+                        {dept.name}
+                      </span>
+                    )}
                     <Avatar name={emp.name} size={18} />
                     <span>{emp.name}</span>
                     <button
@@ -878,15 +978,16 @@ function DetailGrid({
                         whiteSpace: 'nowrap',
                       }}
                     >
-                      {showTelegram ? emp.tg : labels.projectBadge.replace('{n}', String(emp.pIdx))}
+                      {showTelegram ? emp.tg : labels.roles[emp.roleKey]}
                     </button>
                   </div>
                 </td>
                 {merged ? (() => {
                   type Run = { code: Status | undefined; indices: number[] }
                   const runs: Run[] = []
-                  DAYS_DEMO.forEach((_d, ci) => {
-                    const code = statusOf(emp.name, ci, emp.s)
+                  MONTH_DEMO.forEach((_d, ci) => {
+                    let code = statusOf(emp.name, ci % 14, emp.s)
+                    if (code === 'U' && ci !== PROBLEM_DAY_IDX) code = 'W'
                     const last = runs[runs.length - 1]
                     if (last && last.code === code) { last.indices.push(ci) }
                     else { runs.push({ code, indices: [ci] }) }
@@ -895,7 +996,7 @@ function DetailGrid({
                     const { code, indices } = run
                     const span = indices.length
                     const isOff = code === '-' || code === undefined
-                    const allWkd = indices.every(i => { const d = DAYS_DEMO[i]; return d.k === 'sat' || d.k === 'sun' })
+                    const allWkd = indices.every(i => { const d = MONTH_DEMO[i]; return d.k === 'sat' || d.k === 'sun' })
                     const raw = code as Exclude<Status, '-'>
                     const runKey = `${emp.name}-${ri}`
                     const isHovered = hoveredRun === runKey
@@ -943,14 +1044,17 @@ function DetailGrid({
                       </td>
                     )
                   })
-                })() : DAYS_DEMO.map((d, ci) => {
-                  const raw = statusOf(emp.name, ci, emp.s)
+                })() : MONTH_DEMO.map((d, ci) => {
+                  let raw = statusOf(emp.name, ci % 14, emp.s)
+                  if (raw === 'U' && ci !== PROBLEM_DAY_IDX) raw = 'W'
                   const isWkd = d.k === 'sat' || d.k === 'sun'
                   const isOff = raw === '-' || raw === undefined
                   const cellInteractive = editMode
+                  const tip = isOff ? '' : cellTooltip(raw, emp.shift, labels)
                   return (
                     <td
                       key={d.n}
+                      title={tip || undefined}
                       onClick={cellInteractive ? (e) => {
                         const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
                         onCellEdit(emp.name, ci, r.left + r.width / 2, r.bottom + 6)
@@ -963,62 +1067,98 @@ function DetailGrid({
                         outline: editMode ? '1px dashed var(--accent)' : 'none',
                         outlineOffset: editMode ? -2 : 0,
                         cursor: cellInteractive ? 'pointer' : 'default',
+                        ...problemColumnStyle(ci),
                       }}
                     >
                       {isOff ? (
                         <span style={{ fontSize: 9, color: 'var(--grid-empty-fg)' }}>—</span>
-                      ) : isExt ? (
-                        <div
-                          style={{
-                            display: 'flex', flexDirection: 'column', alignItems: 'stretch',
-                            background: chipBg(raw as Exclude<Status, '-'>),
-                            color: chipFg(raw as Exclude<Status, '-'>),
-                            padding: '5px 7px', borderRadius: 5,
-                            fontSize: 10, fontWeight: 600, lineHeight: 1.15,
-                            textAlign: 'left',
-                          }}
-                        >
-                          <span style={{ fontSize: raw === 'W' && showTimes ? 9 : 10.5, fontWeight: 600 }}>
-                            {raw === 'W' ? workLabel(emp) : chipLblFull[raw as Exclude<Status, '-'>]}
-                          </span>
-                          {raw === 'W' && (
-                            <span style={{ fontSize: 9, fontWeight: 500, opacity: 0.88, marginTop: 1 }}>
-                              {labels.projects[projectFor(emp.name, ci)].name}
-                            </span>
-                          )}
-                        </div>
-                      ) : (
-                        <div
-                          style={{
-                            display: 'inline-flex', alignItems: 'center',
-                            background: chipBg(raw as Exclude<Status, '-'>),
-                            color: chipFg(raw as Exclude<Status, '-'>),
-                            padding: '1px 5px', borderRadius: 3,
-                            fontSize: raw === 'W' && showTimes ? 8 : 9.5,
-                            fontWeight: 500, whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {raw === 'W' ? workLabel(emp) : chipLbl[raw as Exclude<Status, '-'>]}
-                        </div>
-                      )}
+                      ) : (() => {
+                        const code = raw as Exclude<Status, '-'>
+                        const wm = workMeta(emp.shift, labels)
+                        const WIcon = wm.Icon
+                        const StIcon = statusIcon(code)
+                        const bg = code === 'W' ? (contrast ? wm.bg : 'var(--chip-w-bg)') : chipBg(code)
+                        const fg = chipFg(code)
+                        const isU = code === 'U'
+                        if (isExt) {
+                          return (
+                            <div
+                              style={{
+                                display: 'flex', flexDirection: 'column', alignItems: 'stretch',
+                                background: isU ? 'transparent' : bg,
+                                color: isU ? 'var(--st-uncovered)' : fg,
+                                border: isU ? '1.5px dashed var(--st-uncovered)' : 'none',
+                                padding: '5px 7px', borderRadius: 5,
+                                fontSize: 10, fontWeight: 600, lineHeight: 1.15,
+                                textAlign: 'left',
+                              }}
+                            >
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: code === 'W' && showTimes ? 9 : 10.5, fontWeight: 600 }}>
+                                {code === 'W' ? (
+                                  <>
+                                    <WIcon size={10} strokeWidth={2.4} />
+                                    {workLabel(emp)}
+                                  </>
+                                ) : (
+                                  <>
+                                    {StIcon && <StIcon size={10} />}
+                                    {chipLblFull[code]}
+                                  </>
+                                )}
+                              </span>
+                              {code === 'W' && (
+                                <span style={{ fontSize: 9, fontWeight: 500, opacity: 0.88, marginTop: 1 }}>
+                                  {wm.window} · {wm.hours}{labels.hourSuffix}
+                                </span>
+                              )}
+                            </div>
+                          )
+                        }
+                        return (
+                          <div
+                            style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 2,
+                              background: isU ? 'transparent' : bg,
+                              color: isU ? 'var(--st-uncovered)' : fg,
+                              border: isU ? '1.5px dashed var(--st-uncovered)' : 'none',
+                              padding: '1px 5px', borderRadius: 3,
+                              fontSize: code === 'W' && showTimes ? 8 : 9.5,
+                              fontWeight: 500, whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {code === 'W' ? (
+                              <>
+                                <WIcon size={9} strokeWidth={2.4} />
+                                {showTimes ? workLabel(emp) : null}
+                              </>
+                            ) : StIcon ? (
+                              <StIcon size={9} />
+                            ) : (
+                              chipLbl[code]
+                            )}
+                          </div>
+                        )
+                      })()}
                     </td>
                   )
                 })}
                 {(() => {
                   let off = 0, work = 0
-                  DAYS_DEMO.forEach((_d, ci) => {
-                    const s = statusOf(emp.name, ci, emp.s)
+                  MONTH_DEMO.forEach((_d, ci) => {
+                    let s = statusOf(emp.name, ci % 14, emp.s)
+                    if (s === 'U' && ci !== PROBLEM_DAY_IDX) s = 'W'
                     if (s === 'V' || s === 'S' || s === 'D') off++
-                    else if (s === 'W' || s === 'L') work++
+                    else if (s === 'W') work++
                   })
-                  const hrs = work * (emp.shift === 'night' ? 13 : 10)
+                  const wm = workMeta(emp.shift, labels)
+                  const hrs = work * wm.hours
                   return (
                     <>
                       <td style={{ borderLeft: '2px solid var(--border)', width: 40, minWidth: 40, textAlign: 'center', background: 'var(--grid-cell)', padding: '4px 2px' }}>
                         <span style={{ fontSize: 10, color: 'var(--muted-foreground)', fontWeight: 600 }}>{off || '—'}</span>
                       </td>
                       <td style={{ borderLeft: '1px solid var(--border)', width: 48, minWidth: 48, textAlign: 'center', background: 'var(--grid-cell)', padding: '4px 2px' }}>
-                        <span style={{ fontSize: 10, color: 'var(--foreground)', fontWeight: 600 }}>{hrs > 0 ? `${hrs}h` : '—'}</span>
+                        <span style={{ fontSize: 10, color: 'var(--foreground)', fontWeight: 600 }}>{hrs > 0 ? `${hrs}${labels.hourSuffix}` : '—'}</span>
                       </td>
                     </>
                   )
@@ -1034,18 +1174,20 @@ function DetailGrid({
 
 /* ── Compact mode ──────────────────────────────────────────────── */
 function CompactGrid({
-  groups, statusOf, weekendBg, chipBg, chipFg, labels,
-  showTimes, merged, showGrid, showTelegram, editMode, onToggleProjects, onProjectClick, onCellEdit,
+  groups, statusOf, weekendBg, chipBg, chipFg, contrast, labels,
+  showTimes, merged, showGrid, sticky, showTelegram, editMode, onToggleProjects, onProjectClick, onCellEdit,
 }: {
   groups: { key: string; name: string; min?: number; rows: EmpDef[] }[]
   statusOf: (name: string, dayIdx: number, base: string) => Status
   weekendBg: string
   chipBg: (c: Exclude<Status, '-'>) => string
   chipFg: (c: Exclude<Status, '-'>) => string
+  contrast: boolean
   labels: GridPreviewLabels
   showTimes: boolean
   merged: boolean
   showGrid: boolean
+  sticky: boolean
   showTelegram: boolean
   editMode: boolean
   onToggleProjects: () => void
@@ -1053,16 +1195,17 @@ function CompactGrid({
   onCellEdit: (name: string, day: number, px: number, py: number) => void
 }) {
   const [hoveredRun, setHoveredRun] = useState<string | null>(null)
+  const nameColW = sticky ? 220 : 168
   return (
     <div style={{ overflowX: 'auto' }}>
-      <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: 10 }}>
+      <table style={{ borderCollapse: 'collapse', width: 'max-content', minWidth: '100%', fontSize: 10, tableLayout: 'fixed' }}>
         <thead>
           <tr style={{ borderBottom: '1px solid var(--border)' }}>
             <th
               style={{
                 position: 'sticky', left: 0, zIndex: 10,
                 background: 'var(--grid-cell)',
-                padding: '6px 10px', width: 168, minWidth: 168,
+                padding: '6px 10px', width: nameColW, minWidth: nameColW,
                 textAlign: 'left', fontWeight: 500,
                 color: 'var(--muted-foreground)', fontSize: 9.5,
                 textTransform: 'uppercase', letterSpacing: '0.05em',
@@ -1086,19 +1229,38 @@ function CompactGrid({
                 </button>
               </div>
             </th>
-            {MONTH_DEMO.map((d) => {
+            {MONTH_DEMO.map((d, ci) => {
               const isWkd = d.k === 'sat' || d.k === 'sun'
+              const isProblem = ci === PROBLEM_DAY_IDX
               return (
                 <th
                   key={d.n}
                   style={{
-                    width: 22, minWidth: 22, padding: '4px 0', textAlign: 'center',
+                    width: 32, minWidth: 28, padding: '4px 0', textAlign: 'center',
                     background: isWkd ? weekendBg : 'var(--grid-cell)',
                     color: 'var(--muted-foreground)',
                     fontWeight: 500, fontSize: 9.5,
+                    position: 'relative',
+                    ...problemColumnStyle(ci),
                   }}
                 >
-                  {d.n}
+                  <div style={{ fontWeight: 500, fontSize: 9.5 }}>{d.n}</div>
+                  <div style={{ fontSize: 8, opacity: 0.65 }}>{labels.days[d.k]}</div>
+                  {isProblem && (
+                    <div
+                      title={labels.shortageLabel}
+                      style={{
+                        marginTop: 2,
+                        display: 'inline-flex', alignItems: 'center',
+                        padding: '0 3px', borderRadius: 3,
+                        background: 'var(--accent)', color: '#fff',
+                        fontSize: 8, fontWeight: 700, lineHeight: '11px',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {labels.coverageGap}
+                    </div>
+                  )}
                 </th>
               )
             })}
@@ -1112,13 +1274,14 @@ function CompactGrid({
         </thead>
         <tbody>
           {groups.flatMap((dept, di) => [
+            ...(sticky ? [] : [(
             <tr key={`dept-${dept.key}-${di}`}>
               <td
                 style={{
                   position: 'sticky', left: 0, zIndex: 6,
                   padding: '3px 10px',
                   background: 'var(--grid-dept-bg)',
-                  width: 168, minWidth: 168,
+                  width: nameColW, minWidth: nameColW,
                   fontSize: 9.5, fontWeight: 600,
                   color: 'var(--grid-dept-fg)',
                   textTransform: 'uppercase', letterSpacing: '0.05em',
@@ -1128,7 +1291,8 @@ function CompactGrid({
                 ▸ {dept.name}
               </td>
               <td colSpan={MONTH_DEMO.length + 2} style={{ background: 'var(--grid-dept-bg)' }} />
-            </tr>,
+            </tr>
+            )]),
             ...dept.rows.map((emp, ei) => (
               <tr key={`${dept.key}-${ei}`} style={{ borderBottom: '1px solid var(--grid-row-divider)' }}>
                 <td
@@ -1136,11 +1300,26 @@ function CompactGrid({
                     position: 'sticky', left: 0, zIndex: 5,
                     background: 'var(--grid-cell)',
                     padding: '3px 10px', fontWeight: 500,
-                    color: 'var(--foreground)', whiteSpace: 'nowrap', fontSize: 11,
+                    color: 'var(--foreground)', whiteSpace: 'nowrap', fontSize: 11, overflow: 'hidden',
                   }}
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
+                      {sticky && (
+                        <span
+                          style={{
+                            display: 'inline-flex', alignItems: 'center',
+                            padding: '1px 5px', borderRadius: 3,
+                            background: 'var(--grid-dept-bg)',
+                            color: 'var(--grid-dept-fg)',
+                            fontSize: 8, fontWeight: 700,
+                            textTransform: 'uppercase', letterSpacing: '0.05em',
+                            whiteSpace: 'nowrap', flexShrink: 0,
+                          }}
+                        >
+                          {dept.name}
+                        </span>
+                      )}
                       <Avatar name={emp.name} size={16} />
                       <span className="truncate">{emp.name}</span>
                     </div>
@@ -1156,7 +1335,7 @@ function CompactGrid({
                         whiteSpace: 'nowrap',
                       }}
                     >
-                      {showTelegram ? emp.tg : labels.projectBadge.replace('{n}', String(emp.pIdx))}
+                      {showTelegram ? emp.tg : labels.roles[emp.roleKey]}
                     </button>
                   </div>
                 </td>
@@ -1164,7 +1343,8 @@ function CompactGrid({
                   type Run = { code: Status | undefined; indices: number[] }
                   const runs: Run[] = []
                   MONTH_DEMO.forEach((_d, ci) => {
-                    const code = statusOf(emp.name, ci % 15, emp.s)
+                    let code = statusOf(emp.name, ci % 14, emp.s)
+                    if (code === 'U' && ci !== PROBLEM_DAY_IDX) code = 'W'
                     const last = runs[runs.length - 1]
                     if (last && last.code === code) { last.indices.push(ci) }
                     else { runs.push({ code, indices: [ci] }) }
@@ -1215,15 +1395,18 @@ function CompactGrid({
                     )
                   })
                 })() : MONTH_DEMO.map((d, ci) => {
-                  const code = statusOf(emp.name, ci % 15, emp.s)
+                  let code = statusOf(emp.name, ci % 14, emp.s)
+                  if (code === 'U' && ci !== PROBLEM_DAY_IDX) code = 'W'
                   const isWkd = d.k === 'sat' || d.k === 'sun'
                   const isOff = code === '-' || code === undefined
+                  const tip = isOff ? '' : cellTooltip(code, emp.shift, labels)
                   return (
                     <td
                       key={d.n}
+                      title={tip || undefined}
                       onClick={editMode ? (e) => {
                         const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
-                        onCellEdit(emp.name, ci % 15, r.left + r.width / 2, r.bottom + 4)
+                        onCellEdit(emp.name, ci % 14, r.left + r.width / 2, r.bottom + 4)
                       } : undefined}
                       style={{
                         padding: 2, textAlign: 'center',
@@ -1231,45 +1414,57 @@ function CompactGrid({
                         borderRight: showGrid ? '1px solid var(--border)' : 'none',
                         outline: editMode ? '1px dashed var(--accent)' : 'none',
                         outlineOffset: editMode ? -1 : 0,
+                        ...problemColumnStyle(ci),
                         cursor: editMode ? 'pointer' : 'default',
                       }}
                     >
                       {isOff ? (
                         <span style={{ fontSize: 9, color: 'var(--grid-empty-fg)' }}>—</span>
-                      ) : (
-                        <div
-                          style={{
-                            background: chipBg(code as Exclude<Status, '-'>),
-                            color: chipFg(code as Exclude<Status, '-'>),
-                            borderRadius: 3,
-                            fontSize: code === 'W' && showTimes ? 7.5 : 9,
-                            fontWeight: 600,
-                            padding: '2px 0', lineHeight: 1.1,
-                          }}
-                        >
-                          {code === 'W' && showTimes
-                            ? (emp.shift === 'night' ? '19–8' : '9–19')
-                            : code}
-                        </div>
-                      )}
+                      ) : (() => {
+                        const cc = code as Exclude<Status, '-'>
+                        const wm = workMeta(emp.shift, labels)
+                        const bg = cc === 'W' ? (contrast ? wm.bg : 'var(--chip-w-bg)') : chipBg(cc)
+                        const isU = cc === 'U'
+                        const timeText = cc === 'W' && showTimes
+                          ? (emp.shift === 'night' ? '22–8' : emp.shift === 'evening' ? '14–22' : '9–17')
+                          : ''
+                        return (
+                          <div
+                            style={{
+                              background: isU ? 'transparent' : bg,
+                              color: isU ? 'var(--st-uncovered)' : cc === 'W' ? (contrast ? 'var(--st-work-fg)' : chipFg('W')) : chipFg(cc),
+                              border: isU ? '1px dashed var(--st-uncovered)' : 'none',
+                              borderRadius: 4,
+                              fontSize: cc === 'W' && showTimes ? 9 : 10.5,
+                              fontWeight: 600,
+                              padding: '3px 0', lineHeight: 1.15,
+                              minHeight: 16,
+                            }}
+                          >
+                            {isU ? '?' : timeText}
+                          </div>
+                        )
+                      })()}
                     </td>
                   )
                 })}
                 {(() => {
                   let off = 0, work = 0
                   MONTH_DEMO.forEach((_d, ci) => {
-                    const s = statusOf(emp.name, ci % 15, emp.s)
+                    let s = statusOf(emp.name, ci % 14, emp.s)
+                    if (s === 'U' && ci !== PROBLEM_DAY_IDX) s = 'W'
                     if (s === 'V' || s === 'S' || s === 'D') off++
-                    else if (s === 'W' || s === 'L') work++
+                    else if (s === 'W') work++
                   })
-                  const hrs = work * (emp.shift === 'night' ? 13 : 10)
+                  const wm = workMeta(emp.shift, labels)
+                  const hrs = work * wm.hours
                   return (
                     <>
                       <td style={{ borderLeft: '2px solid var(--border)', width: 40, minWidth: 40, textAlign: 'center', background: 'var(--grid-cell)', padding: '2px 2px' }}>
                         <span style={{ fontSize: 9, color: 'var(--muted-foreground)', fontWeight: 600 }}>{off || '—'}</span>
                       </td>
                       <td style={{ borderLeft: '1px solid var(--border)', width: 46, minWidth: 46, textAlign: 'center', background: 'var(--grid-cell)', padding: '2px 2px' }}>
-                        <span style={{ fontSize: 9, color: 'var(--foreground)', fontWeight: 600 }}>{hrs > 0 ? `${hrs}h` : '—'}</span>
+                        <span style={{ fontSize: 9, color: 'var(--foreground)', fontWeight: 600 }}>{hrs > 0 ? `${hrs}${labels.hourSuffix}` : '—'}</span>
                       </td>
                     </>
                   )
