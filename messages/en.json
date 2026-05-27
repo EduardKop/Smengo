@@ -79,15 +79,21 @@
       "product": "Product",
       "pricing": "Pricing",
       "login": "Sign in",
-      "start": "Start free"
+      "start": "Start free",
+      "how": "How it works"
     },
     "hero": {
       "badge": "Shift scheduler for growing teams",
-      "headline": "Your whole team schedule\nat a glance",
+      "headline": "Your whole team's month, on one screen.",
       "subheadline": "Replace spreadsheets with a smart scheduler. See who's working, who's on leave, and where coverage gaps are — at a glance, no calls needed.",
       "cta": "Start free",
       "ctaHint": "14 days, no card",
-      "demo": "See how it works"
+      "demo": "See how it works",
+      "tag": "Shift scheduling, reimagined",
+      "sub": "Plan shifts, spot coverage gaps, stop living in Excel. One calm grid — every employee, every day of the month.",
+      "cta1": "Start free trial",
+      "cta2": "See how it works",
+      "note": "14 days free — no credit card needed"
     },
     "pain": {
       "title": "Sound familiar?",
@@ -96,16 +102,21 @@
       "item3": "To find out who's working Saturday, you have to call or message someone"
     },
     "features": {
-      "title": "One grid, the full picture",
+      "title": "Everything you need.\nNothing you don't.",
       "subtitle": "Smengo shows the whole month at once: employees as rows, days as columns.",
-      "f1Title": "Monthly grid view",
-      "f1Desc": "Employees in rows, days in columns. Each day's status shown in color. Everything visible at once.",
-      "f2Title": "Coverage alerts",
-      "f2Desc": "The system highlights days when a shift is below the minimum needed. No more last-minute surprises.",
-      "f3Title": "Roles & departments",
-      "f3Desc": "Managers see only their departments. Owners see everything. Permissions set without IT help.",
-      "f4Title": "PDF/PNG export",
-      "f4Desc": "Share the schedule in one click — for printing, in chat, or in a management presentation."
+      "f1Title": "Month at a glance",
+      "f1Desc": "One screen shows your entire team's schedule for the full month. No scrolling, no pivot tables.",
+      "f2Title": "Departments & filters",
+      "f2Desc": "Group employees by team. Filter instantly to focus on just the department you need right now.",
+      "f3Title": "Coverage alerts",
+      "f3Desc": "Set a minimum headcount per department. Smengo flags any day that falls short — quietly, not alarmingly.",
+      "f4Title": "Custom statuses",
+      "f4Desc": "Define your own shift types with labels, colors, and a \"counts as present\" toggle — in any language.",
+      "tag": "Features",
+      "f5Title": "Multi-language",
+      "f5Desc": "Full support for Russian, Ukrainian, and English. Set a company default; each user can override their own.",
+      "f6Title": "Roles & access",
+      "f6Desc": "Managers see their team. Owners see everything. No accidental edits from the wrong person."
     },
     "testimonials": {
       "title": "What teams say",
@@ -121,13 +132,19 @@
       "hint": "Already have an account?"
     },
     "footer": {
-      "tagline": "Smart shift scheduler for teams.",
+      "tagline": "Shift scheduling for modern operations teams.",
       "product": "Product",
       "pricing": "Pricing",
       "legal": "Legal",
       "privacy": "Privacy policy",
       "terms": "Terms of service",
-      "rights": "All rights reserved."
+      "rights": "All rights reserved.",
+      "productFeatures": "Features",
+      "productPricing": "Pricing",
+      "company": "Company",
+      "companyAbout": "About",
+      "companyBlog": "Blog",
+      "companyContact": "Contact"
     },
     "gridMockup": {
       "title": "Team schedule",
@@ -141,6 +158,74 @@
       "title": "Simple pricing",
       "subtitle": "Start with a 14-day free trial. Choose a plan when you're ready.",
       "compare": "Compare all plans"
+    },
+    "proof": {
+      "label": "Trusted by operations teams across 12 countries"
+    },
+    "how": {
+      "tag": "How it works",
+      "title": "Three steps to full visibility.",
+      "step1Title": "Add your team",
+      "step1Desc": "Import employees, organize into departments. Done in minutes — no training needed.",
+      "step2Title": "Fill the grid",
+      "step2Desc": "Click any cell to set shifts, vacation, or time off. Drag across a range to fill a whole week at once.",
+      "step3Title": "Catch gaps automatically",
+      "step3Desc": "Coverage alerts highlight days when a department is understaffed — before it becomes a real problem."
+    },
+    "band": {
+      "title": "Ready to stop living in Excel?",
+      "sub": "Join operations teams across Eastern Europe and the CIS who already have.",
+      "cta": "Start your free trial →"
+    },
+    "plans": {
+      "tag": "Pricing",
+      "title": "Simple pricing.\nScales with your team.",
+      "startName": "Start",
+      "startPrice": "$0",
+      "startPeriod": "/forever",
+      "startDesc": "For small teams finding their footing.",
+      "startF1": "Up to 15 employees",
+      "startF2": "1 department",
+      "startF3": "Standard statuses",
+      "startF4": "CSV export",
+      "startCta": "Get started free",
+      "teamName": "Team",
+      "teamPrice": "$29",
+      "teamPeriod": "/month",
+      "teamDesc": "For growing teams that need full visibility.",
+      "teamF1": "Up to 75 employees",
+      "teamF2": "10 departments",
+      "teamF3": "Custom statuses",
+      "teamF4": "Coverage alerts",
+      "teamF5": "Manager roles",
+      "teamF6": "Priority support",
+      "teamCta": "Start free trial",
+      "teamBadge": "★ Most popular",
+      "bizName": "Business",
+      "bizPrice": "$79",
+      "bizPeriod": "/month",
+      "bizDesc": "For large operations with complex needs.",
+      "bizF1": "Unlimited employees",
+      "bizF2": "Unlimited departments",
+      "bizF3": "All Team features",
+      "bizF4": "API access",
+      "bizF5": "SSO",
+      "bizF6": "Dedicated support",
+      "bizCta": "Talk to us"
+    },
+    "faq": {
+      "tag": "FAQ",
+      "title": "Common questions.",
+      "q1": "Do I need a credit card to start?",
+      "a1": "No. The 14-day trial requires no payment information whatsoever. You only enter billing details if you decide to upgrade after the trial ends.",
+      "q2": "Can I import my team from Excel?",
+      "a2": "Yes — import employees via CSV. Direct Excel integration is on the roadmap for later this year.",
+      "q3": "What languages does Smengo support?",
+      "a3": "The full interface is available in Russian, Ukrainian, and English. Set a company-wide default, and each user can override their own preference from their profile.",
+      "q4": "How does billing work?",
+      "a4": "Plans are billed monthly or annually (annual saves 20%). Upgrade, downgrade, or cancel any time from the Billing page. All payments are processed securely via Paddle.",
+      "q5": "Can I change plans later?",
+      "a5": "Absolutely. Upgrade or downgrade any time — changes take effect immediately, and any unused time is prorated."
     }
   },
   "pricing": {

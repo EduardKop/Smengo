@@ -9,13 +9,13 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: 'Цены — Smengo',
     description:
-      'Простые цены без сюрпризов. Старт $29, Команда $79, Бизнес $149 в месяц. 14 дней бесплатно, без карты.',
+      'Простые цены без сюрпризов. Старт бесплатно, Команда $29, Бизнес $79 в месяц. 14 дней бесплатно, без карты.',
     alternates: {
       canonical: 'https://smengo.com/pricing',
     },
     openGraph: {
       title: 'Цены — Smengo',
-      description: 'Старт $29 / Команда $79 / Бизнес $149. 14 дней бесплатно.',
+      description: 'Старт бесплатно / Команда $29 / Бизнес $79. 14 дней бесплатно.',
       type: 'website',
     },
   }
@@ -58,8 +58,8 @@ const PLANS = [
   {
     key: 'start' as const,
     nameKey: 'planStart',
-    price: 29,
-    employees: '25',
+    price: 0,
+    employees: '15',
     groups: '2',
     managers: '1',
     recommended: false,
@@ -77,8 +77,8 @@ const PLANS = [
   {
     key: 'team' as const,
     nameKey: 'planTeam',
-    price: 79,
-    employees: '100',
+    price: 29,
+    employees: '75',
     groups: null,
     managers: '3',
     recommended: true,
@@ -96,7 +96,7 @@ const PLANS = [
   {
     key: 'business' as const,
     nameKey: 'planBusiness',
-    price: 149,
+    price: 79,
     employees: '300',
     groups: null,
     managers: '10',
