@@ -1,7 +1,19 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
-import { Check } from 'lucide-react'
+import {
+  Check,
+  CalendarRange,
+  BellRing,
+  MousePointerClick,
+  ShieldCheck,
+  Tags,
+  FileDown,
+  Sparkles,
+  CheckCircle2,
+  Gift,
+  Globe2,
+} from 'lucide-react'
 import { FaqAccordion } from '@/components/marketing/faq-accordion'
 import { GridPreview, type GridPreviewLabels } from '@/components/marketing/grid-preview'
 import { routing, type Locale } from '@/i18n/routing'
@@ -64,6 +76,19 @@ const jsonLd = {
     { '@type': 'Offer', name: 'Бизнес', price: '79', priceCurrency: 'USD' },
   ],
 }
+
+const WHY_ITEMS = [
+  { Icon: CalendarRange, titleKey: 'whyus.i1Title', descKey: 'whyus.i1Desc' },
+  { Icon: BellRing,      titleKey: 'whyus.i2Title', descKey: 'whyus.i2Desc' },
+  { Icon: MousePointerClick, titleKey: 'whyus.i3Title', descKey: 'whyus.i3Desc' },
+  { Icon: ShieldCheck,   titleKey: 'whyus.i4Title', descKey: 'whyus.i4Desc' },
+  { Icon: Tags,          titleKey: 'whyus.i5Title', descKey: 'whyus.i5Desc' },
+  { Icon: FileDown,      titleKey: 'whyus.i6Title', descKey: 'whyus.i6Desc' },
+  { Icon: Sparkles,      titleKey: 'whyus.i7Title', descKey: 'whyus.i7Desc' },
+  { Icon: CheckCircle2,  titleKey: 'whyus.i8Title', descKey: 'whyus.i8Desc' },
+  { Icon: Gift,          titleKey: 'whyus.i9Title', descKey: 'whyus.i9Desc' },
+  { Icon: Globe2,        titleKey: 'whyus.i10Title', descKey: 'whyus.i10Desc' },
+] as const
 
 export default async function LandingPage({
   params,
@@ -471,6 +496,56 @@ export default async function LandingPage({
                 <p className="text-[13px] leading-[1.6] text-muted-foreground">
                   {t(`features.f${n}Desc` as Parameters<typeof t>[0])}
                 </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── WHY US ──────────────────────────────────────────── */}
+      <section id="why" className="bg-background px-4 py-24 sm:px-6">
+        <div className="mx-auto max-w-[1100px]">
+          <div className="mb-12 text-center">
+            <SecEye>{t('whyus.tag' as Parameters<typeof t>[0])}</SecEye>
+            <h2
+              className="mx-auto mt-3 font-serif font-semibold text-foreground"
+              style={{ fontSize: 'clamp(28px, 3.4vw, 38px)', letterSpacing: '-0.02em', maxWidth: 500, lineHeight: 1.18 }}
+            >
+              {t('whyus.title' as Parameters<typeof t>[0]).split('\n').map((line, i) => (
+                <span key={i}>{line}{i === 0 && <br />}</span>
+              ))}
+            </h2>
+            <p className="mx-auto mt-4 text-[14px] leading-[1.6] text-muted-foreground" style={{ maxWidth: 480 }}>
+              {t('whyus.sub' as Parameters<typeof t>[0])}
+            </p>
+          </div>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: 1,
+              background: 'var(--border)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius)',
+              overflow: 'hidden',
+            }}
+          >
+            {WHY_ITEMS.map(({ Icon, titleKey, descKey }) => (
+              <div key={titleKey} style={{ background: 'var(--surface)', padding: '22px 26px' }} className="flex items-start gap-4">
+                <div
+                  className="mt-0.5 shrink-0 flex items-center justify-center rounded-lg"
+                  style={{ width: 36, height: 36, background: 'var(--accent-soft)', color: 'var(--accent)' }}
+                >
+                  <Icon size={18} strokeWidth={1.8} />
+                </div>
+                <div>
+                  <h3 className="mb-1 text-[14px] font-semibold text-foreground">
+                    {t(titleKey as Parameters<typeof t>[0])}
+                  </h3>
+                  <p className="text-[12.5px] leading-[1.6] text-muted-foreground">
+                    {t(descKey as Parameters<typeof t>[0])}
+                  </p>
+                </div>
               </div>
             ))}
           </div>

@@ -324,6 +324,31 @@
       "a4": "Plans are billed monthly or annually (annual saves 20%). Upgrade, downgrade, or cancel any time from the Billing page. All payments are processed securely via Paddle.",
       "q5": "Can I change plans later?",
       "a5": "Absolutely. Upgrade or downgrade any time - changes take effect immediately, and any unused time is prorated."
+    },
+    "whyus": {
+      "tag": "Why teams choose Smengo",
+      "title": "Built for managers\nwho hate spreadsheets.",
+      "sub": "Every feature is here because a real ops manager asked for it.",
+      "i1Title": "Whole month, one screen",
+      "i1Desc": "Every employee, every day — no tabs, no scrolling. Full picture in seconds.",
+      "i2Title": "Coverage alerts",
+      "i2Desc": "Auto-flag days when a department falls below minimum headcount — before the shift starts.",
+      "i3Title": "One-click editing",
+      "i3Desc": "Click a cell to assign a shift. Drag across a range to fill a whole week instantly.",
+      "i4Title": "Roles & visibility",
+      "i4Desc": "Owners see everything. Managers see only their teams. No accidental edits by the wrong person.",
+      "i5Title": "Custom shift types",
+      "i5Desc": "Name your shifts, pick colors, mark what counts as present. Works in any language.",
+      "i6Title": "PDF & PNG export",
+      "i6Desc": "One click to export — ready to print, share in chat, or attach to an email.",
+      "i7Title": "AI-powered scheduling",
+      "i7Desc": "Fill and analyze schedules with an AI assistant that learns your team's patterns.",
+      "i8Title": "Shift check-in",
+      "i8Desc": "Staff mark themselves present via Telegram bot or the web app — no phone calls needed.",
+      "i9Title": "14 days free, no card",
+      "i9Desc": "Full access from day one. Enter billing details only if you choose to upgrade.",
+      "i10Title": "RU / UK / EN",
+      "i10Desc": "Full interface in Russian, Ukrainian, and English. Company default or personal override."
     }
   },
   "pricing": {
