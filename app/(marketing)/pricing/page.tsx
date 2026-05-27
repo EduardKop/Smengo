@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
-import { Check, Minus } from 'lucide-react'
+import { Check, Info, Minus } from 'lucide-react'
 
 export const revalidate = 3600
 
@@ -137,13 +137,18 @@ export default async function PricingPage() {
 
       {/* ── HERO ── */}
       <section className="px-4 pb-4 pt-16 text-center sm:px-6 sm:pt-20">
-        <h1 className="font-serif text-4xl font-bold text-foreground sm:text-5xl">{t('title')}</h1>
-        <p className="mx-auto mt-4 max-w-md text-muted-foreground">{t('subtitle')}</p>
+        <h1
+          className="font-serif font-semibold text-foreground"
+          style={{ fontSize: 'clamp(34px, 5vw, 52px)', letterSpacing: '-0.025em', lineHeight: 1.1 }}
+        >
+          {t('title')}
+        </h1>
+        <p className="mx-auto mt-4 max-w-md text-[15px] text-muted-foreground">{t('subtitle')}</p>
       </section>
 
       {/* ── PRICING CARDS ── */}
-      <section className="px-4 py-12 sm:px-6">
-        <div className="mx-auto grid max-w-5xl gap-6 sm:grid-cols-3">
+      <section className="px-4 py-12 sm:px-6" style={{ background: 'var(--zone)' }}>
+        <div className="mx-auto grid max-w-5xl gap-5 sm:grid-cols-3">
           {PLANS.map((plan) => (
             <PricingCard key={plan.key} plan={plan} t={t} />
           ))}
@@ -269,7 +274,7 @@ export default async function PricingPage() {
   )
 }
 
-/* ── Pricing card ── */
+/* ── Pricing card (Manychat-style) ── */
 type TFunc = Awaited<ReturnType<typeof getTranslations<'pricing'>>>
 
 function PricingCard({
@@ -279,45 +284,116 @@ function PricingCard({
   plan: (typeof PLANS)[number]
   t: TFunc
 }) {
+  const descKey =
+    plan.key === 'start'
+      ? 'planStartDesc'
+      : plan.key === 'team'
+        ? 'planTeamDesc'
+        : 'planBusinessDesc'
+
+  const featureList = FEATURE_KEYS.filter((fk) => plan.features[fk])
+
   return (
     <div
-      className={`relative flex flex-col rounded-[--radius] border p-6 shadow-sm transition-shadow hover:shadow-md ${
-        plan.recommended
-          ? 'border-accent bg-accent/5 shadow-md'
-          : 'border-border bg-card'
-      }`}
+      className="relative flex flex-col overflow-hidden"
+      style={{
+        background: 'var(--surface)',
+        borderRadius: 24,
+        padding: '32px 28px',
+        boxShadow: plan.recommended
+          ? '0 1px 3px rgba(0,0,0,.06), 0 12px 32px rgba(217,119,87,.18)'
+          : '0 1px 2px rgba(0,0,0,.05), 0 6px 20px rgba(0,0,0,.07)',
+        border: plan.recommended
+          ? '1.5px solid var(--accent)'
+          : '1px solid var(--border)',
+      }}
     >
       {plan.recommended && (
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-          <span className="rounded-full bg-accent px-3 py-0.5 text-xs font-semibold text-white shadow-sm">
-            {t('recommended')}
-          </span>
+        <div
+          className="absolute left-0 right-0 top-0 flex items-center justify-center text-[10.5px] font-semibold uppercase text-white"
+          style={{ background: 'var(--accent)', letterSpacing: '0.12em', height: 24 }}
+        >
+          ★ {t('recommended')}
         </div>
       )}
 
-      <div className="mb-6">
-        <h3 className="font-serif text-xl font-bold text-foreground">
+      <div className={plan.recommended ? 'mt-6 text-center' : 'text-center'}>
+        <h3
+          className="font-serif font-semibold text-foreground"
+          style={{ fontSize: 22, letterSpacing: '-0.01em' }}
+        >
           {t(plan.nameKey as Parameters<typeof t>[0])}
         </h3>
-        <div className="mt-2 flex items-end gap-1">
-          <span className="text-4xl font-bold text-foreground">${plan.price}</span>
-          <span className="mb-1 text-sm text-muted-foreground">{t('monthly')}</span>
-        </div>
-        <p className="mt-1 text-xs text-muted-foreground">{t('trialNote')}</p>
+        <p
+          className="mx-auto mt-1.5 text-[13px] leading-[1.45]"
+          style={{ color: 'var(--subtle)', maxWidth: 200 }}
+        >
+          {t(descKey as Parameters<typeof t>[0])}
+        </p>
       </div>
 
-      {/* Key limits */}
-      <ul className="mb-6 flex flex-col gap-2 text-sm text-muted-foreground">
-        <li className="flex items-center gap-2">
-          <Check className="h-4 w-4 shrink-0 text-accent" />
-          {t('upTo', { n: plan.employees })} {t('employees')}
-        </li>
-        <li className="flex items-center gap-2">
-          <Check className="h-4 w-4 shrink-0 text-accent" />
-          {plan.groups ? `${plan.groups} ${t('groups')}` : t('unlimited')}
-        </li>
-        <li className="flex items-center gap-2">
-          <Check className="h-4 w-4 shrink-0 text-accent" />
+      <div className="mt-6 text-center">
+        <div className="flex items-baseline justify-center gap-0.5">
+          <span
+            className="font-semibold text-foreground"
+            style={{ fontSize: 40, letterSpacing: '-0.025em', lineHeight: 1 }}
+          >
+            ${plan.price}
+          </span>
+          <span className="text-[15px] font-medium text-foreground">{t('monthly')}</span>
+        </div>
+        <p className="mt-1.5 text-[12px]" style={{ color: 'var(--subtle)' }}>
+          {t('trialNote')}
+        </p>
+      </div>
+
+      <div className="mt-6 text-center">
+        <div
+          className="font-semibold text-foreground"
+          style={{ fontSize: 28, letterSpacing: '-0.02em', lineHeight: 1 }}
+        >
+          {plan.employees}
+        </div>
+        <p
+          className="mt-1 text-[13px] leading-[1.5]"
+          style={{ color: 'var(--muted-foreground)' }}
+        >
+          <span className="underline decoration-dotted underline-offset-2">
+            {t('employees')}
+          </span>{' '}
+          · {plan.groups ? `${plan.groups} ${t('groups')}` : t('unlimited')}
+        </p>
+      </div>
+
+      <Link
+        href="/register"
+        className={`mt-7 block w-full rounded-full px-5 py-3 text-center text-[12.5px] font-semibold uppercase tracking-[0.12em] transition-colors ${
+          plan.recommended
+            ? 'bg-accent text-white hover:bg-[var(--accent-hover)]'
+            : 'bg-foreground text-background hover:opacity-90'
+        }`}
+      >
+        {t('startTrial')}
+      </Link>
+
+      <ul className="mt-7 flex flex-col gap-3 border-t pt-6" style={{ borderColor: 'var(--border)' }}>
+        {featureList.map((fk) => (
+          <li
+            key={fk}
+            className="flex items-start justify-between gap-3 text-[13.5px] text-foreground"
+          >
+            <span className="flex-1 leading-[1.45]">{t(fk as Parameters<typeof t>[0])}</span>
+            <Info
+              className="mt-0.5 h-3.5 w-3.5 shrink-0"
+              style={{ color: 'var(--subtle)' }}
+            />
+          </li>
+        ))}
+        <li
+          className="flex items-center gap-2 text-[13.5px]"
+          style={{ color: 'var(--subtle)' }}
+        >
+          <Check className="h-3.5 w-3.5 shrink-0 text-accent" />
           {plan.managers}{' '}
           {plan.managers === '1'
             ? t('managers')
@@ -326,17 +402,6 @@ function PricingCard({
               : t('managersMany')}
         </li>
       </ul>
-
-      <Link
-        href="/register"
-        className={`mt-auto block rounded-[--radius-sm] px-4 py-2.5 text-center text-sm font-semibold transition-colors ${
-          plan.recommended
-            ? 'bg-accent text-white hover:bg-accent/90'
-            : 'border border-accent text-accent hover:bg-accent/5'
-        }`}
-      >
-        {t('startTrial')}
-      </Link>
     </div>
   )
 }

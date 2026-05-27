@@ -4,6 +4,7 @@ import './globals.css'
 import { cn } from "@/lib/utils"
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages, getLocale } from 'next-intl/server'
+import { themeInitScript } from '@/components/theme-toggle'
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
@@ -33,7 +34,10 @@ export default async function RootLayout({
   const messages = await getMessages()
 
   return (
-    <html lang={locale} className={cn("h-full", "antialiased", inter.variable, sourceSerif.variable, "font-sans", geist.variable)}>
+    <html lang={locale} suppressHydrationWarning className={cn("h-full", "antialiased", inter.variable, sourceSerif.variable, "font-sans", geist.variable)}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <NextIntlClientProvider messages={messages} locale={locale}>
           {children}

@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
 import { Check } from 'lucide-react'
 import { FaqAccordion } from '@/components/marketing/faq-accordion'
+import { GridPreview, type GridPreviewLabels } from '@/components/marketing/grid-preview'
 
 export const revalidate = 3600
 
@@ -44,11 +45,64 @@ const jsonLd = {
 
 export default async function LandingPage() {
   const t = await getTranslations('marketing')
+  const tg = await getTranslations('marketing.gridMockup')
 
   const faqItems = Array.from({ length: 5 }, (_, i) => ({
     q: t(`faq.q${i + 1}` as Parameters<typeof t>[0]),
     a: t(`faq.a${i + 1}` as Parameters<typeof t>[0]),
   }))
+
+  const gridLabels: GridPreviewLabels = {
+    modeDetail: tg('modeDetail'),
+    modeCompact: tg('modeCompact'),
+    modeExtended: tg('modeExtended'),
+    monthLabel: tg('monthLabel'),
+    allDepts: tg('allDepts'),
+    exportBtn: tg('exportBtn'),
+    addEmployee: tg('addEmployee'),
+    employee: tg('employee'),
+    deptSales: tg('deptSales'),
+    deptOps: tg('deptOps'),
+    deptSupport: tg('deptSupport'),
+    deptMarketing: tg('deptMarketing'),
+    deptDesign: tg('deptDesign'),
+    demoDept: tg('demoDept'),
+    minDay: tg.raw('minDay'),
+    alert: tg('alert'),
+    allOnShift: tg('allOnShift'),
+    statusWork: tg('statusWork'),
+    statusVac: tg('statusVac'),
+    statusSick: tg('statusSick'),
+    statusOff: tg('statusOff'),
+    statusLate: tg('statusLate'),
+    statusWorkFull: tg('statusWorkFull'),
+    showTimesLabel: tg('showTimesLabel'),
+    days: {
+      mon: tg('days.mon'), tue: tg('days.tue'), wed: tg('days.wed'),
+      thu: tg('days.thu'), fri: tg('days.fri'), sat: tg('days.sat'), sun: tg('days.sun'),
+    },
+    projectsBtn: tg('projectsBtn'),
+    telegramBtn: tg('telegramBtn'),
+    editBtn: tg('editBtn'),
+    editDone: tg('editDone'),
+    toastCopied: tg('toastCopied'),
+    toastExported: tg('toastExported'),
+    toastAdded: tg('toastAdded'),
+    newEmployee: tg('newEmployee'),
+    projectBadge: tg.raw('projectBadge'),
+    projectTeam: tg('projectTeam'),
+    projectStatus: tg('projectStatus'),
+    projectClose: tg('projectClose'),
+    projects: {
+      p1: { name: tg('p1Name'), desc: tg('p1Desc'), tag: tg('p1Tag') },
+      p2: { name: tg('p2Name'), desc: tg('p2Desc'), tag: tg('p2Tag') },
+      p3: { name: tg('p3Name'), desc: tg('p3Desc'), tag: tg('p3Tag') },
+      p4: { name: tg('p4Name'), desc: tg('p4Desc'), tag: tg('p4Tag') },
+      p5: { name: tg('p5Name'), desc: tg('p5Desc'), tag: tg('p5Tag') },
+      p6: { name: tg('p6Name'), desc: tg('p6Desc'), tag: tg('p6Tag') },
+    },
+    months: [tg('m1'), tg('m2'), tg('m3'), tg('m4'), tg('m5')],
+  }
 
   return (
     <>
@@ -62,54 +116,66 @@ export default async function LandingPage() {
         <div className="mx-auto max-w-[1100px]">
           <div className="text-center">
             <span
-              className="mb-5 inline-block rounded-full px-3 py-1 text-xs font-medium tracking-wider"
-              style={{ background: 'rgba(217,119,87,0.1)', color: 'var(--accent)' }}
+              className="mb-5 inline-block rounded-full px-3.5 py-1 text-[12.5px] font-medium tracking-wider"
+              style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
             >
               {t('hero.tag')}
             </span>
             <h1
-              className="font-serif font-bold leading-[1.15] tracking-tight text-foreground"
-              style={{ fontSize: 'clamp(2.2rem, 5vw, 3.5rem)' }}
+              className="font-serif font-semibold leading-[1.1] text-foreground"
+              style={{ fontSize: 'clamp(34px, 5.5vw, 60px)', letterSpacing: '-0.025em' }}
             >
               {t('hero.headline')}
             </h1>
-            <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-muted-foreground">
+            <p
+              className="mx-auto mt-5 text-[17px] leading-[1.65] text-muted-foreground"
+              style={{ maxWidth: 500 }}
+            >
               {t('hero.sub')}
             </p>
-            <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+            <div className="mt-8 flex flex-col items-center gap-2.5 sm:flex-row sm:justify-center">
               <Link
                 href="/register"
-                className="inline-flex items-center gap-2 rounded-[--radius-sm] bg-accent px-6 py-3 text-base font-semibold text-white shadow-sm transition-colors hover:bg-[--accent-hover]"
-                style={{ '--accent-hover': '#C45D3D' } as React.CSSProperties}
+                className="inline-flex items-center gap-2 rounded-lg bg-accent px-[22px] py-[11px] text-sm font-medium text-white shadow-sm transition-colors hover:bg-[var(--accent-hover)]"
               >
                 {t('hero.cta1')} →
               </Link>
               <Link
                 href="#how"
-                className="inline-flex items-center gap-2 rounded-[--radius-sm] border border-border bg-background px-6 py-3 text-base font-medium text-foreground transition-colors hover:bg-muted/60"
+                className="inline-flex items-center gap-2 rounded-lg border border-border bg-transparent px-[22px] py-[11px] text-sm font-medium text-foreground transition-[color,border-color] hover:bg-muted/40"
               >
                 {t('hero.cta2')}
               </Link>
             </div>
-            <p className="mt-3 text-sm text-muted-foreground">{t('hero.note')}</p>
+            <p className="mt-3 text-[12.5px]" style={{ color: 'var(--subtle)' }}>
+              {t('hero.note')}
+            </p>
           </div>
 
           {/* Grid preview — flush to bottom of hero */}
           <div className="mt-14 overflow-hidden">
-            <GridPreview />
+            <GridPreview labels={gridLabels} />
           </div>
         </div>
       </section>
 
       {/* ── PROOF BAR ─────────────────────────────────────────── */}
-      <section className="border-y border-border bg-white px-4 py-8 sm:px-6">
-        <div className="mx-auto max-w-[1100px]">
-          <p className="mb-5 text-center text-sm text-muted-foreground">{t('proof.label')}</p>
+      <section
+        className="border-y border-border px-4 sm:px-6"
+        style={{ background: 'var(--surface)', padding: '42px 0' }}
+      >
+        <div className="mx-auto max-w-[1100px] px-4 sm:px-6">
+          <p
+            className="mb-5 text-center text-[11.5px] font-medium uppercase"
+            style={{ letterSpacing: '0.07em', color: 'var(--subtle)' }}
+          >
+            {t('proof.label')}
+          </p>
           <div className="flex flex-wrap items-center justify-center gap-8">
             {[82, 96, 70, 108, 88, 74].map((w, i) => (
               <div
                 key={i}
-                style={{ width: w, height: 18, borderRadius: 4, background: '#C9C5BA', opacity: 0.55 }}
+                style={{ width: w, height: 18, borderRadius: 4, background: 'var(--muted)', opacity: 0.75 }}
               />
             ))}
           </div>
@@ -117,16 +183,14 @@ export default async function LandingPage() {
       </section>
 
       {/* ── HOW IT WORKS ──────────────────────────────────────── */}
-      <section id="how" className="bg-background px-4 py-20 sm:px-6">
+      <section id="how" className="bg-background px-4 py-24 sm:px-6">
         <div className="mx-auto max-w-[1100px]">
           <div className="mb-12 text-center">
-            <span
-              className="mb-3 inline-block rounded-full px-3 py-1 text-xs font-medium tracking-wider"
-              style={{ background: 'rgba(217,119,87,0.1)', color: 'var(--accent)' }}
+            <SecEye>{t('how.tag')}</SecEye>
+            <h2
+              className="mx-auto mt-3 font-serif font-semibold text-foreground"
+              style={{ fontSize: 'clamp(28px, 3.4vw, 38px)', letterSpacing: '-0.02em', maxWidth: 460, lineHeight: 1.18 }}
             >
-              {t('how.tag')}
-            </span>
-            <h2 className="mt-3 font-serif text-3xl font-bold text-foreground sm:text-4xl">
               {t('how.title')}
             </h2>
           </div>
@@ -134,16 +198,16 @@ export default async function LandingPage() {
             {([1, 2, 3] as const).map((step) => (
               <div key={step} className="flex flex-col items-start gap-4">
                 <div
-                  className="flex h-10 w-10 items-center justify-center rounded-full text-base font-bold"
-                  style={{ background: 'rgba(217,119,87,0.12)', color: 'var(--accent)' }}
+                  className="flex items-center justify-center rounded-full text-[15px] font-semibold"
+                  style={{ width: 34, height: 34, background: 'var(--accent-soft)', color: 'var(--accent)' }}
                 >
                   {step}
                 </div>
                 <div>
-                  <h3 className="mb-2 font-semibold text-foreground">
+                  <h3 className="mb-2 text-[15px] font-semibold text-foreground">
                     {t(`how.step${step}Title` as Parameters<typeof t>[0])}
                   </h3>
-                  <p className="text-sm leading-relaxed text-muted-foreground">
+                  <p className="text-[13px] leading-[1.6] text-muted-foreground">
                     {t(`how.step${step}Desc` as Parameters<typeof t>[0])}
                   </p>
                 </div>
@@ -154,16 +218,18 @@ export default async function LandingPage() {
       </section>
 
       {/* ── FEATURES ──────────────────────────────────────────── */}
-      <section id="features" className="bg-white px-4 py-20 sm:px-6">
+      <section
+        id="features"
+        className="px-4 py-24 sm:px-6"
+        style={{ background: 'var(--surface)' }}
+      >
         <div className="mx-auto max-w-[1100px]">
           <div className="mb-12 text-center">
-            <span
-              className="mb-3 inline-block rounded-full px-3 py-1 text-xs font-medium tracking-wider"
-              style={{ background: 'rgba(217,119,87,0.1)', color: 'var(--accent)' }}
+            <SecEye>{t('features.tag')}</SecEye>
+            <h2
+              className="mx-auto mt-3 font-serif font-semibold text-foreground"
+              style={{ fontSize: 'clamp(28px, 3.4vw, 38px)', letterSpacing: '-0.02em', maxWidth: 460, lineHeight: 1.18 }}
             >
-              {t('features.tag')}
-            </span>
-            <h2 className="mt-3 font-serif text-3xl font-bold text-foreground sm:text-4xl">
               {t('features.title').split('\n').map((line, i) => (
                 <span key={i}>
                   {line}
@@ -179,27 +245,28 @@ export default async function LandingPage() {
               gridTemplateColumns: 'repeat(3, 1fr)',
               gap: 1,
               background: 'var(--border)',
+              border: '1px solid var(--border)',
               borderRadius: 'var(--radius)',
               overflow: 'hidden',
             }}
           >
             {([1, 2, 3, 4, 5, 6] as const).map((n) => (
-              <div key={n} style={{ background: '#fff', padding: '28px 24px' }}>
+              <div key={n} style={{ background: 'var(--surface)', padding: '26px 28px' }}>
                 <div
                   style={{
                     height: 76,
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
+                    justifyContent: 'flex-start',
                     marginBottom: 16,
                   }}
                 >
                   <FeatureSvg n={n} />
                 </div>
-                <h3 className="mb-2 font-semibold text-foreground">
+                <h3 className="mb-2 text-[14.5px] font-semibold text-foreground">
                   {t(`features.f${n}Title` as Parameters<typeof t>[0])}
                 </h3>
-                <p className="text-sm leading-relaxed text-muted-foreground">
+                <p className="text-[13px] leading-[1.6] text-muted-foreground">
                   {t(`features.f${n}Desc` as Parameters<typeof t>[0])}
                 </p>
               </div>
@@ -210,18 +277,31 @@ export default async function LandingPage() {
 
       {/* ── CTA BAND ──────────────────────────────────────────── */}
       <section
-        className="px-4 py-16 sm:px-6"
-        style={{ background: '#EDEBE3', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}
+        className="px-4 sm:px-6"
+        style={{
+          background: 'var(--zone)',
+          borderTop: '1px solid var(--border)',
+          borderBottom: '1px solid var(--border)',
+          paddingTop: 60,
+          paddingBottom: 60,
+        }}
       >
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="font-serif text-2xl font-bold text-foreground sm:text-3xl">
+          <h2
+            className="font-serif font-semibold text-foreground"
+            style={{ fontSize: 'clamp(26px, 3vw, 34px)', letterSpacing: '-0.02em', lineHeight: 1.2 }}
+          >
             {t('band.title')}
           </h2>
-          <p className="mx-auto mt-3 max-w-md text-muted-foreground">{t('band.sub')}</p>
+          <p
+            className="mx-auto mt-3 text-[15px] leading-[1.6] text-muted-foreground"
+            style={{ maxWidth: 480 }}
+          >
+            {t('band.sub')}
+          </p>
           <Link
             href="/register"
-            className="mt-6 inline-flex items-center gap-2 rounded-[--radius-sm] bg-accent px-7 py-3.5 text-base font-semibold text-white shadow-sm transition-colors hover:bg-[--accent-hover]"
-            style={{ '--accent-hover': '#C45D3D' } as React.CSSProperties}
+            className="mt-6 inline-flex items-center gap-2 rounded-lg bg-accent px-[24px] py-[12px] text-sm font-medium text-white shadow-sm transition-colors hover:bg-[var(--accent-hover)]"
           >
             {t('band.cta')}
           </Link>
@@ -229,16 +309,14 @@ export default async function LandingPage() {
       </section>
 
       {/* ── PRICING ───────────────────────────────────────────── */}
-      <section id="pricing" className="bg-background px-4 py-20 sm:px-6">
+      <section id="pricing" className="bg-background px-4 py-24 sm:px-6">
         <div className="mx-auto max-w-[1100px]">
           <div className="mb-12 text-center">
-            <span
-              className="mb-3 inline-block rounded-full px-3 py-1 text-xs font-medium tracking-wider"
-              style={{ background: 'rgba(217,119,87,0.1)', color: 'var(--accent)' }}
+            <SecEye>{t('plans.tag')}</SecEye>
+            <h2
+              className="mx-auto mt-3 font-serif font-semibold text-foreground"
+              style={{ fontSize: 'clamp(28px, 3.4vw, 38px)', letterSpacing: '-0.02em', maxWidth: 460, lineHeight: 1.18 }}
             >
-              {t('plans.tag')}
-            </span>
-            <h2 className="mt-3 font-serif text-3xl font-bold text-foreground sm:text-4xl">
               {t('plans.title').split('\n').map((line, i) => (
                 <span key={i}>
                   {line}
@@ -303,12 +381,24 @@ export default async function LandingPage() {
       </section>
 
       {/* ── FAQ ───────────────────────────────────────────────── */}
-      <section className="bg-white px-4 py-20 sm:px-6">
+      <section className="px-4 py-24 sm:px-6" style={{ background: 'var(--surface)' }}>
         <div className="mx-auto max-w-[1100px]">
           <FaqAccordion tag={t('faq.tag')} title={t('faq.title')} items={faqItems} />
         </div>
       </section>
     </>
+  )
+}
+
+/* ── Section eyebrow (uppercase accent text, no pill) ──────────── */
+function SecEye({ children }: { children: React.ReactNode }) {
+  return (
+    <span
+      className="mb-3 inline-block text-[11.5px] font-semibold uppercase"
+      style={{ letterSpacing: '0.08em', color: 'var(--accent)' }}
+    >
+      {children}
+    </span>
   )
 }
 
@@ -336,31 +426,33 @@ function PlanCard({
 }) {
   return (
     <div
-      className={`relative flex flex-col rounded-[--radius] border p-6 ${
-        highlighted
-          ? 'border-accent bg-accent/5 shadow-[var(--shadow-md)]'
-          : 'border-border bg-white shadow-[var(--shadow-sm)]'
-      }`}
+      className={`relative flex flex-col rounded-[--radius] ${highlighted ? 'border-[1.5px] border-accent' : 'border border-border'} shadow-[var(--shadow-sm)]`}
+      style={{ background: 'var(--surface)', padding: 28 }}
     >
       {badge && (
         <span
-          className="absolute left-1/2 -translate-x-1/2 rounded-b-lg bg-accent px-3 py-0.5 text-xs font-semibold text-white"
+          className="absolute left-1/2 -translate-x-1/2 rounded-b-lg bg-accent px-3 py-0.5 text-[11px] font-semibold text-white"
           style={{ top: -1 }}
         >
           {badge}
         </span>
       )}
       <div className="mb-4">
-        <h3 className="font-semibold text-foreground">{name}</h3>
+        <h3 className="text-[15px] font-semibold text-foreground">{name}</h3>
         <div className="mt-2 flex items-baseline gap-1">
-          <span className="font-serif text-4xl font-bold text-foreground">{price}</span>
-          <span className="text-sm text-muted-foreground">{period}</span>
+          <span
+            className="font-serif font-semibold text-foreground"
+            style={{ fontSize: 36, letterSpacing: '-0.02em', lineHeight: 1 }}
+          >
+            {price}
+          </span>
+          <span className="text-[13px]" style={{ color: 'var(--subtle)' }}>{period}</span>
         </div>
-        <p className="mt-1 text-sm text-muted-foreground">{desc}</p>
+        <p className="mt-2 text-[13px] leading-[1.5] text-muted-foreground">{desc}</p>
       </div>
       <ul className="mb-6 flex flex-col gap-2.5">
         {features.map((f) => (
-          <li key={f} className="flex items-start gap-2 text-sm text-foreground">
+          <li key={f} className="flex items-start gap-2 text-[13.5px] text-foreground">
             <Check className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
             {f}
           </li>
@@ -368,12 +460,11 @@ function PlanCard({
       </ul>
       <Link
         href={href}
-        className={`mt-auto block rounded-[--radius-sm] px-4 py-2.5 text-center text-sm font-semibold transition-colors ${
+        className={`mt-auto block rounded-lg px-4 py-2.5 text-center text-sm font-medium transition-colors ${
           highlighted
-            ? 'bg-accent text-white hover:bg-[--accent-hover]'
+            ? 'bg-accent text-white hover:bg-[var(--accent-hover)]'
             : 'border border-border bg-background text-foreground hover:bg-muted/60'
         }`}
-        style={{ '--accent-hover': '#C45D3D' } as React.CSSProperties}
       >
         {cta}
       </Link>
@@ -381,401 +472,76 @@ function PlanCard({
   )
 }
 
-/* ── Feature SVG illustrations ───────────────────────────────── */
+/* ── Feature SVG illustrations (theme-aware via CSS vars) ────── */
 function FeatureSvg({ n }: { n: number }) {
+  // n=1 — chip grid
   if (n === 1) return (
     <svg width="120" height="60" viewBox="0 0 120 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {(['#E8F5F1','#FDF3E3','#E8F5F1','#FCECEA','#E8F5F1','#F3F4F6','#E8F5F1','#FDF3E3','#F9EFF9','#E8F5F1','#FCECEA','#E8F5F1','#F3F4F6','#E8F5F1','#E8F5F1'] as const).map((c, j) => (
-        <rect key={j} x={4 + (j % 5) * 23} y={4 + Math.floor(j / 5) * 19} width={19} height={15} rx="3" fill={c} />
+      {(['--chip-w-bg','--chip-v-bg','--chip-w-bg','--chip-s-bg','--chip-w-bg','--chip-d-bg','--chip-w-bg','--chip-v-bg','--chip-l-bg','--chip-w-bg','--chip-s-bg','--chip-w-bg','--chip-d-bg','--chip-w-bg','--chip-w-bg'] as const).map((v, j) => (
+        <rect key={j} x={4 + (j % 5) * 23} y={4 + Math.floor(j / 5) * 19} width={19} height={15} rx="3" fill={`var(${v})`} />
       ))}
     </svg>
   )
+  // n=2 — list of departments
   if (n === 2) return (
     <svg width="120" height="60" viewBox="0 0 120 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {([['#3B9B7F', 62], ['#E8A04C', 48], ['#9CA3AF', 56]] as const).map(([c, w], i) => (
+      {([['var(--st-work)', 62], ['var(--st-vacation)', 48], ['var(--st-dayoff)', 56]] as const).map(([c, w], i) => (
         <g key={i}>
-          <rect x="8" y={8 + i * 17} width="104" height="13" rx="4" fill="#EDEBE3" />
+          <rect x="8" y={8 + i * 17} width="104" height="13" rx="4" fill="var(--grid-dept-bg)" />
           <circle cx="18" cy={14.5 + i * 17} r="4" fill={c} />
-          <rect x="28" y={12 + i * 17} width={w} height="4" rx="2" fill="#C9C5BA" />
+          <rect x="28" y={12 + i * 17} width={w} height="4" rx="2" fill="var(--border)" />
         </g>
       ))}
     </svg>
   )
+  // n=3 — alert card
   if (n === 3) return (
     <svg width="120" height="60" viewBox="0 0 120 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="8" y="8" width="104" height="44" rx="7" fill="#FFF5F5" stroke="#D4604A" strokeWidth="1" />
-      <circle cx="26" cy="30" r="9" fill="#FCECEA" stroke="#D4604A" strokeWidth="1.4" />
-      <rect x="25" y="24" width="2" height="8" rx="1" fill="#D4604A" />
-      <rect x="25" y="33.5" width="2" height="2" rx="1" fill="#D4604A" />
-      <rect x="42" y="25" width="56" height="3" rx="1.5" fill="#E0DDD4" />
-      <rect x="42" y="31" width="40" height="3" rx="1.5" fill="#E0DDD4" />
+      <rect x="8" y="8" width="104" height="44" rx="7" fill="var(--grid-alert-bg)" stroke="var(--grid-alert-fg)" strokeWidth="1" />
+      <circle cx="26" cy="30" r="9" fill="var(--chip-s-bg)" stroke="var(--grid-alert-fg)" strokeWidth="1.4" />
+      <rect x="25" y="24" width="2" height="8" rx="1" fill="var(--grid-alert-fg)" />
+      <rect x="25" y="33.5" width="2" height="2" rx="1" fill="var(--grid-alert-fg)" />
+      <rect x="42" y="25" width="56" height="3" rx="1.5" fill="var(--border)" />
+      <rect x="42" y="31" width="40" height="3" rx="1.5" fill="var(--border)" />
     </svg>
   )
+  // n=4 — custom statuses
   if (n === 4) return (
     <svg width="120" height="60" viewBox="0 0 120 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {([['#E8F5F1', '#3B9B7F', 54], ['#FDF3E3', '#E8A04C', 40], ['#F9EFF9', '#C77DC0', 62]] as const).map(([bg, c, w], i) => (
+      {([['--chip-w-bg', 'var(--st-work)', 54], ['--chip-v-bg', 'var(--st-vacation)', 40], ['--chip-l-bg', 'var(--st-late)', 62]] as const).map(([bg, c, w], i) => (
         <g key={i}>
-          <rect x="8" y={8 + i * 17} width={w + 24} height="13" rx="6" fill={bg} />
+          <rect x="8" y={8 + i * 17} width={w + 24} height="13" rx="6" fill={`var(${bg})`} />
           <rect x="16" y={12 + i * 17} width="8" height="5" rx="2.5" fill={c} />
-          <rect x="30" y={12.5 + i * 17} width={w - 8} height="4" rx="2" fill={c} opacity="0.35" />
+          <rect x="30" y={12.5 + i * 17} width={w - 8} height="4" rx="2" fill={c} opacity="0.4" />
         </g>
       ))}
     </svg>
   )
+  // n=5 — two language cards
   if (n === 5) return (
     <svg width="120" height="60" viewBox="0 0 120 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="6" y="8" width="50" height="44" rx="7" fill="#EDEBE3" />
+      <rect x="6" y="8" width="50" height="44" rx="7" fill="var(--muted)" />
       {([0, 1, 2] as const).map((i) => (
-        <rect key={i} x="14" y={18 + i * 12} width={([34, 26, 30] as const)[i]} height="4" rx="2" fill="#C9C5BA" />
+        <rect key={i} x="14" y={18 + i * 12} width={([34, 26, 30] as const)[i]} height="4" rx="2" fill="var(--border)" />
       ))}
-      <rect x="64" y="8" width="50" height="44" rx="7" fill="#F5F4EF" stroke="#E0DDD4" strokeWidth="1" />
+      <rect x="64" y="8" width="50" height="44" rx="7" fill="var(--surface)" stroke="var(--border)" strokeWidth="1" />
       {([0, 1, 2] as const).map((i) => (
-        <rect key={i} x="72" y={18 + i * 12} width={([28, 36, 24] as const)[i]} height="4" rx="2" fill="#C9C5BA" />
+        <rect key={i} x="72" y={18 + i * 12} width={([28, 36, 24] as const)[i]} height="4" rx="2" fill="var(--border)" />
       ))}
     </svg>
   )
-  // n === 6
+  // n=6 — roles list
   return (
     <svg width="120" height="60" viewBox="0 0 120 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {([['#D97757', 36], ['#3B9B7F', 46], ['#9CA3AF', 38]] as const).map(([c, w], i) => (
+      {([['var(--accent)', 36], ['var(--st-work)', 46], ['var(--st-dayoff)', 38]] as const).map(([c, w], i) => (
         <g key={i}>
-          <circle cx="20" cy={15 + i * 18} r="6" fill="#EDEBE3" />
-          <circle cx="20" cy={13 + i * 18} r="3" fill="#C9C5BA" />
-          <rect x="32" y={12 + i * 18} width={w} height="4" rx="2" fill="#C9C5BA" />
-          <rect x="88" y={11 + i * 18} width="24" height="8" rx="4" fill={c} opacity="0.22" />
+          <circle cx="20" cy={15 + i * 18} r="6" fill="var(--muted)" />
+          <circle cx="20" cy={13 + i * 18} r="3" fill="var(--border)" />
+          <rect x="32" y={12 + i * 18} width={w} height="4" rx="2" fill="var(--border)" />
+          <rect x="88" y={11 + i * 18} width="24" height="8" rx="4" fill={c} opacity="0.3" />
         </g>
       ))}
     </svg>
-  )
-}
-
-/* ── Grid preview ─────────────────────────────────────────────── */
-const DAYS_DEMO = [
-  { n: 1, d: 'Thu' }, { n: 2, d: 'Fri' }, { n: 3, d: 'Sat' }, { n: 4, d: 'Sun' },
-  { n: 5, d: 'Mon' }, { n: 6, d: 'Tue' }, { n: 7, d: 'Wed' }, { n: 8, d: 'Thu' },
-  { n: 9, d: 'Fri' }, { n: 10, d: 'Sat' }, { n: 11, d: 'Sun' }, { n: 12, d: 'Mon' },
-  { n: 13, d: 'Tue' }, { n: 14, d: 'Wed' }, { n: 15, d: 'Thu' },
-]
-const TODAY_COL = 9
-const WKND = new Set([3, 4, 10, 11])
-const SALES_ALERT = new Set([7, 8])
-
-type Status = 'W' | 'V' | 'S' | 'D' | 'L'
-
-const CHIP_META: Record<Status, { lbl: string; c: string; bg: string }> = {
-  W: { lbl: 'Work', c: '#2E8A6A', bg: '#E8F5F1' },
-  V: { lbl: 'Vac',  c: '#C07825', bg: '#FDF3E3' },
-  S: { lbl: 'Sick', c: '#B84030', bg: '#FCECEA' },
-  D: { lbl: 'Off',  c: '#7A8290', bg: '#F3F4F6' },
-  L: { lbl: 'Late', c: '#9E5A97', bg: '#F9EFF9' },
-}
-
-const GRID_DEPTS = [
-  {
-    name: 'Sales', min: 3,
-    rows: [
-      { name: 'Anna Petrov',   s: 'WWWWWWWWWVVWWWW' },
-      { name: 'Mark Sidorov',  s: 'WWWWWWSSWWWWWWW' },
-      { name: 'Kate Volkova',  s: 'VVWWWWWWWWWWDDW' },
-    ],
-  },
-  {
-    name: 'Operations', min: 2,
-    rows: [
-      { name: 'Ivan Melnikov', s: 'WWWWWWWWWWWWWWW' },
-      { name: 'Daria Kos',     s: 'WWWWVVVWWWWWWWW' },
-      { name: 'Alex Novikov',  s: 'WWWWWWWWWWWLWWW' },
-    ],
-  },
-]
-
-function GridPreview() {
-  return (
-    <div style={{ position: 'relative' }}>
-      <div
-        style={{
-          background: '#fff',
-          border: '1px solid var(--border)',
-          borderRadius: 'var(--radius) var(--radius) 0 0',
-          overflow: 'hidden',
-          boxShadow: '0 2px 6px rgba(31,30,28,.04), 0 12px 48px rgba(31,30,28,.08)',
-        }}
-      >
-        {/* Chrome bar */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            padding: '10px 14px',
-            background: '#F7F6F2',
-            borderBottom: '1px solid var(--border)',
-          }}
-        >
-          <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#F0C2C2' }} />
-          <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#F0DFB0' }} />
-          <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#B5DBCA' }} />
-          <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--muted-foreground)', fontWeight: 500 }}>
-            smengo · May 2026
-          </span>
-        </div>
-
-        {/* App topbar */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            padding: '8px 12px',
-            borderBottom: '1px solid var(--border)',
-            background: '#fff',
-            flexWrap: 'wrap',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 5,
-              background: '#F5F4EF',
-              borderRadius: 6,
-              padding: '4px 8px',
-              fontSize: 11,
-              fontWeight: 500,
-              color: 'var(--foreground)',
-            }}
-          >
-            <span>‹</span>
-            <span>May 2026</span>
-            <span>›</span>
-          </div>
-          <div
-            style={{
-              background: '#F5F4EF',
-              borderRadius: 6,
-              padding: '4px 8px',
-              fontSize: 11,
-              color: 'var(--muted-foreground)',
-            }}
-          >
-            All departments ▾
-          </div>
-          <div style={{ flex: 1 }} />
-          <div
-            style={{
-              background: '#F5F4EF',
-              borderRadius: 6,
-              padding: '4px 8px',
-              fontSize: 11,
-              color: 'var(--muted-foreground)',
-            }}
-          >
-            Export
-          </div>
-          <div
-            style={{
-              background: 'var(--accent)',
-              borderRadius: 6,
-              padding: '4px 8px',
-              fontSize: 11,
-              fontWeight: 600,
-              color: '#fff',
-            }}
-          >
-            + Add employee
-          </div>
-        </div>
-
-        {/* Grid table */}
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: 11 }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                <th
-                  style={{
-                    position: 'sticky',
-                    left: 0,
-                    zIndex: 10,
-                    background: '#fff',
-                    padding: '6px 10px',
-                    width: 148,
-                    minWidth: 148,
-                    textAlign: 'left',
-                    fontWeight: 500,
-                    color: 'var(--muted-foreground)',
-                    fontSize: 10,
-                  }}
-                >
-                  Employee
-                </th>
-                {DAYS_DEMO.map((d) => {
-                  const isToday = d.n === TODAY_COL
-                  const isWkd = WKND.has(d.n)
-                  return (
-                    <th
-                      key={d.n}
-                      style={{
-                        width: 52,
-                        minWidth: 44,
-                        padding: '4px 2px',
-                        textAlign: 'center',
-                        background: isToday
-                          ? 'rgba(217,119,87,0.09)'
-                          : isWkd
-                          ? '#FAFAF8'
-                          : '#fff',
-                        color: isToday ? 'var(--accent)' : 'var(--muted-foreground)',
-                        position: 'relative',
-                      }}
-                    >
-                      {isToday && (
-                        <div
-                          style={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            height: 2,
-                            background: 'var(--accent)',
-                          }}
-                        />
-                      )}
-                      <div style={{ fontWeight: isToday ? 700 : 500, fontSize: 11 }}>{d.n}</div>
-                      <div style={{ fontSize: 9, opacity: 0.65 }}>{d.d}</div>
-                    </th>
-                  )
-                })}
-              </tr>
-            </thead>
-            <tbody>
-              {GRID_DEPTS.flatMap((dept, di) => [
-                <tr key={`dept-${di}`}>
-                  <td
-                    colSpan={DAYS_DEMO.length + 1}
-                    style={{
-                      padding: '4px 10px',
-                      background: '#EDEBE3',
-                      fontSize: 10,
-                      fontWeight: 600,
-                      color: '#6B6862',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                    }}
-                  >
-                    ▸ {dept.name}
-                    <span style={{ marginLeft: 8, opacity: 0.6, fontWeight: 400, textTransform: 'none' }}>
-                      · min {dept.min}/day
-                    </span>
-                  </td>
-                </tr>,
-                ...dept.rows.map((emp, ei) => (
-                  <tr key={`${di}-${ei}`} style={{ borderBottom: '1px solid #F0EDE5' }}>
-                    <td
-                      style={{
-                        position: 'sticky',
-                        left: 0,
-                        zIndex: 5,
-                        background: '#fff',
-                        padding: '4px 10px',
-                        fontWeight: 500,
-                        color: 'var(--foreground)',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {emp.name}
-                    </td>
-                    {DAYS_DEMO.map((d, ci) => {
-                      const code = emp.s[ci] as Status
-                      const isWkd = WKND.has(d.n)
-                      const isToday = d.n === TODAY_COL
-                      const isAlert = dept.name === 'Sales' && SALES_ALERT.has(d.n) && !isWkd
-                      const chip = CHIP_META[code]
-                      return (
-                        <td
-                          key={d.n}
-                          style={{
-                            padding: '3px 2px',
-                            textAlign: 'center',
-                            background: isAlert
-                              ? '#FFF5F5'
-                              : isToday
-                              ? 'rgba(217,119,87,0.04)'
-                              : isWkd
-                              ? '#FAFAF8'
-                              : '#fff',
-                            position: 'relative',
-                          }}
-                        >
-                          {isAlert && (
-                            <div
-                              style={{
-                                position: 'absolute',
-                                bottom: 0,
-                                left: 2,
-                                right: 2,
-                                height: 2,
-                                background: '#D4604A',
-                                borderRadius: 1,
-                              }}
-                            />
-                          )}
-                          {isWkd ? (
-                            <span style={{ fontSize: 9, color: '#D0CDC5' }}>—</span>
-                          ) : chip ? (
-                            <div
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                background: chip.bg,
-                                color: chip.c,
-                                padding: '1px 5px',
-                                borderRadius: 3,
-                                fontSize: 9.5,
-                                fontWeight: 500,
-                                whiteSpace: 'nowrap',
-                              }}
-                            >
-                              {chip.lbl}
-                            </div>
-                          ) : null}
-                        </td>
-                      )
-                    })}
-                  </tr>
-                )),
-              ])}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Alert strip */}
-        <div
-          style={{
-            padding: '7px 12px',
-            background: '#FFF5F5',
-            borderTop: '1px solid #F8D0CC',
-          }}
-        >
-          <span style={{ fontSize: 11, fontWeight: 500, color: '#D4604A' }}>
-            ⚠ Coverage alert: Sales · Wed 7, Thu 8 — below minimum of 3
-          </span>
-        </div>
-      </div>
-
-      {/* Right edge fade */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          right: 0,
-          bottom: 0,
-          width: 80,
-          background: 'linear-gradient(to right, transparent, var(--background))',
-          pointerEvents: 'none',
-          borderRadius: '0 var(--radius) var(--radius) 0',
-        }}
-      />
-    </div>
   )
 }
 

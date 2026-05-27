@@ -1,17 +1,23 @@
 import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
+import { LocaleSwitcher } from '@/components/locale-switcher'
 
 export async function MarketingFooter() {
   const t = await getTranslations('marketing.footer')
   const tNav = await getTranslations('marketing.nav')
   const tCommon = await getTranslations('common')
 
+  const colLabel =
+    'text-[11px] font-semibold uppercase'
+  const colLink =
+    'text-[13.5px] text-muted-foreground hover:text-foreground transition-colors'
+
   return (
-    <footer className="border-t border-border bg-muted/30">
-      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-        <div className="flex flex-col items-start justify-between gap-10 sm:flex-row">
+    <footer className="border-t border-border" style={{ background: 'var(--surface)' }}>
+      <div className="mx-auto max-w-[1100px] px-4 py-14 sm:px-6">
+        <div className="grid grid-cols-2 gap-10 sm:[grid-template-columns:1.6fr_1fr_1fr_1fr]">
           {/* Brand */}
-          <div className="max-w-xs">
+          <div className="col-span-2 max-w-[260px] sm:col-span-1">
             <Link
               href="/"
               className="text-xl font-semibold text-foreground"
@@ -23,65 +29,53 @@ export async function MarketingFooter() {
                 style={{ background: 'var(--accent)' }}
               />
             </Link>
-            <p className="mt-2 text-sm text-muted-foreground">{t('tagline')}</p>
+            <p
+              className="mt-2 text-[13px] leading-[1.6]"
+              style={{ color: 'var(--subtle)' }}
+            >
+              {t('tagline')}
+            </p>
+            <div className="mt-5">
+              <LocaleSwitcher />
+            </div>
           </div>
 
-          {/* Links */}
-          <div className="flex flex-wrap gap-10">
-            {/* Product */}
-            <div className="flex flex-col gap-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                {tNav('product')}
-              </span>
-              <Link href="/#features" className="text-sm text-muted-foreground hover:text-foreground">
-                {t('productFeatures')}
-              </Link>
-              <Link href="/pricing" className="text-sm text-muted-foreground hover:text-foreground">
-                {t('productPricing')}
-              </Link>
-              <Link href="/changelog" className="text-sm text-muted-foreground hover:text-foreground">
-                {t('productChangelog')}
-              </Link>
-              <Link href="/roadmap" className="text-sm text-muted-foreground hover:text-foreground">
-                {t('productRoadmap')}
-              </Link>
-            </div>
+          {/* Product */}
+          <div className="flex flex-col gap-2">
+            <span className={colLabel} style={{ letterSpacing: '0.08em', color: 'var(--subtle)' }}>
+              {tNav('product')}
+            </span>
+            <Link href="/#features" className={colLink}>{t('productFeatures')}</Link>
+            <Link href="/pricing" className={colLink}>{t('productPricing')}</Link>
+            <Link href="/changelog" className={colLink}>{t('productChangelog')}</Link>
+            <Link href="/roadmap" className={colLink}>{t('productRoadmap')}</Link>
+          </div>
 
-            {/* Company */}
-            <div className="flex flex-col gap-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                {t('company')}
-              </span>
-              <Link href="/about" className="text-sm text-muted-foreground hover:text-foreground">
-                {t('companyAbout')}
-              </Link>
-              <Link href="/blog" className="text-sm text-muted-foreground hover:text-foreground">
-                {t('companyBlog')}
-              </Link>
-              <Link href="/contact" className="text-sm text-muted-foreground hover:text-foreground">
-                {t('companyContact')}
-              </Link>
-            </div>
+          {/* Company */}
+          <div className="flex flex-col gap-2">
+            <span className={colLabel} style={{ letterSpacing: '0.08em', color: 'var(--subtle)' }}>
+              {t('company')}
+            </span>
+            <Link href="/about" className={colLink}>{t('companyAbout')}</Link>
+            <Link href="/blog" className={colLink}>{t('companyBlog')}</Link>
+            <Link href="/contact" className={colLink}>{t('companyContact')}</Link>
+          </div>
 
-            {/* Legal */}
-            <div className="flex flex-col gap-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                {t('legal')}
-              </span>
-              <Link href="/terms" className="text-sm text-muted-foreground hover:text-foreground">
-                {t('terms')}
-              </Link>
-              <Link href="/privacy" className="text-sm text-muted-foreground hover:text-foreground">
-                {t('privacy')}
-              </Link>
-              <Link href="/refund" className="text-sm text-muted-foreground hover:text-foreground">
-                {t('legalRefund')}
-              </Link>
-            </div>
+          {/* Legal */}
+          <div className="flex flex-col gap-2">
+            <span className={colLabel} style={{ letterSpacing: '0.08em', color: 'var(--subtle)' }}>
+              {t('legal')}
+            </span>
+            <Link href="/terms" className={colLink}>{t('terms')}</Link>
+            <Link href="/privacy" className={colLink}>{t('privacy')}</Link>
+            <Link href="/refund" className={colLink}>{t('legalRefund')}</Link>
           </div>
         </div>
 
-        <div className="mt-10 border-t border-border pt-6 text-center text-xs text-muted-foreground">
+        <div
+          className="mt-12 border-t border-border pt-6 text-[12px]"
+          style={{ color: 'var(--subtle)' }}
+        >
           © {new Date().getFullYear()} {tCommon('appName')}. {t('rights')}
         </div>
       </div>

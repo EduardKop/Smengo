@@ -20,18 +20,25 @@
   --card-foreground: #1f1e1c;
   --popover: #faf9f6;
   --popover-foreground: #1f1e1c;
+  --surface: #ffffff;
+  --zone: #edebe3;
 
   /* Muted */
   --muted: #ece9e1;
   --muted-foreground: #6b6860;
+  --subtle: #8a857d;
+
+  /* Accent variants */
+  --accent-soft: #f4e4dc;
+  --accent-hover: #c45d3d;
 
   /* Secondary */
   --secondary: #ece9e1;
   --secondary-foreground: #1f1e1c;
 
   /* Borders & inputs */
-  --border: #ddd9d0;
-  --input: #ddd9d0;
+  --border: #e0ddd4;
+  --input: #e0ddd4;
 
   /* Semantic */
   --destructive: oklch(0.577 0.245 27.325);
@@ -71,6 +78,28 @@
   --chart-3: #e09b3a;
   --chart-4: #6b6860;
   --chart-5: #ece9e1;
+
+  /* Grid preview palette */
+  --grid-chrome: #f7f6f2;
+  --grid-cell: #ffffff;
+  --grid-weekend: #eaf0f7;
+  --grid-today-head: rgba(217, 119, 87, 0.09);
+  --grid-today-cell: rgba(217, 119, 87, 0.04);
+  --grid-row-divider: #f0ede5;
+  --grid-dept-bg: #edebe3;
+  --grid-dept-fg: #6b6862;
+  --grid-empty-fg: #d0cdc5;
+  --grid-alert-bg: #fff5f5;
+  --grid-alert-border: #f8d0cc;
+  --grid-alert-fg: #d4604a;
+  --grid-pill-bg: #f5f4ef;
+
+  /* Status chip palette (light) */
+  --chip-w-bg: #e8f5f1; --chip-w-fg: #2e8a6a;
+  --chip-v-bg: #fdf3e3; --chip-v-fg: #c07825;
+  --chip-s-bg: #fcecea; --chip-s-fg: #b84030;
+  --chip-d-bg: #f3f4f6; --chip-d-fg: #7a8290;
+  --chip-l-bg: #f9eff9; --chip-l-fg: #9e5a97;
 }
 
 /* ─── Tailwind v4 Theme ─────────────────────────────────────────── */
@@ -144,4 +173,69 @@ body {
 
 * {
   border-color: var(--border);
+}
+
+/* ─── Grid preview animations ───────────────────────────────────── */
+@keyframes smengo-toast-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes smengo-modal-pop {
+  from { opacity: 0; transform: scale(0.94); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes smengo-popover-pop {
+  from { opacity: 0; transform: translateX(-50%) scale(0.94); }
+  to   { opacity: 1; transform: translateX(-50%) scale(1); }
+}
+@keyframes smengo-backdrop-in {
+  from { opacity: 0; backdrop-filter: blur(0); -webkit-backdrop-filter: blur(0); }
+  to   { opacity: 1; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+}
+
+/* ─── Dark theme (cool slate-ink) ───────────────────────────────── */
+.dark {
+  --background: #0e1014;
+  --foreground: #e8e7e3;
+  --card: #161a22;
+  --card-foreground: #e8e7e3;
+  --popover: #161a22;
+  --popover-foreground: #e8e7e3;
+  --surface: #141821;
+  --zone: #0a0c10;
+  --muted: #1a1f29;
+  --muted-foreground: #a4a9b3;
+  --secondary: #1a1f29;
+  --secondary-foreground: #e8e7e3;
+  --subtle: #6c7280;
+  --border: #242a36;
+  --input: #242a36;
+  --accent-soft: #3a2620;
+  --sidebar: #141821;
+  --sidebar-foreground: #e8e7e3;
+  --sidebar-accent: #242a36;
+  --sidebar-accent-foreground: #e8e7e3;
+  --sidebar-border: #242a36;
+
+  /* Grid preview palette (dark) */
+  --grid-chrome: #161a22;
+  --grid-cell: #141821;
+  --grid-weekend: #181d28;
+  --grid-today-head: rgba(217, 119, 87, 0.18);
+  --grid-today-cell: rgba(217, 119, 87, 0.07);
+  --grid-row-divider: #1c2129;
+  --grid-dept-bg: #1a1f29;
+  --grid-dept-fg: #a4a9b3;
+  --grid-empty-fg: #3a4150;
+  --grid-alert-bg: rgba(212, 96, 74, 0.10);
+  --grid-alert-border: rgba(212, 96, 74, 0.35);
+  --grid-alert-fg: #ec8470;
+  --grid-pill-bg: #1a1f29;
+
+  /* Status chip palette (dark) */
+  --chip-w-bg: rgba(59, 155, 127, 0.18); --chip-w-fg: #6dccab;
+  --chip-v-bg: rgba(232, 160, 76, 0.18); --chip-v-fg: #f2bb76;
+  --chip-s-bg: rgba(212, 96, 74, 0.18);  --chip-s-fg: #ee8e7a;
+  --chip-d-bg: rgba(156, 163, 175, 0.16); --chip-d-fg: #b6bcc8;
+  --chip-l-bg: rgba(199, 125, 192, 0.18); --chip-l-fg: #d99dd2;
 }
