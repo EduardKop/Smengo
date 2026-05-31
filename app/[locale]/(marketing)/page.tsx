@@ -16,6 +16,8 @@ import {
 } from 'lucide-react'
 import { FaqAccordion } from '@/components/marketing/faq-accordion'
 import { GridPreview, type GridPreviewLabels } from '@/components/marketing/grid-preview'
+import { ScrollLink } from '@/components/marketing/scroll-link'
+import { AnimatedGradientText } from '@/components/ui/animated-gradient-text'
 import { routing, type Locale } from '@/i18n/routing'
 
 export const revalidate = 3600
@@ -142,6 +144,8 @@ export default async function LandingPage({
     mergedLabel: tg('mergedLabel'),
     gridLabel: tg('gridLabel'),
     stickyLabel: tg('stickyLabel'),
+    timerLabel: tg('timerLabel'),
+    todayLabel: tg('todayLabel'),
     days: {
       mon: tg('days.mon'), tue: tg('days.tue'), wed: tg('days.wed'),
       thu: tg('days.thu'), fri: tg('days.fri'), sat: tg('days.sat'), sun: tg('days.sun'),
@@ -191,6 +195,31 @@ export default async function LandingPage({
     months: [tg('m1'), tg('m2'), tg('m3'), tg('m4'), tg('m5')],
     colOffDays: tg('colOffDays'),
     colWorkHrs: tg('colWorkHrs'),
+    chromeOnShift: tg('chromeOnShift'),
+    chromeOffToday: tg('chromeOffToday'),
+    chromeToday: tg('chromeToday'),
+    themeLabel: tg('themeLabel'),
+    themeStandard: tg('themeStandard'),
+    themeClassic: tg('themeClassic'),
+    classicTeams: tg('classicTeams'),
+    classicAbsence: tg('classicAbsence'),
+    classicAll: tg('classicAll'),
+    classicSearch: tg('classicSearch'),
+    addSectionBtn: tg('addSectionBtn'),
+    addSectionTitle: tg('addSectionTitle'),
+    sectionNameLabel: tg('sectionNameLabel'),
+    sectionNamePlaceholder: tg('sectionNamePlaceholder'),
+    colorLabel: tg('colorLabel'),
+    previewLabel: tg('previewLabel'),
+    gradientLabel: tg('gradientLabel'),
+    stdColorsLabel: tg('stdColorsLabel'),
+    gradientsLabel: tg('gradientsLabel'),
+    customColorLabel: tg('customColorLabel'),
+    createBtn: tg('createBtn'),
+    cancelBtn: tg('cancelBtn'),
+    changeRoleTitle: tg('changeRoleTitle'),
+    customBadge: tg('customBadge'),
+    resetBtn: tg('resetBtn'),
   }
 
   const industries = [
@@ -285,12 +314,27 @@ export default async function LandingPage({
 
         <div className="relative mx-auto max-w-[1100px]" style={{ zIndex: 2 }}>
           <div className="text-center">
-            <span
-              className="mb-5 inline-block rounded-full px-3.5 py-1 text-[12.5px] font-medium tracking-wider"
-              style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
-            >
-              {t('hero.tag')}
-            </span>
+            <div className="group relative mb-5 inline-flex items-center justify-center rounded-full px-3.5 py-1 shadow-[inset_0_-8px_10px_rgba(217,119,87,0.15)] transition-shadow duration-500 ease-out hover:shadow-[inset_0_-5px_10px_rgba(217,119,87,0.28)]">
+              <span
+                className="animate-gradient absolute inset-0 block h-full w-full rounded-[inherit] bg-linear-to-r from-[#f4a261]/50 via-[#d97757]/50 to-[#f4a261]/50 bg-size-[300%_100%] p-[1px]"
+                style={{
+                  WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                  WebkitMaskComposite: 'destination-out',
+                  mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                  maskComposite: 'subtract',
+                }}
+              />
+              <span className="mr-1 text-sm leading-none">🏆</span>
+              <hr className="mx-2 h-3.5 w-px shrink-0 border-none bg-neutral-400/50" />
+              <AnimatedGradientText
+                colorFrom="#f4a261"
+                colorTo="#c45d3d"
+                speed={0.8}
+                className="text-[12.5px] font-semibold tracking-wider"
+              >
+                {t('hero.tag')}
+              </AnimatedGradientText>
+            </div>
             <h1
               className="font-serif font-semibold leading-[1.1] text-foreground"
               style={{ fontSize: 'clamp(34px, 5.5vw, 60px)', letterSpacing: '-0.025em' }}
@@ -310,12 +354,12 @@ export default async function LandingPage({
               >
                 {t('hero.cta1')} →
               </Link>
-              <Link
-                href="#how"
+              <ScrollLink
+                id="how"
                 className="inline-flex items-center gap-2 rounded-lg border border-border bg-transparent px-[22px] py-[11px] text-sm font-medium text-foreground transition-[color,border-color] hover:bg-muted/40"
               >
                 {t('hero.cta2')}
-              </Link>
+              </ScrollLink>
             </div>
             <p className="mt-3 text-[12.5px]" style={{ color: 'var(--subtle)' }}>
               {t('hero.note')}

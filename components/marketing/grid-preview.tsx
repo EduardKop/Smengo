@@ -2,24 +2,30 @@
 
 import { useEffect, useRef, useState, type ComponentType } from 'react'
 import {
-  Settings2, Pencil, X, Check, ChevronDown,
+  Settings2, Pencil, X, Check, ChevronDown, RotateCcw,
   Sun, Sunset, Moon, TreePalm, Thermometer, AlertCircle, AlertTriangle,
+  Palette,
 } from 'lucide-react'
+import { ClassicGrid } from './classic-grid'
+import {
+  RolePickerModal, AddSectionModal,
+  ROLE_COLORS, type CustomSection, type RoleOrSectionKey,
+} from './grid-shared'
 
-type Status = 'W' | 'V' | 'S' | 'D' | 'U' | '-'
-type Mode = 'compact' | 'detail' | 'extended'
-type DeptKey = 'all' | 'sales' | 'ops' | 'support' | 'marketing' | 'design'
-type ProjectKey = 'p1' | 'p2' | 'p3' | 'p4' | 'p5' | 'p6'
-type ShiftType = 'morning' | 'evening' | 'night'
-type RoleKey =
+export type Status = 'W' | 'V' | 'S' | 'D' | 'U' | '-'
+export type Mode = 'compact' | 'detail' | 'extended'
+export type DeptKey = 'all' | 'sales' | 'ops' | 'support' | 'marketing' | 'design'
+export type ProjectKey = 'p1' | 'p2' | 'p3' | 'p4' | 'p5' | 'p6'
+export type ShiftType = 'morning' | 'evening' | 'night'
+export type RoleKey =
   | 'waiter' | 'host' | 'barista'
   | 'cook' | 'souschef' | 'pastry'
   | 'floormanager' | 'shiftlead'
   | 'cashier' | 'courier'
-type ShiftKey = 'morning' | 'evening' | 'night' | 'dayoff' | 'vacation' | 'sick' | 'unfilled'
+export type ShiftKey = 'morning' | 'evening' | 'night' | 'dayoff' | 'vacation' | 'sick' | 'unfilled'
 
 // Day index that highlights a coverage gap (Wed, day 14)
-const PROBLEM_DAY_IDX = 13
+export const PROBLEM_DAY_IDX = 13
 
 export type GridPreviewLabels = {
   modeDetail: string
@@ -58,6 +64,8 @@ export type GridPreviewLabels = {
   mergedLabel: string
   gridLabel: string
   stickyLabel: string
+  timerLabel: string
+  todayLabel: string
   days: { mon: string; tue: string; wed: string; thu: string; fri: string; sat: string; sun: string }
   projectsBtn: string
   telegramBtn: string
@@ -78,15 +86,40 @@ export type GridPreviewLabels = {
   months: [string, string, string, string, string]
   colOffDays: string
   colWorkHrs: string
+  chromeOnShift: string
+  chromeOffToday: string
+  chromeToday: string
+  themeLabel: string
+  themeStandard: string
+  themeClassic: string
+  classicTeams: string
+  classicAbsence: string
+  classicAll: string
+  classicSearch: string
+  addSectionBtn: string
+  addSectionTitle: string
+  sectionNameLabel: string
+  sectionNamePlaceholder: string
+  colorLabel: string
+  previewLabel: string
+  gradientLabel: string
+  stdColorsLabel: string
+  gradientsLabel: string
+  customColorLabel: string
+  createBtn: string
+  cancelBtn: string
+  changeRoleTitle: string
+  customBadge: string
+  resetBtn: string
 }
 
-const MONTH_DEMO = Array.from({ length: 31 }, (_, i) => {
+export const MONTH_DEMO = Array.from({ length: 31 }, (_, i) => {
   const dayOfWeekIdx = (3 + i) % 7
   const keys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
   return { n: i + 1, k: keys[dayOfWeekIdx] }
 })
 
-type EmpDef = {
+export type EmpDef = {
   dept: Exclude<DeptKey, 'all'>
   name: string
   tg: string
@@ -98,7 +131,7 @@ type EmpDef = {
 
 // Schedule strings are 15 chars. Index 13 (=day 14 Wed) is highlighted as a coverage gap.
 // Mix is tuned for realism: ~63% W, ~26% D, ~9% V, ~1% S, ~1% U.
-const BASE_EMPLOYEES: EmpDef[] = [
+export const BASE_EMPLOYEES: EmpDef[] = [
   { dept: 'sales',     name: 'Anna Petrov',     tg: '@anna_p',   pIdx: 1, roleKey: 'waiter',       s: 'WWDDWWWWWDDWWW', shift: 'morning' },
   { dept: 'sales',     name: 'Mark Sidorov',    tg: '@mark_s',   pIdx: 2, roleKey: 'host',         s: 'WWDDWWWWWDDSSW', shift: 'evening' },
   { dept: 'sales',     name: 'Kate Volkova',    tg: '@kate_v',   pIdx: 1, roleKey: 'barista',      s: 'WWDDWWWWWDDWWW', shift: 'morning' },
@@ -112,7 +145,7 @@ const BASE_EMPLOYEES: EmpDef[] = [
   { dept: 'design',    name: 'Lera Tarasova',   tg: '@lera_t',   pIdx: 4, roleKey: 'courier',      s: 'WWDDWWWWWDDWWW', shift: 'morning' },
 ]
 
-function rotateSchedule(s: string, offset: number): string {
+export function rotateSchedule(s: string, offset: number): string {
   const padded = (s + 'WWWWWWWWWWWWWW').slice(0, 14)
   const o = ((offset % 14) + 14) % 14
   return padded.slice(o) + padded.slice(0, o)
@@ -120,7 +153,7 @@ function rotateSchedule(s: string, offset: number): string {
 
 const STATUS_OPTIONS: Exclude<Status, never>[] = ['W', 'V', 'S', 'D', 'U', '-']
 
-type WorkMeta = {
+export type WorkMeta = {
   bg: string
   name: string
   hours: number
@@ -128,7 +161,7 @@ type WorkMeta = {
   Icon: ComponentType<{ size?: number; strokeWidth?: number; style?: React.CSSProperties }>
 }
 
-function workMeta(shift: ShiftType, labels: GridPreviewLabels): WorkMeta {
+export function workMeta(shift: ShiftType, labels: GridPreviewLabels): WorkMeta {
   if (shift === 'morning') {
     return { bg: 'var(--st-work-morning)', name: labels.shiftMorning, hours: 8, window: '09–17', Icon: Sun }
   }
@@ -174,6 +207,11 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
   const [showGrid, setShowGrid] = useState(false)
   const [sticky, setSticky] = useState(true)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [showTimer, setShowTimer] = useState(true)
+  const [showToday, setShowToday] = useState(true)
+  const [theme, setTheme] = useState<'standard' | 'classic'>('standard')
+  const [themeOpen, setThemeOpen] = useState(false)
+  const themeRef = useRef<HTMLDivElement | null>(null)
   const [showTelegram, setShowTelegram] = useState(false)
   const [monthIdx, setMonthIdx] = useState(2) // May
   const [deptFilter, setDeptFilter] = useState<DeptKey>('all')
@@ -185,10 +223,144 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
   const [overrides, setOverrides] = useState<Record<string, Status>>({})
   const [demoEmps, setDemoEmps] = useState<EmpDef[]>([])
 
+  // Custom sections + role overrides + custom order per employee (persisted)
+  const [customSections, setCustomSections] = useState<CustomSection[]>([])
+  const [empRoleOverrides, setEmpRoleOverrides] = useState<Record<string, RoleOrSectionKey>>({})
+  const [empOrder, setEmpOrder] = useState<string[]>([])
+  const [rolePickerFor, setRolePickerFor] = useState<string | null>(null)
+  const [addSectionOpen, setAddSectionOpen] = useState(false)
+  const [dragEmp, setDragEmp] = useState<string | null>(null)
+  const [dragOverEmp, setDragOverEmp] = useState<string | null>(null)
+  const [dragOverGroup, setDragOverGroup] = useState<string | null>(null)
+
+  // Persist to localStorage
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('smengo:demo:gridState')
+      if (!raw) return
+      const parsed = JSON.parse(raw) as { sections?: CustomSection[]; overrides?: Record<string, RoleOrSectionKey>; order?: string[] }
+      if (parsed.sections) setCustomSections(parsed.sections)
+      if (parsed.overrides) setEmpRoleOverrides(parsed.overrides)
+      if (parsed.order) setEmpOrder(parsed.order)
+    } catch { /* ignore */ }
+  }, [])
+  useEffect(() => {
+    try {
+      localStorage.setItem('smengo:demo:gridState', JSON.stringify({
+        sections: customSections,
+        overrides: empRoleOverrides,
+        order: empOrder,
+      }))
+    } catch { /* ignore */ }
+  }, [customSections, empRoleOverrides, empOrder])
+
+  function getEmpRoleKey(emp: EmpDef): RoleOrSectionKey {
+    return empRoleOverrides[emp.name] ?? emp.roleKey
+  }
+  function getRoleLabel(key: RoleOrSectionKey): string {
+    if (typeof key === 'string' && key.startsWith('cs:')) {
+      return customSections.find((c) => c.key === key)?.name ?? key
+    }
+    return labels.roles[key as RoleKey] ?? String(key)
+  }
+  function getRoleColor(key: RoleOrSectionKey): string {
+    if (typeof key === 'string' && key.startsWith('cs:')) {
+      return customSections.find((c) => c.key === key)?.color ?? 'var(--muted-foreground)'
+    }
+    return ROLE_COLORS[key as RoleKey] ?? 'var(--muted-foreground)'
+  }
+  function onPickRole(empName: string, key: RoleOrSectionKey) {
+    setEmpRoleOverrides((prev) => ({ ...prev, [empName]: key }))
+  }
+  function onCreateSection(section: CustomSection) {
+    setCustomSections((prev) => [...prev, section])
+  }
+  function handleReset() {
+    try { localStorage.removeItem('smengo:demo:gridState') } catch { /* ignore */ }
+    setCustomSections([])
+    setEmpRoleOverrides({})
+    setEmpOrder([])
+    setMode('compact')
+    setTheme('standard')
+    setContrast(true)
+    setStrongWeekend(false)
+    setShowTimes(true)
+    setMerged(false)
+    setShowGrid(false)
+    setSticky(true)
+    setShowTimer(true)
+    setShowToday(true)
+    setMonthIdx(2)
+    setDeptFilter('all')
+    setEditMode(false)
+    setOverrides({})
+  }
+  function onMoveEmp(srcName: string, targetName: string | null, targetGroupKey: RoleOrSectionKey | null) {
+    if (!srcName) return
+    // Update role if dropping on a different group
+    if (targetGroupKey !== null) {
+      setEmpRoleOverrides((prev) => ({ ...prev, [srcName]: targetGroupKey }))
+    }
+    // Update order: place src right before/at target name (or end if null)
+    setEmpOrder((prev) => {
+      const everyone = [...BASE_EMPLOYEES.map((e) => e.name), ...demoEmps.map((e) => e.name)]
+      const base = prev.length ? prev.filter((n) => everyone.includes(n)) : everyone.slice()
+      const withoutSrc = base.filter((n) => n !== srcName)
+      if (targetName && targetName !== srcName) {
+        const idx = withoutSrc.indexOf(targetName)
+        if (idx >= 0) {
+          withoutSrc.splice(idx, 0, srcName)
+          return withoutSrc
+        }
+      }
+      withoutSrc.push(srcName)
+      return withoutSrc
+    })
+  }
+
+  const [timerRunning, setTimerRunning] = useState(false)
+  const [timerSec, setTimerSec] = useState(0)
+  const [notifOpen, setNotifOpen] = useState(false)
+  const [userOpen, setUserOpen] = useState(false)
+
   const settingsRef = useRef<HTMLDivElement | null>(null)
   const deptRef = useRef<HTMLDivElement | null>(null)
   const editCellRef = useRef<HTMLDivElement | null>(null)
+  const notifRef = useRef<HTMLDivElement | null>(null)
+  const userRef = useRef<HTMLDivElement | null>(null)
   const toastTimer = useRef<number | null>(null)
+
+  useEffect(() => {
+    if (!timerRunning) return
+    const id = window.setInterval(() => setTimerSec((s) => s + 1), 1000)
+    return () => window.clearInterval(id)
+  }, [timerRunning])
+
+  useEffect(() => {
+    if (!notifOpen) return
+    function onDown(e: MouseEvent) {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [notifOpen])
+
+  useEffect(() => {
+    if (!userOpen) return
+    function onDown(e: MouseEvent) {
+      if (userRef.current && !userRef.current.contains(e.target as Node)) setUserOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [userOpen])
+
+  function fmtTime(sec: number): string {
+    const h = Math.floor(sec / 3600)
+    const m = Math.floor((sec % 3600) / 60)
+    const s = sec % 60
+    const pad = (n: number) => String(n).padStart(2, '0')
+    return `${pad(h)}:${pad(m)}:${pad(s)}`
+  }
 
   useEffect(() => {
     if (!settingsOpen) return
@@ -200,6 +372,17 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
     document.addEventListener('mousedown', onDown)
     return () => document.removeEventListener('mousedown', onDown)
   }, [settingsOpen])
+
+  useEffect(() => {
+    if (!themeOpen) return
+    function onDown(e: MouseEvent) {
+      if (themeRef.current && !themeRef.current.contains(e.target as Node)) {
+        setThemeOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [themeOpen])
 
   useEffect(() => {
     if (!deptOpen) return
@@ -327,15 +510,41 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
       ? ['sales', 'ops', 'support', 'marketing', 'design']
       : [deptFilter]
 
-  const groups: { key: string; name: string; min?: number; rows: EmpDef[] }[] = []
+  // Build role-based groups (respecting dept filter)
+  const flatEmps: EmpDef[] = []
   for (const d of baseDeptOrder) {
-    const rows = BASE_EMPLOYEES.filter((e) => e.dept === d)
-    if (rows.length === 0) continue
-    groups.push({ key: d, name: deptLabel(d), min: d === 'sales' ? 3 : d === 'ops' ? 2 : undefined, rows })
+    for (const e of BASE_EMPLOYEES) if (e.dept === d) flatEmps.push(e)
   }
-  if (demoEmps.length > 0 && deptFilter === 'all') {
-    groups.push({ key: 'demo', name: labels.demoDept, rows: demoEmps })
+  if (demoEmps.length > 0 && deptFilter === 'all') flatEmps.push(...demoEmps)
+  // Apply custom order (if set)
+  const orderedEmps: EmpDef[] = empOrder.length
+    ? (() => {
+        const map = new Map(flatEmps.map((e) => [e.name, e]))
+        const out: EmpDef[] = []
+        for (const n of empOrder) { const e = map.get(n); if (e) { out.push(e); map.delete(n) } }
+        for (const e of map.values()) out.push(e)
+        return out
+      })()
+    : flatEmps
+  const roleOrderSt: RoleOrSectionKey[] = []
+  const roleGroupMapSt = new Map<RoleOrSectionKey, EmpDef[]>()
+  for (const emp of orderedEmps) {
+    const rk = getEmpRoleKey(emp)
+    if (!roleGroupMapSt.has(rk)) {
+      roleOrderSt.push(rk)
+      roleGroupMapSt.set(rk, [])
+    }
+    roleGroupMapSt.get(rk)!.push(emp)
   }
+  // Append empty custom sections (so user can drop into them)
+  for (const cs of customSections) {
+    if (!roleGroupMapSt.has(cs.key)) {
+      roleOrderSt.push(cs.key)
+      roleGroupMapSt.set(cs.key, [])
+    }
+  }
+  const groups: { key: string; name: string; min?: number; rows: EmpDef[] }[] =
+    roleOrderSt.map((rk) => ({ key: String(rk), name: getRoleLabel(rk), rows: roleGroupMapSt.get(rk)! }))
 
   return (
     <div style={{ position: 'relative' }}>
@@ -391,11 +600,116 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
               <SettingRow label={labels.mergedLabel} value={merged} onChange={setMerged} />
               <SettingRow label={labels.gridLabel} value={showGrid} onChange={setShowGrid} />
               <SettingRow label={labels.stickyLabel} value={sticky} onChange={setSticky} />
+              <SettingRow label={labels.timerLabel} value={showTimer} onChange={setShowTimer} />
+              <SettingRow label={labels.todayLabel} value={showToday} onChange={setShowToday} />
             </div>
           )}
         </div>
+
+        <div ref={themeRef} className="relative">
+          <button
+            type="button"
+            onClick={() => setThemeOpen((v) => !v)}
+            aria-label="Theme"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:text-foreground"
+            style={{ background: 'var(--grid-pill-bg)' }}
+          >
+            <Palette className="h-4 w-4" />
+          </button>
+          {themeOpen && (
+            <div
+              className="absolute right-0 z-30 mt-2 w-56 rounded-xl border border-border p-2 text-[13px] shadow-lg"
+              style={{ background: 'var(--surface)' }}
+            >
+              <div className="mb-1 px-2 pt-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                {labels.themeLabel}
+              </div>
+              {(['standard', 'classic'] as const).map((t) => {
+                const active = theme === t
+                const isClassic = t === 'classic'
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => { setTheme(t); setThemeOpen(false) }}
+                    className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left transition-colors hover:bg-muted"
+                    style={{
+                      background: active ? 'var(--accent-soft)' : 'transparent',
+                    }}
+                  >
+                    <span
+                      style={isClassic
+                        ? {
+                            fontFamily: 'ui-serif, Georgia, "Times New Roman", serif',
+                            fontSize: 15, fontWeight: 500,
+                            color: '#1a1f2e',
+                            background: '#ffffff',
+                            border: '1px solid #e3e6ea',
+                            padding: '2px 10px', borderRadius: 4,
+                            letterSpacing: '-0.01em',
+                          }
+                        : {
+                            fontFamily: 'inherit',
+                            fontSize: 13, fontWeight: 600,
+                            color: 'var(--accent)',
+                            letterSpacing: '0.01em',
+                          }
+                      }
+                    >
+                      {isClassic ? labels.themeClassic : labels.themeStandard}
+                    </span>
+                    {active && <Check className="h-4 w-4" style={{ color: 'var(--accent)' }} />}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+          <button
+            type="button"
+            onClick={handleReset}
+            title={labels.resetBtn}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:text-foreground"
+            style={{ background: 'var(--grid-pill-bg)' }}
+          >
+            <RotateCcw className="h-4 w-4" />
+          </button>
       </div>
 
+      {theme === 'classic' ? (
+        <ClassicGrid
+          labels={labels}
+          mode={mode}
+          monthIdx={monthIdx}
+          setMonthIdx={setMonthIdx}
+          deptFilter={deptFilter}
+          showTimer={showTimer}
+          showToday={showToday}
+          contrast={contrast}
+          strongWeekend={strongWeekend}
+          showTimes={showTimes}
+          merged={merged}
+          showGrid={showGrid}
+          sticky={sticky}
+          customSections={customSections}
+          empRoleOverrides={empRoleOverrides}
+          empOrder={empOrder}
+          getEmpRoleKey={getEmpRoleKey}
+          getRoleLabel={getRoleLabel}
+          getRoleColor={getRoleColor}
+          onOpenRolePicker={(name) => setRolePickerFor(name)}
+          onOpenAddSection={() => setAddSectionOpen(true)}
+          onReset={handleReset}
+          onMoveEmp={onMoveEmp}
+          dragEmp={dragEmp}
+          setDragEmp={setDragEmp}
+          dragOverEmp={dragOverEmp}
+          setDragOverEmp={setDragOverEmp}
+          dragOverGroup={dragOverGroup}
+          setDragOverGroup={setDragOverGroup}
+        />
+      ) : (
       <div
         style={{
           background: 'var(--grid-cell)',
@@ -421,6 +735,177 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
           <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--muted-foreground)', fontWeight: 500 }}>
             smengo · {monthLabel}
           </span>
+          {showToday && (() => {
+            let onShift = 0, offToday = 0
+            for (const emp of allEmps) {
+              const s = statusOf(emp.name, PROBLEM_DAY_IDX % 14, emp.s)
+              if (s === 'W') onShift++
+              else if (s === 'V' || s === 'S' || s === 'D') offToday++
+            }
+            return (
+              <span
+                style={{
+                  marginLeft: 14,
+                  display: 'inline-flex', alignItems: 'center', gap: 8,
+                  fontSize: 11,
+                  background: 'var(--grid-cell)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 6,
+                  padding: '3px 8px',
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                <span style={{ color: 'var(--muted-foreground)', fontWeight: 500 }}>{labels.chromeToday}</span>
+                <span style={{ width: 1, height: 10, background: 'var(--border)' }} />
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--st-work)' }} />
+                  <span style={{ color: 'var(--foreground)', fontWeight: 600 }}>{onShift}</span>
+                  <span style={{ color: 'var(--muted-foreground)' }}>{labels.chromeOnShift}</span>
+                </span>
+                <span style={{ color: 'var(--muted-foreground)', opacity: 0.4 }}>·</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--chip-d-bg)', border: '1px solid var(--border)' }} />
+                  <span style={{ color: 'var(--foreground)', fontWeight: 600 }}>{offToday}</span>
+                  <span style={{ color: 'var(--muted-foreground)' }}>{labels.chromeOffToday}</span>
+                </span>
+              </span>
+            )
+          })()}
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+            {showTimer && (
+            <>
+            <span
+              style={{
+                fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+                fontSize: 13, fontWeight: 600, letterSpacing: 1,
+                color: timerRunning ? 'var(--foreground)' : 'var(--muted-foreground)',
+                fontVariantNumeric: 'tabular-nums',
+                transition: 'color 0.2s',
+              }}
+            >
+              {fmtTime(timerSec)}
+            </span>
+            <button
+              type="button"
+              onClick={() => setTimerRunning((v) => !v)}
+              aria-label={timerRunning ? 'Pause timer' : 'Start timer'}
+              className="cursor-pointer transition-transform hover:scale-110"
+              style={{
+                width: 20, height: 20, borderRadius: '50%',
+                background: timerRunning ? '#e0a93a' : '#28c840',
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: timerRunning ? '0 1px 3px rgba(224,169,58,.4)' : '0 1px 3px rgba(40,200,64,.35)',
+                border: 0, padding: 0,
+              }}
+            >
+              {timerRunning ? (
+                <svg width="8" height="9" viewBox="0 0 8 9" fill="#fff">
+                  <rect x="1" y="0.5" width="2" height="8" rx="0.5" />
+                  <rect x="5" y="0.5" width="2" height="8" rx="0.5" />
+                </svg>
+              ) : (
+                <svg width="9" height="9" viewBox="0 0 8 8" fill="#fff" style={{ marginLeft: 1 }}>
+                  <path d="M1 0.5 L7 4 L1 7.5 Z" />
+                </svg>
+              )}
+            </button>
+            </>
+            )}
+
+            <div ref={notifRef} style={{ position: 'relative', display: 'inline-flex' }}>
+              <button
+                type="button"
+                onClick={() => { setNotifOpen((v) => !v); setUserOpen(false) }}
+                aria-label="Notifications"
+                className="cursor-pointer transition-colors hover:opacity-80"
+                style={{
+                  background: 'transparent', border: 0, padding: 2,
+                  display: 'inline-flex', alignItems: 'center', position: 'relative',
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted-foreground)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                  <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+                </svg>
+                <span style={{
+                  position: 'absolute', top: 1, right: 1,
+                  width: 6, height: 6, borderRadius: '50%',
+                  background: 'var(--accent)',
+                  boxShadow: '0 0 0 1.5px var(--grid-chrome)',
+                }} />
+              </button>
+              {notifOpen && (
+                <div
+                  className="absolute right-0 z-30 mt-2 rounded-xl border border-border shadow-lg"
+                  style={{
+                    top: '100%', background: 'var(--surface)',
+                    width: 260, padding: 8, fontSize: 12,
+                  }}
+                >
+                  <div style={{
+                    padding: '6px 8px 8px',
+                    fontSize: 10, fontWeight: 600, textTransform: 'uppercase',
+                    letterSpacing: '0.05em', color: 'var(--muted-foreground)',
+                  }}>
+                    {labels.shortageLabel}
+                  </div>
+                  <div style={{
+                    display: 'flex', gap: 8, padding: '8px',
+                    borderRadius: 6, background: 'var(--accent-soft)',
+                    color: 'var(--foreground)', lineHeight: 1.35,
+                  }}>
+                    <AlertCircle style={{ width: 14, height: 14, color: 'var(--accent)', flexShrink: 0, marginTop: 1 }} />
+                    <span>{labels.coverageSummary}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div ref={userRef} style={{ position: 'relative', display: 'inline-flex' }}>
+              <button
+                type="button"
+                onClick={() => { setUserOpen((v) => !v); setNotifOpen(false) }}
+                aria-label="User menu"
+                className="cursor-pointer transition-transform hover:scale-105"
+                style={{ background: 'transparent', border: 0, padding: 0, borderRadius: '50%' }}
+              >
+                <Avatar name="Olga Romanenko" size={22} />
+              </button>
+              {userOpen && (
+                <div
+                  className="absolute right-0 z-30 mt-2 rounded-xl border border-border shadow-lg"
+                  style={{
+                    top: '100%', background: 'var(--surface)',
+                    width: 200, padding: 10, fontSize: 12,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 8, borderBottom: '1px solid var(--border)' }}>
+                    <Avatar name="Olga Romanenko" size={28} />
+                    <div style={{ lineHeight: 1.25, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, color: 'var(--foreground)', fontSize: 12 }}>Olga Romanenko</div>
+                      <div style={{ fontSize: 10, color: 'var(--muted-foreground)' }}>olga@smengo.app</div>
+                    </div>
+                  </div>
+                  <div style={{ paddingTop: 6 }}>
+                    {[labels.editBtn, labels.exportBtn].map((item) => (
+                      <button
+                        key={item}
+                        type="button"
+                        onClick={() => setUserOpen(false)}
+                        className="block w-full text-left cursor-pointer transition-colors hover:bg-muted rounded"
+                        style={{
+                          background: 'transparent', border: 0,
+                          padding: '6px 8px', fontSize: 12, color: 'var(--foreground)',
+                        }}
+                      >
+                        {item}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
 
@@ -504,6 +989,20 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
 
           <div style={{ flex: 1 }} />
 
+          {/* Add Section */}
+          <button
+            type="button"
+            onClick={() => setAddSectionOpen(true)}
+            className="cursor-pointer transition-colors hover:opacity-80"
+            style={{
+              background: 'var(--grid-pill-bg)', borderRadius: 6,
+              padding: '4px 8px', fontSize: 11,
+              color: 'var(--muted-foreground)', border: 0,
+            }}
+          >
+            {labels.addSectionBtn}
+          </button>
+
           {/* Edit toggle */}
           <button
             type="button"
@@ -575,6 +1074,17 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
                 : setProjectModal((`p${pIdx}` as ProjectKey))
             }
             onCellEdit={(name, day, px, py) => setEditCell({ name, day, px, py })}
+            getEmpRoleKey={getEmpRoleKey}
+            getRoleLabel={getRoleLabel}
+            getRoleColor={getRoleColor}
+            onOpenRolePicker={(name) => setRolePickerFor(name)}
+            dragEmp={dragEmp}
+            setDragEmp={setDragEmp}
+            dragOverEmp={dragOverEmp}
+            setDragOverEmp={setDragOverEmp}
+            dragOverGroup={dragOverGroup}
+            setDragOverGroup={setDragOverGroup}
+            onMoveEmp={onMoveEmp}
           />
         ) : (
           <DetailGrid
@@ -601,6 +1111,17 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
             }
             editMode={editMode}
             onCellEdit={(name, day, px, py) => setEditCell({ name, day, px, py })}
+            getEmpRoleKey={getEmpRoleKey}
+            getRoleLabel={getRoleLabel}
+            getRoleColor={getRoleColor}
+            onOpenRolePicker={(name) => setRolePickerFor(name)}
+            dragEmp={dragEmp}
+            setDragEmp={setDragEmp}
+            dragOverEmp={dragOverEmp}
+            setDragOverEmp={setDragOverEmp}
+            dragOverGroup={dragOverGroup}
+            setDragOverGroup={setDragOverGroup}
+            onMoveEmp={onMoveEmp}
           />
         )}
 
@@ -751,12 +1272,34 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
           </div>
         )}
       </div>
+      )}
+
+      {/* Role picker modal (themed) */}
+      {rolePickerFor && (
+        <RolePickerModal
+          theme={theme}
+          labels={labels}
+          empName={rolePickerFor}
+          currentKey={getEmpRoleKey(allEmps.find((e) => e.name === rolePickerFor) ?? BASE_EMPLOYEES[0])}
+          customSections={customSections}
+          onPick={(key) => onPickRole(rolePickerFor, key)}
+          onClose={() => setRolePickerFor(null)}
+        />
+      )}
+      {addSectionOpen && (
+        <AddSectionModal
+          theme={theme}
+          labels={labels}
+          onCreate={onCreateSection}
+          onClose={() => setAddSectionOpen(false)}
+        />
+      )}
     </div>
   )
 }
 
-const AVATAR_COLORS = ['#3b9b7f', '#e8a04c', '#d4604a', '#c77dc0', '#6b8cae', '#9b85c4', '#5da38c', '#cc8a4b']
-function Avatar({ name, size = 18 }: { name: string; size?: number }) {
+export const AVATAR_COLORS = ['#3b9b7f', '#e8a04c', '#d4604a', '#c77dc0', '#6b8cae', '#9b85c4', '#5da38c', '#cc8a4b']
+export function Avatar({ name, size = 18 }: { name: string; size?: number }) {
   const initial = (name.trim()[0] || '?').toUpperCase()
   let h = 0
   for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0
@@ -801,6 +1344,8 @@ function SettingRow({
 function DetailGrid({
   mode, groups, statusOf, labels, chipLbl, chipLblFull, chipBg, chipFg, contrast, weekendBg,
   showTimes, merged, showGrid, sticky, showTelegram, onToggleProjects, onProjectClick, editMode, onCellEdit,
+  getEmpRoleKey, getRoleLabel, getRoleColor, onOpenRolePicker,
+  dragEmp, setDragEmp, dragOverEmp, setDragOverEmp, dragOverGroup, setDragOverGroup, onMoveEmp,
 }: {
   mode: Mode
   groups: { key: string; name: string; min?: number; rows: EmpDef[] }[]
@@ -821,6 +1366,17 @@ function DetailGrid({
   onProjectClick: (name: string, pIdx: number) => void
   editMode: boolean
   onCellEdit: (name: string, day: number, px: number, py: number) => void
+  getEmpRoleKey: (emp: EmpDef) => RoleOrSectionKey
+  getRoleLabel: (key: RoleOrSectionKey) => string
+  getRoleColor: (key: RoleOrSectionKey) => string
+  onOpenRolePicker: (name: string) => void
+  dragEmp: string | null
+  setDragEmp: (v: string | null) => void
+  dragOverEmp: string | null
+  setDragOverEmp: (v: string | null) => void
+  dragOverGroup: string | null
+  setDragOverGroup: (v: string | null) => void
+  onMoveEmp: (srcName: string, targetName: string | null, targetGroupKey: RoleOrSectionKey | null) => void
 }) {
   const [hoveredRun, setHoveredRun] = useState<string | null>(null)
   const dayKey = (k: keyof GridPreviewLabels['days']) => labels.days[k]
@@ -917,17 +1473,32 @@ function DetailGrid({
             ...(sticky ? [] : [(
             <tr key={`dept-${dept.key}-${di}`}>
               <td
+                onDragOver={(e) => { if (dragEmp) { e.preventDefault(); setDragOverGroup(dept.key) } }}
+                onDragLeave={() => setDragOverGroup(null)}
+                onDrop={(e) => {
+                  e.preventDefault()
+                  if (dragEmp) onMoveEmp(dragEmp, null, dept.key as RoleOrSectionKey)
+                  setDragEmp(null); setDragOverEmp(null); setDragOverGroup(null)
+                }}
                 style={{
                   position: 'sticky', left: 0, zIndex: 6,
                   padding: '4px 10px',
-                  background: 'var(--grid-dept-bg)',
+                  background: dragOverGroup === dept.key ? 'var(--accent-soft)' : 'var(--grid-dept-bg)',
                   width: nameColW, minWidth: nameColW,
                   fontSize: 10, fontWeight: 600,
                   color: 'var(--grid-dept-fg)',
                   textTransform: 'uppercase', letterSpacing: '0.05em',
                   whiteSpace: 'nowrap',
+                  outline: dragOverGroup === dept.key ? '2px dashed var(--accent)' : 'none',
+                  outlineOffset: -2,
+                  transition: 'background 0.12s',
                 }}
               >
+                <span style={{
+                  display: 'inline-block', width: 8, height: 8, borderRadius: '50%',
+                  background: getRoleColor(dept.key as RoleOrSectionKey),
+                  marginRight: 6, verticalAlign: 'middle',
+                }} />
                 ▸ {dept.name}
                 {dept.min && (
                   <span style={{ marginLeft: 8, opacity: 0.6, fontWeight: 400, textTransform: 'none' }}>
@@ -935,20 +1506,36 @@ function DetailGrid({
                   </span>
                 )}
               </td>
-              <td colSpan={MONTH_DEMO.length + 2} style={{ background: 'var(--grid-dept-bg)' }} />
+              <td colSpan={MONTH_DEMO.length + 2} style={{ background: dragOverGroup === dept.key ? 'var(--accent-soft)' : 'var(--grid-dept-bg)' }} />
             </tr>
             )]),
             ...dept.rows.map((emp, ei) => (
               <tr key={`${dept.key}-${ei}`} style={{ borderBottom: '1px solid var(--grid-row-divider)' }}>
                 <td
+                  onDragOver={(e) => { if (!sticky && dragEmp && dragEmp !== emp.name) { e.preventDefault(); setDragOverEmp(emp.name) } }}
+                  onDragLeave={() => { if (dragOverEmp === emp.name) setDragOverEmp(null) }}
+                  onDrop={(e) => {
+                    if (sticky) return
+                    e.preventDefault()
+                    if (dragEmp && dragEmp !== emp.name) onMoveEmp(dragEmp, emp.name, dept.key as RoleOrSectionKey)
+                    setDragEmp(null); setDragOverEmp(null); setDragOverGroup(null)
+                  }}
                   style={{
-                    position: 'sticky', left: 0, zIndex: 5,
+                    position: sticky ? 'sticky' : 'static', left: 0, zIndex: 5,
                     background: 'var(--grid-cell)',
                     padding: '6px 10px', fontWeight: 500,
                     color: 'var(--foreground)', whiteSpace: 'nowrap', overflow: 'hidden',
+                    borderTop: !sticky && dragOverEmp === emp.name ? '2px solid var(--accent)' : '2px solid transparent',
+                    opacity: dragEmp === emp.name ? 0.4 : 1,
                   }}
                 >
-                  <div className="flex items-center gap-2">
+                  <div
+                    className="flex items-center gap-2"
+                    draggable={!sticky}
+                    onDragStart={(e) => { if (!sticky) { setDragEmp(emp.name); e.dataTransfer.effectAllowed = 'move' } }}
+                    onDragEnd={() => { setDragEmp(null); setDragOverEmp(null); setDragOverGroup(null) }}
+                    style={{ cursor: !sticky ? 'grab' : 'default' }}
+                  >
                     {sticky && (
                       <span
                         style={{
@@ -968,17 +1555,21 @@ function DetailGrid({
                     <span>{emp.name}</span>
                     <button
                       type="button"
-                      onClick={() => onProjectClick(emp.name, emp.pIdx)}
+                      onClick={() => showTelegram ? onProjectClick(emp.name, emp.pIdx) : onOpenRolePicker(emp.name)}
                       className="cursor-pointer transition-opacity hover:opacity-80"
                       style={{
-                        background: showTelegram ? 'rgba(56, 132, 222, 0.14)' : 'var(--accent-soft)',
-                        color: showTelegram ? '#3884de' : 'var(--accent)',
+                        background: showTelegram ? 'rgba(56, 132, 222, 0.14)' : `color-mix(in oklab, ${getRoleColor(getEmpRoleKey(emp))} 18%, transparent)`,
+                        color: showTelegram ? '#3884de' : getRoleColor(getEmpRoleKey(emp)),
                         border: 0, borderRadius: 4,
                         padding: '2px 6px', fontSize: 9.5, fontWeight: 600,
                         whiteSpace: 'nowrap',
+                        display: 'inline-flex', alignItems: 'center', gap: 4,
                       }}
                     >
-                      {showTelegram ? emp.tg : labels.roles[emp.roleKey]}
+                      {!showTelegram && (
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: getRoleColor(getEmpRoleKey(emp)) }} />
+                      )}
+                      {showTelegram ? emp.tg : getRoleLabel(getEmpRoleKey(emp))}
                     </button>
                   </div>
                 </td>
@@ -1176,6 +1767,8 @@ function DetailGrid({
 function CompactGrid({
   groups, statusOf, weekendBg, chipBg, chipFg, contrast, labels,
   showTimes, merged, showGrid, sticky, showTelegram, editMode, onToggleProjects, onProjectClick, onCellEdit,
+  getEmpRoleKey, getRoleLabel, getRoleColor, onOpenRolePicker,
+  dragEmp, setDragEmp, dragOverEmp, setDragOverEmp, dragOverGroup, setDragOverGroup, onMoveEmp,
 }: {
   groups: { key: string; name: string; min?: number; rows: EmpDef[] }[]
   statusOf: (name: string, dayIdx: number, base: string) => Status
@@ -1193,6 +1786,17 @@ function CompactGrid({
   onToggleProjects: () => void
   onProjectClick: (name: string, pIdx: number) => void
   onCellEdit: (name: string, day: number, px: number, py: number) => void
+  getEmpRoleKey: (emp: EmpDef) => RoleOrSectionKey
+  getRoleLabel: (key: RoleOrSectionKey) => string
+  getRoleColor: (key: RoleOrSectionKey) => string
+  onOpenRolePicker: (name: string) => void
+  dragEmp: string | null
+  setDragEmp: (v: string | null) => void
+  dragOverEmp: string | null
+  setDragOverEmp: (v: string | null) => void
+  dragOverGroup: string | null
+  setDragOverGroup: (v: string | null) => void
+  onMoveEmp: (srcName: string, targetName: string | null, targetGroupKey: RoleOrSectionKey | null) => void
 }) {
   const [hoveredRun, setHoveredRun] = useState<string | null>(null)
   const nameColW = sticky ? 220 : 168
@@ -1277,33 +1881,64 @@ function CompactGrid({
             ...(sticky ? [] : [(
             <tr key={`dept-${dept.key}-${di}`}>
               <td
+                onDragOver={(e) => { if (dragEmp) { e.preventDefault(); setDragOverGroup(dept.key) } }}
+                onDragLeave={() => setDragOverGroup(null)}
+                onDrop={(e) => {
+                  e.preventDefault()
+                  if (dragEmp) onMoveEmp(dragEmp, null, dept.key as RoleOrSectionKey)
+                  setDragEmp(null); setDragOverEmp(null); setDragOverGroup(null)
+                }}
                 style={{
                   position: 'sticky', left: 0, zIndex: 6,
                   padding: '3px 10px',
-                  background: 'var(--grid-dept-bg)',
+                  background: dragOverGroup === dept.key ? 'var(--accent-soft)' : 'var(--grid-dept-bg)',
                   width: nameColW, minWidth: nameColW,
                   fontSize: 9.5, fontWeight: 600,
                   color: 'var(--grid-dept-fg)',
                   textTransform: 'uppercase', letterSpacing: '0.05em',
                   whiteSpace: 'nowrap',
+                  outline: dragOverGroup === dept.key ? '2px dashed var(--accent)' : 'none',
+                  outlineOffset: -2,
+                  transition: 'background 0.12s',
                 }}
               >
+                <span style={{
+                  display: 'inline-block', width: 7, height: 7, borderRadius: '50%',
+                  background: getRoleColor(dept.key as RoleOrSectionKey),
+                  marginRight: 5, verticalAlign: 'middle',
+                }} />
                 ▸ {dept.name}
               </td>
-              <td colSpan={MONTH_DEMO.length + 2} style={{ background: 'var(--grid-dept-bg)' }} />
+              <td colSpan={MONTH_DEMO.length + 2} style={{ background: dragOverGroup === dept.key ? 'var(--accent-soft)' : 'var(--grid-dept-bg)' }} />
             </tr>
             )]),
             ...dept.rows.map((emp, ei) => (
               <tr key={`${dept.key}-${ei}`} style={{ borderBottom: '1px solid var(--grid-row-divider)' }}>
                 <td
+                  onDragOver={(e) => { if (!sticky && dragEmp && dragEmp !== emp.name) { e.preventDefault(); setDragOverEmp(emp.name) } }}
+                  onDragLeave={() => { if (dragOverEmp === emp.name) setDragOverEmp(null) }}
+                  onDrop={(e) => {
+                    if (sticky) return
+                    e.preventDefault()
+                    if (dragEmp && dragEmp !== emp.name) onMoveEmp(dragEmp, emp.name, dept.key as RoleOrSectionKey)
+                    setDragEmp(null); setDragOverEmp(null); setDragOverGroup(null)
+                  }}
                   style={{
-                    position: 'sticky', left: 0, zIndex: 5,
+                    position: sticky ? 'sticky' : 'static', left: 0, zIndex: 5,
                     background: 'var(--grid-cell)',
                     padding: '3px 10px', fontWeight: 500,
                     color: 'var(--foreground)', whiteSpace: 'nowrap', fontSize: 11, overflow: 'hidden',
+                    borderTop: !sticky && dragOverEmp === emp.name ? '2px solid var(--accent)' : '2px solid transparent',
+                    opacity: dragEmp === emp.name ? 0.4 : 1,
                   }}
                 >
-                  <div className="flex items-center justify-between gap-2">
+                  <div
+                    className="flex items-center justify-between gap-2"
+                    draggable={!sticky}
+                    onDragStart={(e) => { if (!sticky) { setDragEmp(emp.name); e.dataTransfer.effectAllowed = 'move' } }}
+                    onDragEnd={() => { setDragEmp(null); setDragOverEmp(null); setDragOverGroup(null) }}
+                    style={{ cursor: !sticky ? 'grab' : 'default' }}
+                  >
                     <div className="flex items-center gap-2 min-w-0">
                       {sticky && (
                         <span
@@ -1325,17 +1960,21 @@ function CompactGrid({
                     </div>
                     <button
                       type="button"
-                      onClick={() => onProjectClick(emp.name, emp.pIdx)}
+                      onClick={() => showTelegram ? onProjectClick(emp.name, emp.pIdx) : onOpenRolePicker(emp.name)}
                       className="cursor-pointer transition-opacity hover:opacity-80"
                       style={{
-                        background: showTelegram ? 'rgba(56, 132, 222, 0.14)' : 'var(--accent-soft)',
-                        color: showTelegram ? '#3884de' : 'var(--accent)',
+                        background: showTelegram ? 'rgba(56, 132, 222, 0.14)' : `color-mix(in oklab, ${getRoleColor(getEmpRoleKey(emp))} 18%, transparent)`,
+                        color: showTelegram ? '#3884de' : getRoleColor(getEmpRoleKey(emp)),
                         border: 0, borderRadius: 4,
                         padding: '1px 5px', fontSize: 9, fontWeight: 600,
                         whiteSpace: 'nowrap',
+                        display: 'inline-flex', alignItems: 'center', gap: 3,
                       }}
                     >
-                      {showTelegram ? emp.tg : labels.roles[emp.roleKey]}
+                      {!showTelegram && (
+                        <span style={{ width: 5, height: 5, borderRadius: '50%', background: getRoleColor(getEmpRoleKey(emp)) }} />
+                      )}
+                      {showTelegram ? emp.tg : getRoleLabel(getEmpRoleKey(emp))}
                     </button>
                   </div>
                 </td>

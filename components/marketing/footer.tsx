@@ -1,5 +1,6 @@
 import { getTranslations } from 'next-intl/server'
 import { LocaleSwitcher } from '@/components/locale-switcher'
+import { ScrollLink } from '@/components/marketing/scroll-link'
 import { Link } from '@/i18n/routing'
 
 export async function MarketingFooter() {
@@ -45,7 +46,7 @@ export async function MarketingFooter() {
             <span className={colLabel} style={{ letterSpacing: '0.08em', color: 'var(--subtle)' }}>
               {tNav('product')}
             </span>
-            <Link href="/#features" className={colLink}>{t('productFeatures')}</Link>
+            <ScrollLink id="features" className={colLink}>{t('productFeatures')}</ScrollLink>
             <Link href="/pricing" className={colLink}>{t('productPricing')}</Link>
             <Link href="/changelog" className={colLink}>{t('productChangelog')}</Link>
             <Link href="/roadmap" className={colLink}>{t('productRoadmap')}</Link>

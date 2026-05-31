@@ -173,6 +173,14 @@ html {
   --font-sans: var(--font-inter);
   --font-serif: var(--font-lora);
   --font-mono: ui-monospace, "Cascadia Code", monospace;
+
+  /* Animations */
+  --animate-gradient: gradient 4s ease-in-out infinite alternate;
+}
+
+@keyframes gradient {
+  from { background-position: 0% 0%; }
+  to   { background-position: var(--bg-size, 300%) 0%; }
 }
 
 /* ─── Base Styles ───────────────────────────────────────────────── */

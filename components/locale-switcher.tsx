@@ -53,16 +53,22 @@ export function LocaleSwitcher() {
     setOpen((v) => !v)
   }
 
+  const AUTH_PATHS = ['/login', '/register', '/forgot-password', '/reset-password', '/invite', '/auth']
+  const isAuthPage = AUTH_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'))
+
   function switchTo(next: Locale) {
     setOpen(false)
     if (switchingRef.current || next === locale) return
     switchingRef.current = true
-    const target = getPathname({ href: pathname, locale: next })
     startTransition(async () => {
       try {
         await setLocaleCookieAction(next)
       } finally {
-        window.location.assign(target)
+        if (isAuthPage) {
+          window.location.reload()
+        } else {
+          window.location.assign(getPathname({ href: pathname, locale: next }))
+        }
       }
     })
   }
