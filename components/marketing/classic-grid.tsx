@@ -154,7 +154,8 @@ export function ClassicGrid({
   const cellPad = mode === 'compact' ? 3 : 4
   const nameSize = mode === 'compact' ? 12 : 13
   const roleSize = mode === 'compact' ? 10 : 11
-  const stickyW = mode === 'compact' ? 220 : mode === 'detail' ? 250 : 280
+  const stickyWMax = mode === 'compact' ? 220 : mode === 'detail' ? 250 : 280
+  const stickyW = `clamp(140px, 42vw, ${stickyWMax}px)`
   const iconSize = mode === 'compact' ? 12 : mode === 'detail' ? 14 : 16
   const timeSize = mode === 'compact' ? 9 : mode === 'detail' ? 10 : 11
 
@@ -456,8 +457,8 @@ export function ClassicGrid({
         </div>
 
         {/* Grid */}
-        <div style={{ overflowX: 'auto', padding: '0 6px 14px' }}>
-          <div style={{ display: 'inline-block', minWidth: '100%', position: 'relative' }}>
+        <div style={{ overflowX: 'auto', padding: '0 0 14px' }}>
+          <div style={{ display: 'block', width: 'max-content', minWidth: '100%', position: 'relative' }}>
             {/* Header row */}
             <div style={{ display: 'flex', borderBottom: '1px solid var(--classic-grid-line)' }}>
               <div
@@ -575,9 +576,10 @@ export function ClassicGrid({
                         style={{
                           width: stickyW, flexShrink: 0,
                           padding: '5px 12px',
-                          position: 'static',
-                          background: 'transparent',
-                          zIndex: 2,
+                          position: 'sticky',
+                          left: 0,
+                          background: 'var(--surface)',
+                          zIndex: 3,
                           borderRight: '1px solid var(--classic-grid-line)',
                           fontSize: 10, fontWeight: 700,
                           color: 'var(--muted-foreground)',
@@ -633,7 +635,7 @@ export function ClassicGrid({
                     position: sticky ? 'sticky' : 'static',
                     left: 0,
                     background: 'var(--surface)',
-                    zIndex: 1,
+                    zIndex: 2,
                     cursor: !sticky ? 'grab' : 'default',
                   }}
                 >

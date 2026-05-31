@@ -51,8 +51,11 @@ export const metadata: Metadata = {
   publisher: 'Smengo',
   formatDetection: { telephone: false, email: false, address: false },
   icons: {
-    icon: '/favicon.ico',
-    apple: '/favicon.ico',
+    icon: [
+      { url: '/icon-light.png', media: '(prefers-color-scheme: light)', sizes: '512x512', type: 'image/png' },
+      { url: '/icon-dark.png',  media: '(prefers-color-scheme: dark)',  sizes: '512x512', type: 'image/png' },
+    ],
+    apple: '/icon-light.png',
   },
 }
 

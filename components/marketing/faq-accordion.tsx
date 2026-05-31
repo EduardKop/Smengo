@@ -39,13 +39,13 @@ export function FaqAccordion({ tag, title, items }: FaqAccordionProps) {
           <div key={i} style={{ borderBottom: '1px solid var(--border)' }}>
             <button
               className="flex w-full items-center justify-between gap-4 text-left transition-colors"
-              style={{ padding: '18px 0' }}
+              style={{ padding: '20px 0', minHeight: 56 }}
               onClick={() => setOpen(open === i ? null : i)}
               aria-expanded={open === i}
             >
-              <span className="text-[14.5px] font-medium text-foreground">{item.q}</span>
+              <span className="text-[15px] font-medium text-foreground sm:text-[14.5px]">{item.q}</span>
               <ChevronDown
-                className={`h-4 w-4 shrink-0 transition-transform duration-200 ${
+                className={`h-5 w-5 shrink-0 transition-transform duration-200 sm:h-4 sm:w-4 ${
                   open === i ? 'rotate-180' : ''
                 }`}
                 style={{ color: 'var(--subtle)' }}

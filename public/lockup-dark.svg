@@ -1,0 +1,7 @@
+<svg width="248" height="64" viewBox="0 0 248 64" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="64" height="64" rx="18" fill="#f5f3ef"/>
+  <rect x="14" y="18" width="30" height="9" rx="4.5" fill="#1f1e1c"/>
+  <rect x="22" y="29.5" width="30" height="9" rx="4.5" fill="#e0a96d"/>
+  <rect x="14" y="41" width="30" height="9" rx="4.5" fill="#9b8b73"/>
+  <text x="80" y="41" font-family="Inter, -apple-system, system-ui, sans-serif" font-size="29" font-weight="600" letter-spacing="-1" fill="#f5f3ef">smengo</text>
+</svg>

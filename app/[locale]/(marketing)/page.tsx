@@ -18,6 +18,7 @@ import { FaqAccordion } from '@/components/marketing/faq-accordion'
 import { GridPreview, type GridPreviewLabels } from '@/components/marketing/grid-preview'
 import { ScrollLink } from '@/components/marketing/scroll-link'
 import { AnimatedGradientText } from '@/components/ui/animated-gradient-text'
+import { WhyConnected } from '@/components/marketing/why-connected'
 import { routing, type Locale } from '@/i18n/routing'
 
 export const revalidate = 3600
@@ -220,6 +221,17 @@ export default async function LandingPage({
     changeRoleTitle: tg('changeRoleTitle'),
     customBadge: tg('customBadge'),
     resetBtn: tg('resetBtn'),
+    showRolesLabel: tg('showRolesLabel'),
+    empCalendarTitle: tg('empCalendarTitle'),
+    empCalendarClose: tg('empCalendarClose'),
+    empCalendarLegendWork: tg('empCalendarLegendWork'),
+    empCalendarLegendOff: tg('empCalendarLegendOff'),
+    empCalendarLegendVacation: tg('empCalendarLegendVacation'),
+    empCalendarLegendSick: tg('empCalendarLegendSick'),
+    empCalendarLegendDayoff: tg('empCalendarLegendDayoff'),
+    empCalendarSummaryWorked: tg('empCalendarSummaryWorked'),
+    empCalendarSummaryOff: tg('empCalendarSummaryOff'),
+    empCalendarSummaryHours: tg('empCalendarSummaryHours'),
   }
 
   const industries = [
@@ -347,16 +359,16 @@ export default async function LandingPage({
             >
               {t('hero.sub')}
             </p>
-            <div className="mt-8 flex flex-col items-center gap-2.5 sm:flex-row sm:justify-center">
+            <div className="mt-7 flex flex-col items-stretch gap-2.5 sm:mt-8 sm:flex-row sm:items-center sm:justify-center">
               <Link
                 href="/register"
-                className="inline-flex items-center gap-2 rounded-lg bg-accent px-[22px] py-[11px] text-sm font-medium text-white shadow-sm transition-colors hover:bg-[var(--accent-hover)]"
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-5 py-3 text-[15px] font-medium text-white shadow-sm transition-colors hover:bg-[var(--accent-hover)] sm:px-[22px] sm:py-[11px] sm:text-sm"
               >
                 {t('hero.cta1')} →
               </Link>
               <ScrollLink
                 id="how"
-                className="inline-flex items-center gap-2 rounded-lg border border-border bg-transparent px-[22px] py-[11px] text-sm font-medium text-foreground transition-[color,border-color] hover:bg-muted/40"
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-transparent px-5 py-3 text-[15px] font-medium text-foreground transition-[color,border-color] hover:bg-muted/40 sm:px-[22px] sm:py-[11px] sm:text-sm"
               >
                 {t('hero.cta2')}
               </ScrollLink>
@@ -366,13 +378,14 @@ export default async function LandingPage({
             </p>
           </div>
 
-          {/* Grid preview — breaks out wider than the 1100 hero column */}
+          {/* Grid preview — breaks out wider than the 1100 hero column.
+              On mobile uses near-edge-to-edge for max readable width. */}
           <div
-            className="mt-14"
+            className="mt-10 sm:mt-14"
             style={{
-              width: 'min(1560px, calc(100vw - 64px))',
-              marginLeft: 'calc(50% - min(780px, calc(50vw - 32px)))',
-              marginRight: 'calc(50% - min(780px, calc(50vw - 32px)))',
+              width: 'min(1560px, calc(100vw - 24px))',
+              marginLeft: 'calc(50% - min(780px, calc(50vw - 12px)))',
+              marginRight: 'calc(50% - min(780px, calc(50vw - 12px)))',
             }}
           >
             <GridPreview labels={gridLabels} />
@@ -524,6 +537,25 @@ export default async function LandingPage({
         </div>
       </section>
 
+      {/* ── WHY CONNECTED ─────────────────────────────────────── */}
+      <WhyConnected
+        locale={locale}
+        title={t('whyConnected.title')}
+        subtitle={t('whyConnected.subtitle')}
+        oldWay={t('whyConnected.oldWay')}
+        oldTitle={t('whyConnected.oldTitle')}
+        old1={t('whyConnected.old1')}
+        old2={t('whyConnected.old2')}
+        old3={t('whyConnected.old3')}
+        oldImgAlt={t('whyConnected.oldImgAlt')}
+        newWay={t('whyConnected.newWay')}
+        newTitle={t('whyConnected.newTitle')}
+        new1={t('whyConnected.new1')}
+        new2={t('whyConnected.new2')}
+        new3={t('whyConnected.new3')}
+        newImgAlt={t('whyConnected.newImgAlt')}
+      />
+
       {/* ── FEATURES ──────────────────────────────────────────── */}
       <section
         id="features"
@@ -547,9 +579,9 @@ export default async function LandingPage({
           </div>
           {/* Hairline separator grid */}
           <div
+            className="[grid-template-columns:repeat(1,1fr)] sm:[grid-template-columns:repeat(2,1fr)] lg:[grid-template-columns:repeat(3,1fr)]"
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
               gap: 1,
               background: 'var(--border)',
               border: '1px solid var(--border)',
@@ -600,9 +632,9 @@ export default async function LandingPage({
             </p>
           </div>
           <div
+            className="[grid-template-columns:repeat(1,1fr)] sm:[grid-template-columns:repeat(2,1fr)]"
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(2, 1fr)',
               gap: 1,
               background: 'var(--border)',
               border: '1px solid var(--border)',

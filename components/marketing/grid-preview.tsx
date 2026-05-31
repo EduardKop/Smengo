@@ -111,6 +111,17 @@ export type GridPreviewLabels = {
   changeRoleTitle: string
   customBadge: string
   resetBtn: string
+  showRolesLabel: string
+  empCalendarTitle: string
+  empCalendarClose: string
+  empCalendarLegendWork: string
+  empCalendarLegendOff: string
+  empCalendarLegendVacation: string
+  empCalendarLegendSick: string
+  empCalendarLegendDayoff: string
+  empCalendarSummaryWorked: string
+  empCalendarSummaryOff: string
+  empCalendarSummaryHours: string
 }
 
 export const MONTH_DEMO = Array.from({ length: 31 }, (_, i) => {
@@ -213,6 +224,8 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
   const [themeOpen, setThemeOpen] = useState(false)
   const themeRef = useRef<HTMLDivElement | null>(null)
   const [showTelegram, setShowTelegram] = useState(false)
+  const [showRoleChips, setShowRoleChips] = useState(false)
+  const [selectedEmp, setSelectedEmp] = useState<string | null>(null)
   const [monthIdx, setMonthIdx] = useState(2) // May
   const [deptFilter, setDeptFilter] = useState<DeptKey>('all')
   const [deptOpen, setDeptOpen] = useState(false)
@@ -290,6 +303,8 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
     setSticky(true)
     setShowTimer(true)
     setShowToday(true)
+    setShowRoleChips(false)
+    setSelectedEmp(null)
     setMonthIdx(2)
     setDeptFilter('all')
     setEditMode(false)
@@ -549,10 +564,10 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
   return (
     <div style={{ position: 'relative' }}>
       {/* Top controls: mode toggle + settings */}
-      <div className="mb-4 flex items-center justify-center gap-2">
+      <div className="mb-4 flex flex-wrap items-center justify-center gap-2">
         <div
           data-mode-pill
-          className="inline-flex items-center gap-1 rounded-full border border-border p-1"
+          className="inline-flex w-full items-center justify-center gap-1 rounded-full border border-border p-1 sm:w-auto"
           style={{ background: 'var(--grid-pill-bg)' }}
         >
           {(['compact', 'detail', 'extended'] as const).map((m) => {
@@ -564,7 +579,7 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
                 type="button"
                 data-active={active}
                 onClick={() => setMode(m)}
-                className="rounded-full px-4 py-1.5 text-[12px] font-medium transition-colors"
+                className="flex-1 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors sm:flex-none sm:px-4"
                 style={{
                   background: active ? 'var(--accent)' : 'transparent',
                   color: active ? '#fff' : 'var(--muted-foreground)',
@@ -575,6 +590,8 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
             )
           })}
         </div>
+
+        <div className="flex items-center gap-2">
 
         <div ref={settingsRef} className="relative">
           <button
@@ -588,7 +605,7 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
           </button>
           {settingsOpen && (
             <div
-              className="absolute right-0 z-30 mt-2 w-60 rounded-xl border border-border p-3 text-[13px] shadow-lg"
+              className="absolute right-0 z-30 mt-2 w-60 rounded-xl border border-border p-3 text-[13px] shadow-lg max-sm:right-auto max-sm:left-1/2 max-sm:-translate-x-1/2"
               style={{ background: 'var(--surface)' }}
             >
               <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -602,6 +619,7 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
               <SettingRow label={labels.stickyLabel} value={sticky} onChange={setSticky} />
               <SettingRow label={labels.timerLabel} value={showTimer} onChange={setShowTimer} />
               <SettingRow label={labels.todayLabel} value={showToday} onChange={setShowToday} />
+              <SettingRow label={labels.showRolesLabel} value={showRoleChips} onChange={setShowRoleChips} />
             </div>
           )}
         </div>
@@ -618,7 +636,7 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
           </button>
           {themeOpen && (
             <div
-              className="absolute right-0 z-30 mt-2 w-56 rounded-xl border border-border p-2 text-[13px] shadow-lg"
+              className="absolute right-0 z-30 mt-2 w-56 rounded-xl border border-border p-2 text-[13px] shadow-lg max-sm:right-auto max-sm:left-1/2 max-sm:-translate-x-1/2"
               style={{ background: 'var(--surface)' }}
             >
               <div className="mb-1 px-2 pt-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -675,6 +693,7 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
           >
             <RotateCcw className="h-4 w-4" />
           </button>
+        </div>
       </div>
 
       {theme === 'classic' ? (
@@ -720,7 +739,8 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
           position: 'relative',
         }}
       >
-        {/* Default chrome bar */}
+        {/* Default chrome bar - hidden on mobile (decorative) */}
+        <div className="hidden sm:contents">
         <div
           style={{
             display: 'flex', alignItems: 'center', gap: 6,
@@ -907,6 +927,7 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
             </div>
           </div>
         </div>
+        </div>
 
 
         {/* App topbar */}
@@ -989,11 +1010,11 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
 
           <div style={{ flex: 1 }} />
 
-          {/* Add Section */}
+          {/* Add Section - hidden on mobile to reduce clutter */}
           <button
             type="button"
             onClick={() => setAddSectionOpen(true)}
-            className="cursor-pointer transition-colors hover:opacity-80"
+            className="hidden cursor-pointer transition-colors hover:opacity-80 sm:inline-block"
             style={{
               background: 'var(--grid-pill-bg)', borderRadius: 6,
               padding: '4px 8px', fontSize: 11,
@@ -1062,6 +1083,8 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
             contrast={contrast}
             labels={labels}
             showTelegram={showTelegram}
+            showRoleChips={showRoleChips}
+            onEmpClick={(name) => setSelectedEmp(name)}
             showTimes={showTimes}
             merged={merged}
             showGrid={showGrid}
@@ -1103,6 +1126,8 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
             showGrid={showGrid}
             sticky={sticky}
             showTelegram={showTelegram}
+            showRoleChips={showRoleChips}
+            onEmpClick={(name) => setSelectedEmp(name)}
             onToggleProjects={() => setShowTelegram((v) => !v)}
             onProjectClick={(name, pIdx) =>
               showTelegram
@@ -1294,6 +1319,19 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
           onClose={() => setAddSectionOpen(false)}
         />
       )}
+
+      {/* Employee calendar overlay (themed, animated) */}
+      <EmployeeCalendarOverlay
+        empName={selectedEmp}
+        emp={allEmps.find((e) => e.name === selectedEmp) ?? null}
+        monthLabel={monthLabel}
+        labels={labels}
+        statusOf={statusOf}
+        getEmpRoleKey={getEmpRoleKey}
+        getRoleLabel={getRoleLabel}
+        getRoleColor={getRoleColor}
+        onClose={() => setSelectedEmp(null)}
+      />
     </div>
   )
 }
@@ -1314,6 +1352,238 @@ export function Avatar({ name, size = 18 }: { name: string; size?: number }) {
       }}
     >
       {initial}
+    </span>
+  )
+}
+
+/* ── Employee calendar overlay ─────────────────────────────────── */
+function EmployeeCalendarOverlay({
+  empName, emp, monthLabel, labels, statusOf,
+  getEmpRoleKey, getRoleLabel, getRoleColor, onClose,
+}: {
+  empName: string | null
+  emp: EmpDef | null
+  monthLabel: string
+  labels: GridPreviewLabels
+  statusOf: (name: string, dayIdx: number, base: string) => Status
+  getEmpRoleKey: (emp: EmpDef) => RoleOrSectionKey
+  getRoleLabel: (key: RoleOrSectionKey) => string
+  getRoleColor: (key: RoleOrSectionKey) => string
+  onClose: () => void
+}) {
+  const open = !!empName && !!emp
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    if (!open) { setMounted(false); return }
+    // Trigger enter animation on next frame
+    const id = requestAnimationFrame(() => setMounted(true))
+    return () => cancelAnimationFrame(id)
+  }, [open])
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.body.style.overflow = prevOverflow
+    }
+  }, [open, onClose])
+
+  if (!open || !emp || !empName) return null
+
+  // Build a 6×7 calendar grid for the 31-day demo month.
+  // MONTH_DEMO[0] is Thursday (dayOfWeekIdx = 3 with mon=0).
+  const firstDowMon0 = 3 // Thursday
+  type CellData = { day: number; status: Status; isWeekend: boolean; idx: number }
+  const cells: (CellData | null)[] = []
+  for (let i = 0; i < firstDowMon0; i++) cells.push(null)
+  for (let i = 0; i < MONTH_DEMO.length; i++) {
+    const d = MONTH_DEMO[i]
+    let code = statusOf(empName, i % 14, emp.s)
+    if (code === 'U' && i !== PROBLEM_DAY_IDX) code = 'W'
+    cells.push({ day: d.n, status: code, isWeekend: d.k === 'sat' || d.k === 'sun', idx: i })
+  }
+  while (cells.length % 7 !== 0) cells.push(null)
+  const rows: (CellData | null)[][] = []
+  for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7))
+
+  // Compute summary
+  let workDays = 0, offDays = 0, vacationDays = 0, sickDays = 0, hours = 0
+  for (const c of cells) {
+    if (!c) continue
+    if (c.status === 'W') {
+      workDays++
+      hours += emp.shift === 'night' ? 13 : 8
+    } else if (c.status === 'V') vacationDays++
+    else if (c.status === 'S') sickDays++
+    else if (c.status === 'D' || c.status === '-' || c.status === undefined) offDays++
+  }
+
+  const dowKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
+
+  function statusColor(s: Status, isWeekend?: boolean): { bg: string; fg: string; label: string } {
+    if (s === 'W') {
+      const t = emp!.shift
+      const time = t === 'night' ? '19–8' : t === 'evening' ? '14–22' : '9–17'
+      return { bg: 'color-mix(in oklab, var(--st-work) 22%, transparent)', fg: 'var(--foreground)', label: time }
+    }
+    if (s === 'V') return { bg: 'color-mix(in oklab, var(--accent) 22%, transparent)', fg: 'var(--accent)', label: labels.empCalendarLegendVacation }
+    if (s === 'S') return { bg: 'color-mix(in oklab, #d4604a 22%, transparent)', fg: '#d4604a', label: labels.empCalendarLegendSick }
+    if (s === 'D') return { bg: 'color-mix(in oklab, var(--muted-foreground) 14%, transparent)', fg: 'var(--muted-foreground)', label: isWeekend ? labels.empCalendarLegendOff : labels.empCalendarLegendDayoff }
+    if (s === 'U') return { bg: 'color-mix(in oklab, var(--accent) 22%, transparent)', fg: 'var(--accent)', label: '!' }
+    return { bg: 'transparent', fg: 'var(--muted-foreground)', label: labels.empCalendarLegendOff }
+  }
+
+  const roleColor = getRoleColor(getEmpRoleKey(emp))
+  const roleLabel = getRoleLabel(getEmpRoleKey(emp))
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 60,
+        background: mounted ? 'rgba(8,7,5,0.55)' : 'rgba(8,7,5,0)',
+        backdropFilter: mounted ? 'blur(6px)' : 'blur(0)',
+        transition: 'background 240ms ease, backdrop-filter 240ms ease',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 16,
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label={labels.empCalendarTitle}
+        style={{
+          width: '100%', maxWidth: 520,
+          maxHeight: 'calc(100vh - 32px)',
+          overflowY: 'auto',
+          background: 'var(--surface)',
+          color: 'var(--foreground)',
+          border: '1px solid var(--border)',
+          borderRadius: 16,
+          boxShadow: '0 32px 64px -16px rgba(0,0,0,0.45)',
+          transform: mounted ? 'translateY(0) scale(1)' : 'translateY(12px) scale(0.98)',
+          opacity: mounted ? 1 : 0,
+          transition: 'transform 280ms cubic-bezier(.32,.72,0,1), opacity 220ms ease',
+        }}
+      >
+        {/* Header */}
+        <div style={{ padding: '18px 20px 12px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+          <Avatar name={empName} size={42} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.2 }}>{empName}</div>
+            <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <span
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 5,
+                  fontSize: 11, fontWeight: 600,
+                  padding: '2px 7px', borderRadius: 5,
+                  background: `color-mix(in oklab, ${roleColor} 18%, transparent)`,
+                  color: roleColor,
+                }}
+              >
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: roleColor }} />
+                {roleLabel}
+              </span>
+              <span style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>{monthLabel}</span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={labels.empCalendarClose}
+            className="cursor-pointer hover:opacity-80"
+            style={{
+              flexShrink: 0,
+              width: 32, height: 32, borderRadius: '50%',
+              background: 'var(--grid-pill-bg)',
+              border: '1px solid var(--border)',
+              color: 'var(--muted-foreground)',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              padding: 0,
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+              <path d="M2.5 2.5 L11.5 11.5 M11.5 2.5 L2.5 11.5" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Summary chips */}
+        <div style={{ padding: '0 20px 16px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+          <div style={{ padding: '10px 12px', borderRadius: 10, background: 'color-mix(in oklab, var(--st-work) 14%, transparent)', border: '1px solid color-mix(in oklab, var(--st-work) 28%, transparent)' }}>
+            <div style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.1 }}>{workDays}</div>
+            <div style={{ fontSize: 11, color: 'var(--muted-foreground)', marginTop: 2 }}>{labels.empCalendarSummaryWorked}</div>
+          </div>
+          <div style={{ padding: '10px 12px', borderRadius: 10, background: 'color-mix(in oklab, var(--muted-foreground) 10%, transparent)', border: '1px solid var(--border)' }}>
+            <div style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.1 }}>{offDays + vacationDays + sickDays}</div>
+            <div style={{ fontSize: 11, color: 'var(--muted-foreground)', marginTop: 2 }}>{labels.empCalendarSummaryOff}</div>
+          </div>
+          <div style={{ padding: '10px 12px', borderRadius: 10, background: 'color-mix(in oklab, var(--accent) 12%, transparent)', border: '1px solid color-mix(in oklab, var(--accent) 24%, transparent)' }}>
+            <div style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.1 }}>{hours}<span style={{ fontSize: 11, fontWeight: 500, color: 'var(--muted-foreground)', marginLeft: 2 }}>{labels.hourSuffix}</span></div>
+            <div style={{ fontSize: 11, color: 'var(--muted-foreground)', marginTop: 2 }}>{labels.empCalendarSummaryHours}</div>
+          </div>
+        </div>
+
+        {/* Calendar grid */}
+        <div style={{ padding: '0 16px 16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 6 }}>
+            {dowKeys.map((k) => (
+              <div key={k} style={{ textAlign: 'center', fontSize: 10, fontWeight: 600, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '4px 0' }}>
+                {labels.days[k]}
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
+            {cells.map((c, i) => {
+              if (!c) return <div key={i} style={{ aspectRatio: '1 / 1.05' }} />
+              const sc = statusColor(c.status, c.isWeekend)
+              const isUnfilled = c.status === 'U'
+              return (
+                <div
+                  key={i}
+                  style={{
+                    aspectRatio: '1 / 1.05',
+                    borderRadius: 8,
+                    background: sc.bg,
+                    border: isUnfilled ? '1.5px dashed var(--accent)' : `1px solid ${c.isWeekend ? 'color-mix(in oklab, var(--accent) 12%, var(--border))' : 'var(--border)'}`,
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '6px 4px 5px',
+                    position: 'relative',
+                  }}
+                >
+                  <div style={{ fontSize: 11, fontWeight: 600, color: c.isWeekend && c.status !== 'W' ? 'var(--accent)' : 'var(--foreground)', opacity: c.status === 'W' || c.status === 'V' || c.status === 'S' ? 1 : 0.78 }}>
+                    {c.day}
+                  </div>
+                  <div style={{ fontSize: 9, fontWeight: 600, color: sc.fg, lineHeight: 1, textAlign: 'center' }}>
+                    {sc.label}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Legend */}
+        <div style={{ padding: '8px 20px 18px', display: 'flex', flexWrap: 'wrap', gap: 12, fontSize: 11, color: 'var(--muted-foreground)', borderTop: '1px solid var(--border)' }}>
+          <LegendDot color="var(--st-work)" label={labels.empCalendarLegendWork} />
+          <LegendDot color="var(--muted-foreground)" label={labels.empCalendarLegendDayoff} />
+          <LegendDot color="var(--accent)" label={labels.empCalendarLegendVacation} />
+          <LegendDot color="#d4604a" label={labels.empCalendarLegendSick} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function LegendDot({ color, label }: { color: string; label: string }) {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+      <span style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
+      {label}
     </span>
   )
 }
@@ -1343,7 +1613,7 @@ function SettingRow({
 /* ── Detail / Extended mode ────────────────────────────────────── */
 function DetailGrid({
   mode, groups, statusOf, labels, chipLbl, chipLblFull, chipBg, chipFg, contrast, weekendBg,
-  showTimes, merged, showGrid, sticky, showTelegram, onToggleProjects, onProjectClick, editMode, onCellEdit,
+  showTimes, merged, showGrid, sticky, showTelegram, showRoleChips, onEmpClick, onToggleProjects, onProjectClick, editMode, onCellEdit,
   getEmpRoleKey, getRoleLabel, getRoleColor, onOpenRolePicker,
   dragEmp, setDragEmp, dragOverEmp, setDragOverEmp, dragOverGroup, setDragOverGroup, onMoveEmp,
 }: {
@@ -1362,6 +1632,8 @@ function DetailGrid({
   showGrid: boolean
   sticky: boolean
   showTelegram: boolean
+  showRoleChips: boolean
+  onEmpClick: (name: string) => void
   onToggleProjects: () => void
   onProjectClick: (name: string, pIdx: number) => void
   editMode: boolean
@@ -1384,7 +1656,9 @@ function DetailGrid({
   const colW = isExt ? 60 : 38
   const colMinW = isExt ? 52 : 30
   const rowPad = isExt ? '6px 4px' : '3px 2px'
-  const nameColW = isExt ? (sticky ? 240 : 168) : (sticky ? 220 : 148)
+  const nameColWMax = isExt ? (sticky ? 240 : 168) : (sticky ? 220 : 148)
+  const nameColWMin = isExt ? 130 : 110
+  const nameColW = `clamp(${nameColWMin}px, 34vw, ${nameColWMax}px)`
 
   function workLabel(emp: EmpDef): string {
     if (!showTimes) return isExt ? chipLblFull.W : chipLbl.W
@@ -1412,7 +1686,7 @@ function DetailGrid({
                 <button
                   type="button"
                   onClick={onToggleProjects}
-                  className="cursor-pointer transition-colors"
+                  className="hidden cursor-pointer transition-colors sm:inline-block"
                   style={{
                     background: showTelegram ? 'var(--accent-soft)' : 'var(--grid-pill-bg)',
                     color: showTelegram ? 'var(--accent)' : 'var(--muted-foreground)',
@@ -1436,6 +1710,7 @@ function DetailGrid({
                     background: isWkd ? weekendBg : 'var(--grid-cell)',
                     color: 'var(--muted-foreground)',
                     position: 'relative',
+                    overflow: 'hidden',
                     ...problemColumnStyle(ci),
                   }}
                 >
@@ -1444,17 +1719,15 @@ function DetailGrid({
                   {isProblem && (
                     <div
                       title={labels.shortageLabel}
+                      aria-label={labels.shortageLabel}
                       style={{
                         marginTop: 2,
-                        display: 'inline-flex', alignItems: 'center', gap: 2,
-                        padding: '1px 4px', borderRadius: 4,
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        width: 14, height: 14, borderRadius: '50%',
                         background: 'var(--accent)', color: '#fff',
-                        fontSize: 8.5, fontWeight: 700, lineHeight: 1.1,
-                        whiteSpace: 'nowrap',
                       }}
                     >
-                      <AlertCircle style={{ width: 8, height: 8 }} />
-                      {labels.shortageBadge}
+                      <AlertCircle style={{ width: 9, height: 9 }} />
                     </div>
                   )}
                 </th>
@@ -1537,9 +1810,9 @@ function DetailGrid({
                     style={{ cursor: !sticky ? 'grab' : 'default' }}
                   >
                     {sticky && (
-                      <span
+                      <span className="hidden sm:inline-flex"
                         style={{
-                          display: 'inline-flex', alignItems: 'center',
+                          alignItems: 'center',
                           padding: '1px 5px', borderRadius: 3,
                           background: 'var(--grid-dept-bg)',
                           color: 'var(--grid-dept-fg)',
@@ -1552,12 +1825,24 @@ function DetailGrid({
                       </span>
                     )}
                     <Avatar name={emp.name} size={18} />
-                    <span>{emp.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => onEmpClick(emp.name)}
+                      className="cursor-pointer truncate bg-transparent p-0 text-left transition-colors hover:text-accent"
+                      style={{ border: 0, color: 'inherit', font: 'inherit' }}
+                    >
+                      {emp.name}
+                    </button>
                     <button
                       type="button"
                       onClick={() => showTelegram ? onProjectClick(emp.name, emp.pIdx) : onOpenRolePicker(emp.name)}
                       className="cursor-pointer transition-opacity hover:opacity-80"
-                      style={{
+                      style={(!showRoleChips && !showTelegram) ? {
+                        background: 'transparent',
+                        border: 0, padding: 2,
+                        display: 'inline-flex', alignItems: 'center',
+                        flexShrink: 0,
+                      } : {
                         background: showTelegram ? 'rgba(56, 132, 222, 0.14)' : `color-mix(in oklab, ${getRoleColor(getEmpRoleKey(emp))} 18%, transparent)`,
                         color: showTelegram ? '#3884de' : getRoleColor(getEmpRoleKey(emp)),
                         border: 0, borderRadius: 4,
@@ -1566,10 +1851,16 @@ function DetailGrid({
                         display: 'inline-flex', alignItems: 'center', gap: 4,
                       }}
                     >
-                      {!showTelegram && (
-                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: getRoleColor(getEmpRoleKey(emp)) }} />
+                      {showTelegram ? (
+                        emp.tg
+                      ) : (!showRoleChips) ? (
+                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: getRoleColor(getEmpRoleKey(emp)), boxShadow: `0 0 0 2px color-mix(in oklab, ${getRoleColor(getEmpRoleKey(emp))} 18%, transparent)` }} />
+                      ) : (
+                        <>
+                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: getRoleColor(getEmpRoleKey(emp)) }} />
+                          {getRoleLabel(getEmpRoleKey(emp))}
+                        </>
                       )}
-                      {showTelegram ? emp.tg : getRoleLabel(getEmpRoleKey(emp))}
                     </button>
                   </div>
                 </td>
@@ -1658,7 +1949,6 @@ function DetailGrid({
                         outline: editMode ? '1px dashed var(--accent)' : 'none',
                         outlineOffset: editMode ? -2 : 0,
                         cursor: cellInteractive ? 'pointer' : 'default',
-                        ...problemColumnStyle(ci),
                       }}
                     >
                       {isOff ? (
@@ -1766,7 +2056,7 @@ function DetailGrid({
 /* ── Compact mode ──────────────────────────────────────────────── */
 function CompactGrid({
   groups, statusOf, weekendBg, chipBg, chipFg, contrast, labels,
-  showTimes, merged, showGrid, sticky, showTelegram, editMode, onToggleProjects, onProjectClick, onCellEdit,
+  showTimes, merged, showGrid, sticky, showTelegram, showRoleChips, onEmpClick, editMode, onToggleProjects, onProjectClick, onCellEdit,
   getEmpRoleKey, getRoleLabel, getRoleColor, onOpenRolePicker,
   dragEmp, setDragEmp, dragOverEmp, setDragOverEmp, dragOverGroup, setDragOverGroup, onMoveEmp,
 }: {
@@ -1782,6 +2072,8 @@ function CompactGrid({
   showGrid: boolean
   sticky: boolean
   showTelegram: boolean
+  showRoleChips: boolean
+  onEmpClick: (name: string) => void
   editMode: boolean
   onToggleProjects: () => void
   onProjectClick: (name: string, pIdx: number) => void
@@ -1799,7 +2091,8 @@ function CompactGrid({
   onMoveEmp: (srcName: string, targetName: string | null, targetGroupKey: RoleOrSectionKey | null) => void
 }) {
   const [hoveredRun, setHoveredRun] = useState<string | null>(null)
-  const nameColW = sticky ? 220 : 168
+  const nameColWMax = sticky ? 220 : 168
+  const nameColW = `clamp(110px, 34vw, ${nameColWMax}px)`
   return (
     <div style={{ overflowX: 'auto' }}>
       <table style={{ borderCollapse: 'collapse', width: 'max-content', minWidth: '100%', fontSize: 10, tableLayout: 'fixed' }}>
@@ -1820,7 +2113,7 @@ function CompactGrid({
                 <button
                   type="button"
                   onClick={onToggleProjects}
-                  className="cursor-pointer transition-colors"
+                  className="hidden cursor-pointer transition-colors sm:inline-block"
                   style={{
                     background: showTelegram ? 'var(--accent-soft)' : 'var(--grid-pill-bg)',
                     color: showTelegram ? 'var(--accent)' : 'var(--muted-foreground)',
@@ -1845,6 +2138,7 @@ function CompactGrid({
                     color: 'var(--muted-foreground)',
                     fontWeight: 500, fontSize: 9.5,
                     position: 'relative',
+                    overflow: 'hidden',
                     ...problemColumnStyle(ci),
                   }}
                 >
@@ -1853,16 +2147,15 @@ function CompactGrid({
                   {isProblem && (
                     <div
                       title={labels.shortageLabel}
+                      aria-label={labels.shortageLabel}
                       style={{
                         marginTop: 2,
-                        display: 'inline-flex', alignItems: 'center',
-                        padding: '0 3px', borderRadius: 3,
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        width: 12, height: 12, borderRadius: '50%',
                         background: 'var(--accent)', color: '#fff',
-                        fontSize: 8, fontWeight: 700, lineHeight: '11px',
-                        whiteSpace: 'nowrap',
                       }}
                     >
-                      {labels.coverageGap}
+                      <AlertCircle style={{ width: 8, height: 8 }} />
                     </div>
                   )}
                 </th>
@@ -1941,9 +2234,9 @@ function CompactGrid({
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       {sticky && (
-                        <span
+                        <span className="hidden sm:inline-flex"
                           style={{
-                            display: 'inline-flex', alignItems: 'center',
+                            alignItems: 'center',
                             padding: '1px 5px', borderRadius: 3,
                             background: 'var(--grid-dept-bg)',
                             color: 'var(--grid-dept-fg)',
@@ -1956,13 +2249,25 @@ function CompactGrid({
                         </span>
                       )}
                       <Avatar name={emp.name} size={16} />
-                      <span className="truncate">{emp.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => onEmpClick(emp.name)}
+                        className="cursor-pointer truncate bg-transparent p-0 text-left transition-colors hover:text-accent"
+                        style={{ border: 0, color: 'inherit', font: 'inherit' }}
+                      >
+                        {emp.name}
+                      </button>
                     </div>
                     <button
                       type="button"
                       onClick={() => showTelegram ? onProjectClick(emp.name, emp.pIdx) : onOpenRolePicker(emp.name)}
                       className="cursor-pointer transition-opacity hover:opacity-80"
-                      style={{
+                      style={(!showRoleChips && !showTelegram) ? {
+                        background: 'transparent',
+                        border: 0, padding: 2,
+                        display: 'inline-flex', alignItems: 'center',
+                        flexShrink: 0,
+                      } : {
                         background: showTelegram ? 'rgba(56, 132, 222, 0.14)' : `color-mix(in oklab, ${getRoleColor(getEmpRoleKey(emp))} 18%, transparent)`,
                         color: showTelegram ? '#3884de' : getRoleColor(getEmpRoleKey(emp)),
                         border: 0, borderRadius: 4,
@@ -1971,10 +2276,16 @@ function CompactGrid({
                         display: 'inline-flex', alignItems: 'center', gap: 3,
                       }}
                     >
-                      {!showTelegram && (
-                        <span style={{ width: 5, height: 5, borderRadius: '50%', background: getRoleColor(getEmpRoleKey(emp)) }} />
+                      {showTelegram ? (
+                        emp.tg
+                      ) : (!showRoleChips) ? (
+                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: getRoleColor(getEmpRoleKey(emp)), boxShadow: `0 0 0 2px color-mix(in oklab, ${getRoleColor(getEmpRoleKey(emp))} 18%, transparent)` }} />
+                      ) : (
+                        <>
+                          <span style={{ width: 5, height: 5, borderRadius: '50%', background: getRoleColor(getEmpRoleKey(emp)) }} />
+                          {getRoleLabel(getEmpRoleKey(emp))}
+                        </>
                       )}
-                      {showTelegram ? emp.tg : getRoleLabel(getEmpRoleKey(emp))}
                     </button>
                   </div>
                 </td>
@@ -2053,7 +2364,6 @@ function CompactGrid({
                         borderRight: showGrid ? '1px solid var(--border)' : 'none',
                         outline: editMode ? '1px dashed var(--accent)' : 'none',
                         outlineOffset: editMode ? -1 : 0,
-                        ...problemColumnStyle(ci),
                         cursor: editMode ? 'pointer' : 'default',
                       }}
                     >

@@ -195,7 +195,8 @@ export default async function PricingPage({
           <h2 className="mb-6 text-center font-serif text-2xl font-bold text-foreground">
             {t('featuresTitle')}
           </h2>
-          <div className="overflow-hidden rounded-[--radius] border border-border">
+          <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+            <div className="min-w-[640px] overflow-hidden rounded-[--radius] border border-border">
             {/* Header row */}
             <div className="grid grid-cols-4 border-b border-border bg-muted/40">
               <div className="px-4 py-3 text-sm font-medium text-muted-foreground" />
@@ -263,6 +264,7 @@ export default async function PricingPage({
                 ))}
               </div>
             ))}
+            </div>
           </div>
         </div>
       </section>

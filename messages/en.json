@@ -91,7 +91,29 @@
       "login": "Sign in",
       "start": "Start free",
       "how": "How it works",
-      "feat": "Features"
+      "feat": "Features",
+      "builtFor": "Built for"
+    },
+    "builtFor": {
+      "groups": {
+        "shiftBusiness": "Shift-based business",
+        "scheduledTeams": "Scheduled teams"
+      },
+      "items": {
+        "restaurants": "Cafes, restaurants & bars",
+        "retail": "Retail & shops",
+        "services": "Salons & services",
+        "clinics": "Clinics & healthcare",
+        "logistics": "Logistics & warehouses",
+        "production": "Manufacturing & security",
+        "sales": "Sales teams",
+        "it": "IT & digital teams",
+        "arbitrage": "Performance / arbitrage teams"
+      },
+      "tagline": "Any team that works by shifts and schedules",
+      "pitchTitle": "Built for your team",
+      "pitchBody": "Proven playbooks for restaurants, retail, services, production, and IT - pick your industry.",
+      "chooseIndustry": "Choose your industry"
     },
     "hero": {
       "badge": "Shift scheduler for growing teams",
@@ -101,7 +123,7 @@
       "ctaHint": "14 days, no card",
       "demo": "See how it works",
       "tag": "Trusted by 400+ companies",
-      "sub": "Shift scheduling that doesn't suck.\nSpot coverage gaps, stop living in Excel. One calm grid — every employee, every day.",
+      "sub": "Shift scheduling that doesn't suck.\nSpot coverage gaps, stop living in Excel. One calm grid - every employee, every day.",
       "cta1": "Start free trial",
       "cta2": "See how it works",
       "note": "14 days free - no credit card needed",
@@ -112,6 +134,22 @@
       "item1": "Your manager sends an updated Excel file in chat - nobody knows if it's the latest version",
       "item2": "Coverage gaps show up at the last minute, not a week before",
       "item3": "To find out who's working Saturday, you have to call or message someone"
+    },
+    "whyConnected": {
+      "title": "When everything's in one place, shifts run smoothly",
+      "subtitle": "Smengo brings scheduling, team, and tasks to one screen - so you plan faster, close coverage gaps, and stop losing people in chats.",
+      "oldWay": "The old way",
+      "oldTitle": "Disconnected tools, constant confusion",
+      "old1": "Schedule in spreadsheets, chats in messengers, time-off on paper",
+      "old2": "Every shift change means manual work and a hundred messages",
+      "old3": "Decisions made too late, when it's already on fire",
+      "oldImgAlt": "Chaos of spreadsheets and chats",
+      "newWay": "With Smengo",
+      "newTitle": "One system, clear next steps",
+      "new1": "Schedule, departments, time - all in one window",
+      "new2": "Shift management without manual hassle",
+      "new3": "Forecast ahead - make calm, proactive decisions",
+      "newImgAlt": "Smengo interface: schedule and team in one place"
     },
     "features": {
       "title": "Everything you need.\nNothing you don't.",
@@ -176,7 +214,7 @@
       "deptSales": "Floor",
       "deptOps": "Kitchen",
       "minDay": "min {n}/day",
-      "alert": "Coverage alert: Kitchen · Wed 14 — 2 slots uncovered",
+      "alert": "Coverage alert: Kitchen · Wed 14 - 2 slots uncovered",
       "statusWork": "Shift",
       "statusVac": "Vac",
       "statusSick": "Sick",
@@ -297,7 +335,18 @@
       "cancelBtn": "Cancel",
       "changeRoleTitle": "Change role",
       "customBadge": "Custom",
-      "resetBtn": "Reset demo"
+      "resetBtn": "Reset demo",
+      "showRolesLabel": "Show positions",
+      "empCalendarTitle": "Employee schedule",
+      "empCalendarClose": "Close",
+      "empCalendarLegendWork": "Shift",
+      "empCalendarLegendOff": "Day off",
+      "empCalendarLegendVacation": "Vacation",
+      "empCalendarLegendSick": "Sick",
+      "empCalendarLegendDayoff": "Time off",
+      "empCalendarSummaryWorked": "Shifts",
+      "empCalendarSummaryOff": "Off days",
+      "empCalendarSummaryHours": "Hours"
     },
     "pricingPreview": {
       "title": "Simple pricing",
@@ -402,9 +451,9 @@
       "title": "Built for managers\nwho hate spreadsheets.",
       "sub": "Every feature is here because a real ops manager asked for it.",
       "i1Title": "Whole month, one screen",
-      "i1Desc": "Every employee, every day — no tabs, no scrolling. Full picture in seconds.",
+      "i1Desc": "Every employee, every day - no tabs, no scrolling. Full picture in seconds.",
       "i2Title": "Coverage alerts",
-      "i2Desc": "Auto-flag days when a department falls below minimum headcount — before the shift starts.",
+      "i2Desc": "Auto-flag days when a department falls below minimum headcount - before the shift starts.",
       "i3Title": "One-click editing",
       "i3Desc": "Click a cell to assign a shift. Drag across a range to fill a whole week instantly.",
       "i4Title": "Roles & visibility",
@@ -412,11 +461,11 @@
       "i5Title": "Custom shift types",
       "i5Desc": "Name your shifts, pick colors, mark what counts as present. Works in any language.",
       "i6Title": "PDF & PNG export",
-      "i6Desc": "One click to export — ready to print, share in chat, or attach to an email.",
+      "i6Desc": "One click to export - ready to print, share in chat, or attach to an email.",
       "i7Title": "AI-powered scheduling",
       "i7Desc": "Fill and analyze schedules with an AI assistant that learns your team's patterns.",
       "i8Title": "Shift check-in",
-      "i8Desc": "Staff mark themselves present via Telegram bot or the web app — no phone calls needed.",
+      "i8Desc": "Staff mark themselves present via Telegram bot or the web app - no phone calls needed.",
       "i9Title": "14 days free, no card",
       "i9Desc": "Full access from day one. Enter billing details only if you choose to upgrade.",
       "i10Title": "Open API",

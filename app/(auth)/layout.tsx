@@ -10,13 +10,11 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
       {/* Top bar */}
       <div className="relative z-20 flex items-center justify-between px-6 py-4">
-        <Link
-          href="/"
-          className="flex items-center gap-1.5 text-xl font-semibold text-foreground"
-          style={{ fontFamily: 'var(--font-inter, sans-serif)', letterSpacing: '-0.035em' }}
-        >
-          smengo
-          <span className="inline-block h-[5px] w-[5px] rounded-full" style={{ background: 'var(--accent)' }} />
+        <Link href="/" className="flex items-center" aria-label="Smengo">
+          {/* Light theme lockup */}
+          <img src="/lockup-light.svg" alt="Smengo" height={28} className="block h-7 w-auto dark:hidden" />
+          {/* Dark theme lockup */}
+          <img src="/lockup-dark.svg"  alt="Smengo" height={28} className="hidden h-7 w-auto dark:block" />
         </Link>
         <div className="flex items-center gap-2">
           <LocaleSwitcher />
