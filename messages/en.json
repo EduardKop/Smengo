@@ -595,6 +595,111 @@
       "i9Desc": "Full access from day one. Enter billing details only if you choose to upgrade.",
       "i10Title": "Open API",
       "i10Desc": "Connect your tools, scripts, or bots. Build on top of Smengo with a documented REST API."
+    },
+    "scheduleGrid": {
+      "hero": {
+        "eyebrow": "SMENGO · SCHEDULE GRID",
+        "title": "Your whole team’s schedule on one screen. No spreadsheets, no chaos.",
+        "subtitle": "Build shifts in a visual grid, see coverage by role, and catch gaps before they hit.",
+        "ctaStart": "Start free",
+        "ctaPricing": "See pricing",
+        "hint": "14 days, no card required",
+        "mockAlt": "Schedule grid preview"
+      },
+      "demo": {
+        "eyebrow": "INTERACTIVE DEMO",
+        "title": "Try it yourself — hover, switch, filter.",
+        "subtitle": "A real grid with restaurant data. Hover a shift to see details. Toggle week/month and filter by department.",
+        "week": "Week",
+        "month": "Month",
+        "departmentLabel": "Department",
+        "deptAll": "All",
+        "deptKitchen": "Kitchen",
+        "deptHall": "Hall",
+        "deptBar": "Bar",
+        "coverageLabel": "Coverage",
+        "coverageGood": "all shifts covered",
+        "coverageGapPrefix": "Sat — open slots:",
+        "off": "Off",
+        "hoursShort": "h",
+        "weekdays": ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"],
+        "tooltipRole": "Role",
+        "tooltipHours": "Hours",
+        "tooltipCoverage": "Counts toward coverage"
+      },
+      "caps": {
+        "eyebrow": "CAPABILITIES",
+        "title": "What the Smengo grid gives you",
+        "i1Title": "Full month on one screen",
+        "i1Desc": "Your whole team at a glance. No separate tabs per employee.",
+        "i2Title": "Coverage by role and hour",
+        "i2Desc": "See thin and overloaded shifts ahead of time. Alerts fire before it becomes a problem.",
+        "i3Title": "Any structure: departments, roles, locations",
+        "i3Desc": "Flexible setup for any team — from one location to a chain.",
+        "i4Title": "Nights, overtime, vacations — all visible",
+        "i4Desc": "All special statuses are clearly marked on the grid. Nothing gets lost."
+      },
+      "ways": {
+        "eyebrow": "TWO EQUAL PATHS",
+        "title": "Manual control or AI fill — your choice",
+        "manualBadge": "MANUAL",
+        "manualTitle": "Build it yourself",
+        "manualDesc": "Full control over every shift.",
+        "manualB1": "Drag-and-drop in the grid",
+        "manualB2": "Copy a week in one click",
+        "manualB3": "Templates for recurring shifts",
+        "aiBadge": "AI",
+        "aiTitle": "Let AI do it",
+        "aiDesc": "AI fills the grid using your rules.",
+        "aiB1": "Respects vacations, roles, workload",
+        "aiB2": "Suggestions for optimization",
+        "aiB3": "You can always edit by hand"
+      },
+      "vs": {
+        "eyebrow": "COMPARISON",
+        "title": "Excel vs Smengo",
+        "excelTitle": "Excel / Google Sheets",
+        "smengoTitle": "Smengo",
+        "r1Excel": "Versions get confused, someone edits an old copy",
+        "r1Smengo": "One always-current version for everyone",
+        "r2Excel": "You learn about a gap the day of the shift",
+        "r2Smengo": "Coverage alerts fire days ahead",
+        "r3Excel": "Hours counted by hand",
+        "r3Smengo": "Hours calculated automatically",
+        "r4Excel": "Changes get lost in chats",
+        "r4Smengo": "One source of truth + notifications",
+        "r5Excel": "No edit history",
+        "r5Smengo": "Full edit history"
+      },
+      "rest": {
+        "eyebrow": "WORKS WITH THE REST OF THE PLATFORM",
+        "title": "The grid is part of the platform",
+        "c1Title": "Telegram bot",
+        "c1Desc": "One-tap check-ins and every employee’s shifts in Telegram.",
+        "c2Title": "AI assistant",
+        "c2Desc": "Autofill the grid based on your rules.",
+        "c3Title": "Shift swaps",
+        "c3Desc": "Staff find their own replacements. Manager approves.",
+        "more": "Learn more"
+      },
+      "proof": {
+        "eyebrow": "RESULT",
+        "title": "What changes for teams",
+        "quote": "Building the schedule used to take a whole day. Now we put it together in 30 minutes and nobody is confused about who works when.",
+        "author": "Alex K.",
+        "role": "Manager, “Smena” restaurant",
+        "stub": "placeholder — real testimonial needed",
+        "statNum": "10×",
+        "statLabel": "faster schedule building",
+        "statNote": "content needed: final number"
+      },
+      "final": {
+        "title": "Build your first schedule in 30 minutes",
+        "subtitle": "Free 14-day trial. No card. Cancel anytime.",
+        "ctaStart": "Start free",
+        "ctaPricing": "See pricing",
+        "hint": "14 days, no card required"
+      }
     }
   },
   "pricing": {
