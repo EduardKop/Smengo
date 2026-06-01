@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
-import { Check, Info, Minus } from 'lucide-react'
+import { Check, Minus, Sparkles } from 'lucide-react'
 import { routing, type Locale } from '@/i18n/routing'
+import { PricingCards } from '@/components/marketing/pricing-cards'
 
 export const revalidate = 3600
 
@@ -180,12 +181,62 @@ export default async function PricingPage({
         <p className="mx-auto mt-4 max-w-md text-[15px] text-muted-foreground">{t('subtitle')}</p>
       </section>
 
-      {/* ── PRICING CARDS ── */}
+      {/* ── SOCIAL PROOF STRIP ── */}
+      <section className="px-4 pt-2 pb-4 sm:px-6">
+        <div className="mx-auto flex max-w-3xl flex-col items-center gap-1 text-center">
+          <p className="text-[12.5px] uppercase tracking-[0.14em] text-muted-foreground/70">
+            {t('socialProof')}
+          </p>
+          <p className="text-[13.5px] font-medium text-foreground">
+            {t('socialProofStat')}
+          </p>
+        </div>
+      </section>
+
+      {/* ── PRICING CARDS (toggle + 3 tiers) ── */}
       <section className="px-4 py-12 sm:px-6" style={{ background: 'var(--zone)' }}>
-        <div className="mx-auto grid max-w-5xl gap-5 sm:grid-cols-3">
-          {PLANS.map((plan) => (
-            <PricingCard key={plan.key} plan={plan} t={t} />
-          ))}
+        <PricingCards />
+
+        {/* ── ENTERPRISE BAND ── */}
+        <div className="mx-auto mt-8 max-w-5xl">
+          <div
+            className="flex flex-col items-start gap-6 rounded-3xl border p-7 sm:flex-row sm:items-center sm:justify-between sm:p-8"
+            style={{
+              background: 'var(--surface)',
+              borderColor: 'var(--border)',
+              boxShadow: '0 1px 2px rgba(0,0,0,.04), 0 6px 20px rgba(0,0,0,.05)',
+            }}
+          >
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-accent" />
+                <h3
+                  className="font-serif font-semibold text-foreground"
+                  style={{ fontSize: 22, letterSpacing: '-0.01em' }}
+                >
+                  {t('enterpriseTitle')}
+                </h3>
+              </div>
+              <p className="mt-2 max-w-xl text-[14px] leading-[1.55] text-muted-foreground">
+                {t('enterpriseDesc')}
+              </p>
+              <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-2">
+                {(['enterpriseFeature1', 'enterpriseFeature2', 'enterpriseFeature3', 'enterpriseFeature4'] as const).map((k) => (
+                  <li key={k} className="flex items-center gap-2 text-[13px] text-foreground">
+                    <Check className="h-3.5 w-3.5 shrink-0 text-accent" />
+                    {t(k)}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <Link
+              href="mailto:hello@smengo.com"
+              className="shrink-0 rounded-full border px-6 py-3 text-[12.5px] font-semibold uppercase tracking-[0.12em] text-foreground transition-colors hover:bg-muted/50"
+              style={{ borderColor: 'var(--border)' }}
+            >
+              {t('enterpriseCta')}
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -307,137 +358,5 @@ export default async function PricingPage({
         </Link>
       </section>
     </>
-  )
-}
-
-/* ── Pricing card (Manychat-style) ── */
-type TFunc = Awaited<ReturnType<typeof getTranslations<'pricing'>>>
-
-function PricingCard({
-  plan,
-  t,
-}: {
-  plan: (typeof PLANS)[number]
-  t: TFunc
-}) {
-  const descKey =
-    plan.key === 'start'
-      ? 'planStartDesc'
-      : plan.key === 'team'
-        ? 'planTeamDesc'
-        : 'planBusinessDesc'
-
-  const featureList = FEATURE_KEYS.filter((fk) => plan.features[fk])
-
-  return (
-    <div
-      className="relative flex flex-col overflow-hidden"
-      style={{
-        background: 'var(--surface)',
-        borderRadius: 24,
-        padding: '32px 28px',
-        boxShadow: plan.recommended
-          ? '0 1px 3px rgba(0,0,0,.06), 0 12px 32px rgba(217,119,87,.18)'
-          : '0 1px 2px rgba(0,0,0,.05), 0 6px 20px rgba(0,0,0,.07)',
-        border: plan.recommended
-          ? '1.5px solid var(--accent)'
-          : '1px solid var(--border)',
-      }}
-    >
-      {plan.recommended && (
-        <div
-          className="absolute left-0 right-0 top-0 flex items-center justify-center text-[10.5px] font-semibold uppercase text-white"
-          style={{ background: 'var(--accent)', letterSpacing: '0.12em', height: 24 }}
-        >
-          ★ {t('recommended')}
-        </div>
-      )}
-
-      <div className={plan.recommended ? 'mt-6 text-center' : 'text-center'}>
-        <h3
-          className="font-serif font-semibold text-foreground"
-          style={{ fontSize: 22, letterSpacing: '-0.01em' }}
-        >
-          {t(plan.nameKey as Parameters<typeof t>[0])}
-        </h3>
-        <p
-          className="mx-auto mt-1.5 text-[13px] leading-[1.45]"
-          style={{ color: 'var(--subtle)', maxWidth: 200 }}
-        >
-          {t(descKey as Parameters<typeof t>[0])}
-        </p>
-      </div>
-
-      <div className="mt-6 text-center">
-        <div className="flex items-baseline justify-center gap-0.5">
-          <span
-            className="font-semibold text-foreground"
-            style={{ fontSize: 40, letterSpacing: '-0.025em', lineHeight: 1 }}
-          >
-            ${plan.price}
-          </span>
-          <span className="text-[15px] font-medium text-foreground">{t('monthly')}</span>
-        </div>
-        <p className="mt-1.5 text-[12px]" style={{ color: 'var(--subtle)' }}>
-          {t('trialNote')}
-        </p>
-      </div>
-
-      <div className="mt-6 text-center">
-        <div
-          className="font-semibold text-foreground"
-          style={{ fontSize: 28, letterSpacing: '-0.02em', lineHeight: 1 }}
-        >
-          {plan.employees}
-        </div>
-        <p
-          className="mt-1 text-[13px] leading-[1.5]"
-          style={{ color: 'var(--muted-foreground)' }}
-        >
-          <span className="underline decoration-dotted underline-offset-2">
-            {t('employees')}
-          </span>{' '}
-          · {plan.groups ? `${plan.groups} ${t('groups')}` : t('unlimited')}
-        </p>
-      </div>
-
-      <Link
-        href="/register"
-        className={`mt-7 block w-full rounded-full px-5 py-3 text-center text-[12.5px] font-semibold uppercase tracking-[0.12em] transition-colors ${
-          plan.recommended
-            ? 'bg-accent text-white hover:bg-[var(--accent-hover)]'
-            : 'bg-foreground text-background hover:opacity-90'
-        }`}
-      >
-        {t('startTrial')}
-      </Link>
-
-      <ul className="mt-7 flex flex-col gap-3 border-t pt-6" style={{ borderColor: 'var(--border)' }}>
-        {featureList.map((fk) => (
-          <li
-            key={fk}
-            className="flex items-start justify-between gap-3 text-[13.5px] text-foreground"
-          >
-            <span className="flex-1 leading-[1.45]">{t(fk as Parameters<typeof t>[0])}</span>
-            <Info
-              className="mt-0.5 h-3.5 w-3.5 shrink-0"
-              style={{ color: 'var(--subtle)' }}
-            />
-          </li>
-        ))}
-        <li
-          className="flex items-center gap-2 text-[13.5px]"
-          style={{ color: 'var(--subtle)' }}
-        >
-          <Check className="h-3.5 w-3.5 shrink-0 text-accent" />
-          {plan.managers}{' '}
-          {plan.managers === '1'
-            ? t('managers')
-            : plan.managers === '3'
-              ? t('managersPlural')
-              : t('managersMany')}
-        </li>
-      </ul>
-    </div>
   )
 }

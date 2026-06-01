@@ -87,12 +87,35 @@
     },
     "nav": {
       "product": "Product",
+      "platform": "Platform",
       "pricing": "Pricing",
       "login": "Sign in",
       "start": "Start free",
       "how": "How it works",
       "feat": "Features",
       "builtFor": "Built for"
+    },
+    "platform": {
+      "tagline": "Less routine – more time for the business.",
+      "chooseStage": "Stages of your team’s work",
+      "groups": {
+        "schedule":   { "verb": "Plan",   "name": "Schedule",   "description": "Flexible shifts, check-ins, and AI fill-ins." },
+        "storage":    { "verb": "Store",  "name": "Storage",    "description": "Team data and onboarding in one place." },
+        "hr":         { "verb": "Hire",   "name": "HR",         "description": "Hiring dashboard and full employee journey." },
+        "motivation": { "verb": "Engage", "name": "Motivation", "description": "Shift swaps, motivation, and a fast UI." }
+      },
+      "items": {
+        "scheduleGrid":     "Shift schedule",
+        "telegramBot":      "Telegram bot: check-ins & alerts",
+        "aiAssistant":      "AI assistant",
+        "employeeDatabase": "Employee database",
+        "onboarding":       "Onboarding",
+        "hrDashboard":      "HR Dashboard",
+        "hrManagement":     "HR Management",
+        "shiftSwaps":       "Shift swaps",
+        "teamMotivation":   "Team motivation",
+        "fastUi":           "Fast interface"
+      }
     },
     "builtFor": {
       "groups": {
@@ -112,7 +135,7 @@
       },
       "tagline": "Any team that works by shifts and schedules",
       "pitchTitle": "Built for your team",
-      "pitchBody": "Proven playbooks for restaurants, retail, services, production, and IT - pick your industry.",
+      "pitchBody": "Proven playbooks for sales teams, arbitrage teams, restaurants, retail, services, production, and IT – pick your industry.",
       "chooseIndustry": "Choose your industry"
     },
     "hero": {
@@ -473,7 +496,7 @@
     }
   },
   "pricing": {
-    "title": "Simple, transparent pricing",
+    "title": "One schedule costs less than one missed shift",
     "subtitle": "14 days free on any plan. No credit card.",
     "monthly": "/ month",
     "recommended": "Most popular",
@@ -514,6 +537,22 @@
     "faq4a": "For teams over 300 people, contact us and we'll work out custom terms.",
     "planStartDesc": "For small teams just getting started",
     "planTeamDesc": "For growing teams that need coverage and alerts",
-    "planBusinessDesc": "For larger operations with multiple departments and roles"
+    "planBusinessDesc": "For larger operations with multiple departments and roles",
+    "billingMonthly": "Monthly",
+    "billingYearly": "Yearly",
+    "yearlyBadge": "2 months free",
+    "billedAnnually": "billed annually",
+    "perEmployee": "≈ ${price} per employee / mo",
+    "riskReducer": "14 days free · no card required",
+    "incrementalIntro": "Everything in {plan}, plus:",
+    "socialProof": "Trusted by teams in restaurants, clinics, retail and IT",
+    "socialProofStat": "400+ teams already plan shifts with Smengo",
+    "enterpriseTitle": "Enterprise",
+    "enterpriseDesc": "For companies with 300+ employees – custom terms, SSO and a dedicated manager",
+    "enterpriseFeature1": "SSO / SAML",
+    "enterpriseFeature2": "Dedicated manager",
+    "enterpriseFeature3": "SLA and priority support",
+    "enterpriseFeature4": "Migration assistance",
+    "enterpriseCta": "Contact us"
   }
 }
