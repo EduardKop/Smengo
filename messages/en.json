@@ -138,6 +138,108 @@
       "pitchBody": "Proven playbooks for sales teams, arbitrage teams, restaurants, retail, services, production, and IT – pick your industry.",
       "chooseIndustry": "Choose your industry"
     },
+    "builtForRestaurants": {
+      "hero": {
+        "eyebrowBefore": "SHIFT PLANNER ",
+        "eyebrowAccent": "#1 FOR FOOD SERVICE",
+        "title": "{label}: a schedule without chaos and shifts covered on time",
+        "subtitle": "Stop juggling spreadsheets and chasing people in chats. See your whole team's month, catch coverage gaps before they turn into an empty dining room.",
+        "ctaStart": "Start free",
+        "ctaPricing": "See pricing",
+        "ctaHint": "14 days, no card",
+        "imageAlt": "Restaurant team"
+      },
+      "pain": {
+        "eyebrow": "Sound familiar?",
+        "titleLine1": "Familiar scenes.",
+        "titleLine2": "Solved in a minute.",
+        "items": {
+          "1": {
+            "pain": "A waiter no-shows on a busy Friday - you find out an hour before service.",
+            "fix": "You see the coverage gap days in advance: an alert fires the moment a shift gets thin."
+          },
+          "2": {
+            "pain": "Every schedule change means phone calls, three chat threads and re-sending the spreadsheet.",
+            "fix": "Change a shift in one click. The staffer gets a notification, the team sees the live version."
+          },
+          "3": {
+            "pain": "Weekends swing between too many shifts and overpaying, or short staff and chaos in the kitchen.",
+            "fix": "Smengo shows coverage by role: «Kitchen · Sat - 2 slots open». You fix it ahead of time."
+          }
+        },
+        "solved": "Solved",
+        "painLabel": "Pain",
+        "spinText": "FAST · SIMPLE · NO CHAOS · SMENGO · ",
+        "chip1": "Hostess · 5pm–11pm",
+        "chip2": "Cook · 9am–9pm",
+        "chip3": "Bar · 6pm–2am",
+        "chip4": "Waiter · 10am–6pm",
+        "chip5": "Barista · 12pm–8pm",
+        "chip6": "Kitchen · 2pm–10pm"
+      },
+      "features": {
+        "eyebrow": "Features",
+        "title": "Built for shifts in the kitchen and the floor",
+        "subtitle": "Six tools that cover 90% of what a restaurant manager does every week.",
+        "items": {
+          "schedule": {
+            "title": "A month at a glance",
+            "desc": "Every kitchen, bar and floor shift on a single screen. Rows are people, columns are days, no separate sheets."
+          },
+          "telegram": {
+            "title": "Telegram bot for the team",
+            "desc": "Staff see their shifts in Telegram. One-tap check-in, late arrivals highlighted automatically."
+          },
+          "swaps": {
+            "title": "Shift swaps without chats",
+            "desc": "A barista can't make it - a replacement claims it from the feed in a minute. Manager approves in one click."
+          },
+          "ai": {
+            "title": "AI scheduling assistant",
+            "desc": "Smengo proposes next week's schedule for you, factoring in hours, time off and typical shift load."
+          },
+          "hr": {
+            "title": "HR dashboard",
+            "desc": "See who's overworked, whose review is coming up, who hasn't finished paperwork - before it becomes a problem."
+          },
+          "onboarding": {
+            "title": "Onboarding for new hires",
+            "desc": "A new waiter goes through checklists and training right in the app - shows up to the first shift ready."
+          }
+        }
+      },
+      "steps": {
+        "title": "Get going in 3 steps. No training needed.",
+        "items": {
+          "1": { "title": "Sign up", "desc": "Email and venue name. No card, no long forms." },
+          "2": { "title": "Import your team", "desc": "CSV or by hand: 30 staff added in 5 minutes." },
+          "3": { "title": "Publish the schedule", "desc": "Staff get a notification in Telegram or by email - everyone knows their shifts." }
+        },
+        "imageAlt": "Restaurant dining room"
+      },
+      "roi": {
+        "title": "Don't overpay for extra shifts. Don't lose revenue when you're short-staffed.",
+        "subtitle": "Smengo shows coverage by role and by hour - you can see where a shift is thin, and where you've put two people in a spot that only needs one.",
+        "items": {
+          "1": "Average shift coverage as a clear metric",
+          "2": "Total hours per person for any period - no manual counting",
+          "3": "Alerts when someone is on track to exceed hours this month"
+        },
+        "metricLabel": "Average coverage improvement",
+        "metricCaption": "Based on anonymized data from pilot teams."
+      },
+      "testimonial": {
+        "quote": "We used to spend 2 hours a week putting the schedule together - now it's 15 minutes. Conflicts show up in advance, and we stopped firefighting on Saturday mornings.",
+        "author": "Alexander, GM",
+        "role": "Coffee shop chain"
+      },
+      "cta": {
+        "title": "Build your cafe's schedule in one evening.",
+        "subtitle": "14 days of full access. No card. 5-minute setup.",
+        "ctaStart": "Start free",
+        "ctaPricing": "See pricing"
+      }
+    },
     "hero": {
       "badge": "Shift scheduler for growing teams",
       "headline": "Your whole team's month, on one screen.",

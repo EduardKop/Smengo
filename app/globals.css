@@ -214,6 +214,40 @@ body {
   to   { opacity: 1; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
 }
 
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+  animation: fade-in-up 0.55s cubic-bezier(0.22,1,0.36,1) both;
+  animation-delay: var(--delay, 0ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in-up { animation: none; }
+}
+
+@keyframes chip-float {
+  0%, 100% { transform: rotate(var(--cf-rot, 0deg)) translateY(0px); }
+  50%       { transform: rotate(var(--cf-rot, 0deg)) translateY(-7px); }
+}
+.shift-chip-float {
+  animation: chip-float var(--cf-dur, 4.5s) ease-in-out var(--cf-delay, 0s) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .shift-chip-float { animation: none; }
+}
+
+@keyframes spinning-text-rotate {
+  to { transform: rotate(360deg); }
+}
+.spinning-text-ring {
+  animation: spinning-text-rotate var(--st-duration, 12s) linear infinite var(--st-direction, normal);
+}
+@media (prefers-reduced-motion: reduce) {
+  .spinning-text-ring { animation: none; }
+}
+.cta-sand:hover { background: #d49a5c !important; }
+
 /* ─── Dark theme (cool slate-ink) ───────────────────────────────── */
 .dark {
   --background: #0e1014;
