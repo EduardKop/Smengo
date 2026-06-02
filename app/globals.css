@@ -309,6 +309,36 @@ body {
   --chip-l-bg: rgba(216, 180, 254, 0.10); --chip-l-fg: #d8b4fe;
 }
 
+/* ─── ScrollMorphGrid locked state ─────────────────────────────── */
+/* When the schedule-grid hero animation has snapped into place, the page
+   gets data-grid-locked='true'. The hero text re-centers and widens so it
+   reads as a single full-width header above the now-empty hero area. */
+[data-hero-text] {
+  transition: max-width 600ms cubic-bezier(0.32, 0.72, 0, 1),
+              margin-left 600ms cubic-bezier(0.32, 0.72, 0, 1),
+              margin-right 600ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+[data-hero-text] > * {
+  transition: text-align 400ms ease;
+}
+[data-hero-buttons] {
+  transition: justify-content 400ms ease;
+}
+
+body[data-grid-locked='true'] [data-hero-text] {
+  max-width: 760px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  text-align: center;
+}
+body[data-grid-locked='true'] [data-hero-text] > * {
+  text-align: center;
+}
+body[data-grid-locked='true'] [data-hero-buttons] {
+  justify-content: center;
+}
+
+
 
 
 

@@ -1383,11 +1383,8 @@ function EmployeeCalendarOverlay({
     if (!open) return
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', onKey)
-    const prevOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
     return () => {
       window.removeEventListener('keydown', onKey)
-      document.body.style.overflow = prevOverflow
     }
   }, [open, onClose])
 
@@ -1457,7 +1454,7 @@ function EmployeeCalendarOverlay({
         aria-modal="true"
         aria-label={labels.empCalendarTitle}
         style={{
-          width: '100%', maxWidth: 520,
+          width: '100%', maxWidth: 400,
           maxHeight: 'calc(100vh - 32px)',
           overflowY: 'auto',
           background: 'var(--surface)',
@@ -1471,10 +1468,10 @@ function EmployeeCalendarOverlay({
         }}
       >
         {/* Header */}
-        <div style={{ padding: '18px 20px 12px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-          <Avatar name={empName} size={42} />
+        <div style={{ padding: '12px 16px 8px', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+          <Avatar name={empName} size={34} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.2 }}>{empName}</div>
+            <div style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.2 }}>{empName}</div>
             <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <span
                 style={{
@@ -1498,7 +1495,7 @@ function EmployeeCalendarOverlay({
             className="cursor-pointer hover:opacity-80"
             style={{
               flexShrink: 0,
-              width: 32, height: 32, borderRadius: '50%',
+              width: 26, height: 26, borderRadius: '50%',
               background: 'var(--grid-pill-bg)',
               border: '1px solid var(--border)',
               color: 'var(--muted-foreground)',
@@ -1513,31 +1510,31 @@ function EmployeeCalendarOverlay({
         </div>
 
         {/* Summary chips */}
-        <div style={{ padding: '0 20px 16px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-          <div style={{ padding: '10px 12px', borderRadius: 10, background: 'color-mix(in oklab, var(--st-work) 14%, transparent)', border: '1px solid color-mix(in oklab, var(--st-work) 28%, transparent)' }}>
-            <div style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.1 }}>{workDays}</div>
-            <div style={{ fontSize: 11, color: 'var(--muted-foreground)', marginTop: 2 }}>{labels.empCalendarSummaryWorked}</div>
+        <div style={{ padding: '0 16px 12px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+          <div style={{ padding: '7px 10px', borderRadius: 8, background: 'color-mix(in oklab, var(--st-work) 14%, transparent)', border: '1px solid color-mix(in oklab, var(--st-work) 28%, transparent)' }}>
+            <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.1 }}>{workDays}</div>
+            <div style={{ fontSize: 10, color: 'var(--muted-foreground)', marginTop: 2 }}>{labels.empCalendarSummaryWorked}</div>
           </div>
-          <div style={{ padding: '10px 12px', borderRadius: 10, background: 'color-mix(in oklab, var(--muted-foreground) 10%, transparent)', border: '1px solid var(--border)' }}>
-            <div style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.1 }}>{offDays + vacationDays + sickDays}</div>
-            <div style={{ fontSize: 11, color: 'var(--muted-foreground)', marginTop: 2 }}>{labels.empCalendarSummaryOff}</div>
+          <div style={{ padding: '7px 10px', borderRadius: 8, background: 'color-mix(in oklab, var(--muted-foreground) 10%, transparent)', border: '1px solid var(--border)' }}>
+            <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.1 }}>{offDays + vacationDays + sickDays}</div>
+            <div style={{ fontSize: 10, color: 'var(--muted-foreground)', marginTop: 2 }}>{labels.empCalendarSummaryOff}</div>
           </div>
-          <div style={{ padding: '10px 12px', borderRadius: 10, background: 'color-mix(in oklab, var(--accent) 12%, transparent)', border: '1px solid color-mix(in oklab, var(--accent) 24%, transparent)' }}>
-            <div style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.1 }}>{hours}<span style={{ fontSize: 11, fontWeight: 500, color: 'var(--muted-foreground)', marginLeft: 2 }}>{labels.hourSuffix}</span></div>
-            <div style={{ fontSize: 11, color: 'var(--muted-foreground)', marginTop: 2 }}>{labels.empCalendarSummaryHours}</div>
+          <div style={{ padding: '7px 10px', borderRadius: 8, background: 'color-mix(in oklab, var(--accent) 12%, transparent)', border: '1px solid color-mix(in oklab, var(--accent) 24%, transparent)' }}>
+            <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.1 }}>{hours}<span style={{ fontSize: 10, fontWeight: 500, color: 'var(--muted-foreground)', marginLeft: 2 }}>{labels.hourSuffix}</span></div>
+            <div style={{ fontSize: 10, color: 'var(--muted-foreground)', marginTop: 2 }}>{labels.empCalendarSummaryHours}</div>
           </div>
         </div>
 
         {/* Calendar grid */}
-        <div style={{ padding: '0 16px 16px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 6 }}>
+        <div style={{ padding: '0 12px 12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 3, marginBottom: 4 }}>
             {dowKeys.map((k) => (
-              <div key={k} style={{ textAlign: 'center', fontSize: 10, fontWeight: 600, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '4px 0' }}>
+              <div key={k} style={{ textAlign: 'center', fontSize: 9, fontWeight: 600, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '3px 0' }}>
                 {labels.days[k]}
               </div>
             ))}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 3 }}>
             {cells.map((c, i) => {
               if (!c) return <div key={i} style={{ aspectRatio: '1 / 1.05' }} />
               const sc = statusColor(c.status, c.isWeekend)
@@ -1547,18 +1544,18 @@ function EmployeeCalendarOverlay({
                   key={i}
                   style={{
                     aspectRatio: '1 / 1.05',
-                    borderRadius: 8,
+                    borderRadius: 6,
                     background: sc.bg,
                     border: isUnfilled ? '1.5px dashed var(--accent)' : `1px solid ${c.isWeekend ? 'color-mix(in oklab, var(--accent) 12%, var(--border))' : 'var(--border)'}`,
                     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '6px 4px 5px',
+                    padding: '4px 2px 3px',
                     position: 'relative',
                   }}
                 >
-                  <div style={{ fontSize: 11, fontWeight: 600, color: c.isWeekend && c.status !== 'W' ? 'var(--accent)' : 'var(--foreground)', opacity: c.status === 'W' || c.status === 'V' || c.status === 'S' ? 1 : 0.78 }}>
+                  <div style={{ fontSize: 10, fontWeight: 600, color: c.isWeekend && c.status !== 'W' ? 'var(--accent)' : 'var(--foreground)', opacity: c.status === 'W' || c.status === 'V' || c.status === 'S' ? 1 : 0.78 }}>
                     {c.day}
                   </div>
-                  <div style={{ fontSize: 9, fontWeight: 600, color: sc.fg, lineHeight: 1, textAlign: 'center' }}>
+                  <div style={{ fontSize: 8, fontWeight: 600, color: sc.fg, lineHeight: 1, textAlign: 'center' }}>
                     {sc.label}
                   </div>
                 </div>
@@ -1568,7 +1565,7 @@ function EmployeeCalendarOverlay({
         </div>
 
         {/* Legend */}
-        <div style={{ padding: '8px 20px 18px', display: 'flex', flexWrap: 'wrap', gap: 12, fontSize: 11, color: 'var(--muted-foreground)', borderTop: '1px solid var(--border)' }}>
+        <div style={{ padding: '6px 16px 14px', display: 'flex', flexWrap: 'wrap', gap: 8, fontSize: 10, color: 'var(--muted-foreground)', borderTop: '1px solid var(--border)' }}>
           <LegendDot color="var(--st-work)" label={labels.empCalendarLegendWork} />
           <LegendDot color="var(--muted-foreground)" label={labels.empCalendarLegendDayoff} />
           <LegendDot color="var(--accent)" label={labels.empCalendarLegendVacation} />

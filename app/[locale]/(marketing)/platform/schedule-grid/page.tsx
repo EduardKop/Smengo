@@ -2,13 +2,16 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import {
-  Calendar, Layers, BarChart3, Moon,
+  Layers, BarChart3, Moon,
   Hand, Sparkles, ArrowRight, Check, X,
   Send, ArrowLeftRight, Quote,
 } from 'lucide-react'
 import { routing, type Locale } from '@/i18n/routing'
-import { InteractiveScheduleDemo } from '@/components/marketing/interactive-schedule-demo'
-import { HeroGridMockup } from '@/components/marketing/hero-grid-mockup'
+import { GridPreview, type GridPreviewLabels } from '@/components/marketing/grid-preview'
+import { ScrollMorphGrid } from '@/components/marketing/scroll-morph-grid'
+import { GridModeDemo } from '@/components/marketing/grid-mode-demo'
+import { CoverageAnimVisual } from '@/components/marketing/coverage-anim-visual'
+import { RolesAnimVisual } from '@/components/marketing/roles-anim-visual'
 
 export const revalidate = 3600
 
@@ -33,6 +36,9 @@ export async function generateMetadata({
 const CTA_PRIMARY =
   'inline-flex items-center justify-center rounded-full bg-[#e0a96d] px-6 py-3 text-[14.5px] font-semibold text-[#1f1e1c] shadow-[0_8px_24px_-8px_rgba(224,169,109,0.65)] transition-transform hover:-translate-y-0.5 hover:bg-[#d49a5a]'
 
+const CTA_SECONDARY_ADAPTIVE =
+  'inline-flex items-center justify-center rounded-full border border-foreground/20 px-6 py-3 text-[14.5px] font-medium text-foreground transition-colors hover:bg-foreground/6'
+
 const CTA_SECONDARY_LIGHT =
   'inline-flex items-center justify-center rounded-full border border-white/25 px-6 py-3 text-[14.5px] font-medium text-white transition-colors hover:bg-white/10'
 
@@ -47,46 +53,121 @@ export default async function ScheduleGridPage({ params }: PageProps) {
   const { locale } = await params
   setRequestLocale(locale)
   const t = await getTranslations({ locale, namespace: 'marketing.scheduleGrid' })
+  const tg = await getTranslations({ locale, namespace: 'marketing.gridMockup' })
 
-  const weekdays = (await getTranslations({ locale, namespace: 'marketing.scheduleGrid.demo' })).raw('weekdays') as string[]
+  const gridLabels: GridPreviewLabels = {
+    modeDetail: tg('modeDetail'), modeCompact: tg('modeCompact'), modeExtended: tg('modeExtended'),
+    monthLabel: tg('monthLabel'), allDepts: tg('allDepts'), exportBtn: tg('exportBtn'),
+    addEmployee: tg('addEmployee'), employee: tg('employee'),
+    deptSales: tg('deptSales'), deptOps: tg('deptOps'), deptSupport: tg('deptSupport'),
+    deptMarketing: tg('deptMarketing'), deptDesign: tg('deptDesign'), demoDept: tg('demoDept'),
+    minDay: tg.raw('minDay'), alert: tg('alert'), coverageSummary: tg('coverageSummary'),
+    statusWork: tg('statusWork'), statusVac: tg('statusVac'), statusSick: tg('statusSick'),
+    statusOff: tg('statusOff'), statusUncovered: tg('statusUncovered'), statusWorkFull: tg('statusWorkFull'),
+    shiftMorning: tg('shiftMorning'), shiftEvening: tg('shiftEvening'), shiftNight: tg('shiftNight'),
+    shortageBadge: tg('shortageBadge'), shortageLabel: tg('shortageLabel'), hourSuffix: tg('hourSuffix'),
+    displayLabel: tg('displayLabel'), highContrastLabel: tg('highContrastLabel'),
+    highlightWeekendsLabel: tg('highlightWeekendsLabel'), showTimesLabel: tg('showTimesLabel'),
+    mergedLabel: tg('mergedLabel'), gridLabel: tg('gridLabel'), stickyLabel: tg('stickyLabel'),
+    timerLabel: tg('timerLabel'), todayLabel: tg('todayLabel'),
+    days: { mon: tg('days.mon'), tue: tg('days.tue'), wed: tg('days.wed'), thu: tg('days.thu'), fri: tg('days.fri'), sat: tg('days.sat'), sun: tg('days.sun') },
+    projectsBtn: tg('projectsBtn'), telegramBtn: tg('telegramBtn'),
+    editBtn: tg('editBtn'), editDone: tg('editDone'),
+    toastCopied: tg('toastCopied'), toastExported: tg('toastExported'), toastAdded: tg('toastAdded'),
+    newEmployee: tg('newEmployee'), projectBadge: tg.raw('projectBadge'),
+    projectTeam: tg('projectTeam'), projectStatus: tg('projectStatus'), projectClose: tg('projectClose'),
+    projects: {
+      p1: { name: tg('p1Name'), desc: tg('p1Desc'), tag: tg('p1Tag') },
+      p2: { name: tg('p2Name'), desc: tg('p2Desc'), tag: tg('p2Tag') },
+      p3: { name: tg('p3Name'), desc: tg('p3Desc'), tag: tg('p3Tag') },
+      p4: { name: tg('p4Name'), desc: tg('p4Desc'), tag: tg('p4Tag') },
+      p5: { name: tg('p5Name'), desc: tg('p5Desc'), tag: tg('p5Tag') },
+      p6: { name: tg('p6Name'), desc: tg('p6Desc'), tag: tg('p6Tag') },
+    },
+    roles: { waiter: tg('roles.waiter'), host: tg('roles.host'), barista: tg('roles.barista'), cook: tg('roles.cook'), souschef: tg('roles.souschef'), pastry: tg('roles.pastry'), floormanager: tg('roles.floormanager'), shiftlead: tg('roles.shiftlead'), cashier: tg('roles.cashier'), courier: tg('roles.courier') },
+    shifts: { morning: tg('shifts.morning'), evening: tg('shifts.evening'), night: tg('shifts.night'), dayoff: tg('shifts.dayoff'), vacation: tg('shifts.vacation'), sick: tg('shifts.sick'), unfilled: tg('shifts.unfilled') },
+    coverageGap: tg('coverageGap'),
+    months: [tg('m1'), tg('m2'), tg('m3'), tg('m4'), tg('m5')],
+    colOffDays: tg('colOffDays'), colWorkHrs: tg('colWorkHrs'),
+    chromeOnShift: tg('chromeOnShift'), chromeOffToday: tg('chromeOffToday'), chromeToday: tg('chromeToday'),
+    themeLabel: tg('themeLabel'), themeStandard: tg('themeStandard'), themeClassic: tg('themeClassic'),
+    classicTeams: tg('classicTeams'), classicAbsence: tg('classicAbsence'), classicAll: tg('classicAll'), classicSearch: tg('classicSearch'),
+    addSectionBtn: tg('addSectionBtn'), addSectionTitle: tg('addSectionTitle'),
+    sectionNameLabel: tg('sectionNameLabel'), sectionNamePlaceholder: tg('sectionNamePlaceholder'),
+    colorLabel: tg('colorLabel'), previewLabel: tg('previewLabel'), gradientLabel: tg('gradientLabel'),
+    stdColorsLabel: tg('stdColorsLabel'), gradientsLabel: tg('gradientsLabel'), customColorLabel: tg('customColorLabel'),
+    createBtn: tg('createBtn'), cancelBtn: tg('cancelBtn'), changeRoleTitle: tg('changeRoleTitle'),
+    customBadge: tg('customBadge'), resetBtn: tg('resetBtn'), showRolesLabel: tg('showRolesLabel'),
+    empCalendarTitle: tg('empCalendarTitle'), empCalendarClose: tg('empCalendarClose'),
+    empCalendarLegendWork: tg('empCalendarLegendWork'), empCalendarLegendOff: tg('empCalendarLegendOff'),
+    empCalendarLegendVacation: tg('empCalendarLegendVacation'), empCalendarLegendSick: tg('empCalendarLegendSick'),
+    empCalendarLegendDayoff: tg('empCalendarLegendDayoff'),
+    empCalendarSummaryWorked: tg('empCalendarSummaryWorked'), empCalendarSummaryOff: tg('empCalendarSummaryOff'),
+    empCalendarSummaryHours: tg('empCalendarSummaryHours'),
+  }
 
   return (
     <div className="overflow-x-hidden">
 
-      {/* ──────────────────────── 1. HERO — DARK ──────────────────────── */}
-      <section className="bg-[#1f1e1c] px-4 py-20 sm:px-6 sm:py-24 lg:py-28">
-        <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[1fr_1.05fr]">
-          <div>
-            <span className="mb-5 inline-flex items-center gap-2 rounded-full bg-[#e0a96d]/15 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#e0a96d]">
-              <Calendar size={12} strokeWidth={2.5} />
-              {t('hero.eyebrow')}
-            </span>
-            <h1 className="font-serif font-semibold text-white" style={{ fontSize: 'clamp(34px, 5vw, 58px)', letterSpacing: '-0.025em', lineHeight: 1.04 }}>
-              {t('hero.title')}
-            </h1>
-            <p className="mt-5 max-w-[520px] text-[17px] leading-[1.6] text-white/70">
-              {t('hero.subtitle')}
-            </p>
-            <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Link href="/register" className={CTA_PRIMARY}>{t('hero.ctaStart')}</Link>
-              <Link href="/pricing" className={CTA_SECONDARY_LIGHT}>{t('hero.ctaPricing')}</Link>
-              <span className="text-[12.5px] text-white/55">{t('hero.hint')}</span>
+      {/* Fixed-positioned real grid that morphs between hero and demo slots on scroll (lg only) */}
+      <ScrollMorphGrid labels={gridLabels} heroSlotId="hero-grid-slot" demoSlotId="demo-grid-slot" />
+
+      {/* ──────────────────────── 1. HERO ──────────────────────── */}
+      <section className="relative overflow-hidden lg:min-h-[640px]">
+        {/* Text column — vertically centered on desktop, sits on the left half */}
+        <div className="relative z-10 flex min-h-[inherit] items-center">
+          <div className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 lg:py-0">
+            <div data-hero-text className="max-w-[460px] lg:py-20">
+              <h1 className="font-serif font-semibold text-foreground" style={{ fontSize: 'clamp(34px, 5vw, 58px)', letterSpacing: '-0.025em', lineHeight: 1.04 }}>
+                {t('hero.title')}
+              </h1>
+              <p className="mt-5 text-[17px] leading-[1.6] text-foreground/65">
+                {t('hero.subtitle')}
+              </p>
+              <div data-hero-buttons className="mt-8 flex flex-wrap items-center gap-3">
+                <Link href="/register" className={CTA_PRIMARY}>{t('hero.ctaStart')}</Link>
+                <Link href="/pricing" className={CTA_SECONDARY_ADAPTIVE}>{t('hero.ctaPricing')}</Link>
+                <span className="text-[12.5px] text-foreground/50">{t('hero.hint')}</span>
+              </div>
             </div>
           </div>
+        </div>
 
-          <div>
-            <HeroGridMockup weekdays={weekdays} offLabel={t('demo.off')} />
+        {/* Desktop hero anchor slot for ScrollMorphGrid.
+            Empty — the real grid is rendered by ScrollMorphGrid as fixed-positioned
+            and reads this rect to know where to sit. Width 1540 > viewport on the
+            right half → right side bleeds off (section overflow-hidden clips DOM,
+            morph element is fixed so it bleeds visually off screen). */}
+        <div
+          id="hero-grid-slot"
+          aria-hidden="true"
+          className="absolute top-1/2 hidden -translate-y-1/2 lg:block"
+          style={{ left: '50%', width: '1540px', height: '600px' }}
+        />
+
+        {/* Mobile / tablet: standalone static grid below the text */}
+        <div className="relative mt-2 lg:hidden">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            <div
+              className="overflow-hidden rounded-2xl drop-shadow-[0_20px_40px_rgba(0,0,0,0.15)]"
+              style={{ height: '420px' }}
+            >
+              <div className="h-full overflow-x-auto overflow-y-hidden">
+                <div style={{ position: 'relative', width: '1300px', height: '472px' }}>
+                  <div style={{ position: 'absolute', top: '-52px', left: 0, width: '1300px' }}>
+                    <GridPreview labels={gridLabels} />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* ──────────────────────── 2. INTERACTIVE DEMO — CREAM ──────────────────────── */}
-      <section className="bg-[#faf4ea] px-4 py-20 sm:px-6 sm:py-24">
+      <section className="bg-[#faf4ea] px-4 py-14 sm:px-6 sm:py-16">
         <div className="mx-auto max-w-6xl">
           <div className="mx-auto max-w-2xl text-center">
-            <span className="mb-4 inline-flex rounded-full bg-[#3b6fd4]/12 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#3b6fd4]">
-              {t('demo.eyebrow')}
-            </span>
             <h2 className="font-serif font-semibold text-[#1f1e1c]" style={{ fontSize: 'clamp(28px, 3.6vw, 44px)', letterSpacing: '-0.022em', lineHeight: 1.1 }}>
               {t('demo.title')}
             </h2>
@@ -95,62 +176,117 @@ export default async function ScheduleGridPage({ params }: PageProps) {
             </p>
           </div>
 
-          <div className="mt-12">
-            <InteractiveScheduleDemo
-              dict={{
-                eyebrow:           t('demo.eyebrow'),
-                title:             t('demo.title'),
-                subtitle:          t('demo.subtitle'),
-                week:              t('demo.week'),
-                month:             t('demo.month'),
-                departmentLabel:   t('demo.departmentLabel'),
-                deptAll:           t('demo.deptAll'),
-                deptKitchen:       t('demo.deptKitchen'),
-                deptHall:          t('demo.deptHall'),
-                deptBar:           t('demo.deptBar'),
-                coverageLabel:     t('demo.coverageLabel'),
-                coverageGood:      t('demo.coverageGood'),
-                coverageGapPrefix: t('demo.coverageGapPrefix'),
-                off:               t('demo.off'),
-                hoursShort:        t('demo.hoursShort'),
-                weekdays,
-                tooltipRole:       t('demo.tooltipRole'),
-                tooltipHours:      t('demo.tooltipHours'),
-                tooltipCoverage:   t('demo.tooltipCoverage'),
-              }}
-            />
+          {/* Desktop demo anchor slot — ScrollMorphGrid lands the real grid here, then grows it
+              to bubble (~viewport) size once seated. CSS transition makes the resize smooth. */}
+          <div
+            id="demo-grid-slot"
+            data-demo-slot
+            aria-hidden="true"
+            className="mt-12 hidden w-full lg:block"
+            style={{ height: '540px', transition: 'height 700ms cubic-bezier(0.32, 0.72, 0, 1)' }}
+          />
+
+          {/* Mobile / tablet: standalone static grid */}
+          <div className="relative mt-12 lg:hidden">
+            <div
+              className="overflow-hidden rounded-2xl drop-shadow-[0_20px_40px_rgba(0,0,0,0.15)]"
+              style={{ height: '420px' }}
+            >
+              <div className="h-full overflow-x-auto overflow-y-hidden">
+                <div style={{ position: 'relative', width: '1300px' }}>
+                  <GridPreview labels={gridLabels} />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* ──────────────────────── 3. CAPABILITIES — WHITE ──────────────────────── */}
-      <section className="bg-white px-4 py-20 sm:px-6 sm:py-24">
+      <section className="bg-white px-4 py-14 dark:bg-background sm:px-6 sm:py-16">
         <div className="mx-auto max-w-6xl">
-          <div className="mb-14 max-w-2xl">
-            <span className="mb-3 inline-flex rounded-full bg-[#2f9e6f]/12 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#2f9e6f]">
-              {t('caps.eyebrow')}
-            </span>
-            <h2 className="font-serif font-semibold text-[#1f1e1c]" style={{ fontSize: 'clamp(28px, 3.4vw, 42px)', letterSpacing: '-0.02em', lineHeight: 1.12 }}>
+          <div className="mx-auto mb-10 max-w-2xl text-center">
+            <h2 className="font-serif font-semibold text-foreground" style={{ fontSize: 'clamp(28px, 3.4vw, 42px)', letterSpacing: '-0.02em', lineHeight: 1.12 }}>
               {t('caps.title')}
             </h2>
           </div>
 
           <div className="flex flex-col gap-16">
-            <CapRow side="left"  accent="#3b6fd4" Icon={Layers}    title={t('caps.i1Title')} desc={t('caps.i1Desc')} />
-            <CapRow side="right" accent="#2f9e6f" Icon={BarChart3} title={t('caps.i2Title')} desc={t('caps.i2Desc')} />
-            <CapRow side="left"  accent="#7c5cc4" Icon={Calendar}  title={t('caps.i3Title')} desc={t('caps.i3Desc')} />
+            <CapRow
+              side="left"
+              accent="#3b6fd4"
+              Icon={Layers}
+              hideIcon
+              title={t('caps.i1Title')}
+              desc={t('caps.i1Desc')}
+              visual={(
+                <GridModeDemo
+                  labels={{
+                    compact:  tg('modeCompact'),
+                    detail:   tg('modeDetail'),
+                    extended: tg('modeExtended'),
+                  }}
+                />
+              )}
+              bullets={[
+                t('caps.i1B1'),
+                t('caps.i1B2'),
+                t('caps.i1B3'),
+              ]}
+              metric={{ value: t('caps.i1MetricValue'), label: t('caps.i1MetricLabel') }}
+            />
+            <CapRow
+              side="right"
+              accent="#2f9e6f"
+              Icon={BarChart3}
+              hideIcon
+              title={t('caps.i2Title')}
+              desc={t('caps.i2Desc')}
+              visual={(
+                <CoverageAnimVisual
+                  labels={{
+                    days:       t.raw('caps.gridDays') as string[],
+                    dayShift:   t('caps.gridDayShift'),
+                    nightShift: t('caps.gridNightShift'),
+                    dayOff:     t('caps.gridDayOff'),
+                    unassigned: t('caps.gridUnassigned'),
+                  }}
+                />
+              )}
+              bullets={[
+                t('caps.i2B1'),
+                t('caps.i2B2'),
+                t('caps.i2B3'),
+              ]}
+              callout={t('caps.i2Callout')}
+            />
+            <CapStacked
+              accent="#7c5cc4"
+              title={t('caps.i3Title')}
+              desc={t('caps.i3Desc')}
+              bullets={[
+                t('caps.i3B1'),
+                t('caps.i3B2'),
+                t('caps.i3B3'),
+              ]}
+              visual={(
+                <RolesAnimVisual
+                  labels={{
+                    days:  t.raw('caps.gridDays') as string[],
+                    roles: t.raw('caps.i3Roles') as string[],
+                  }}
+                />
+              )}
+            />
             <CapRow side="right" accent="#e0a96d" Icon={Moon}      title={t('caps.i4Title')} desc={t('caps.i4Desc')} />
           </div>
         </div>
       </section>
 
       {/* ──────────────────────── 4. MANUAL vs AI — DARK ──────────────────────── */}
-      <section className="bg-[#1f1e1c] px-4 py-20 sm:px-6 sm:py-24">
+      <section className="bg-[#1f1e1c] px-4 py-14 sm:px-6 sm:py-16">
         <div className="mx-auto max-w-6xl">
-          <div className="mb-14 max-w-2xl">
-            <span className="mb-3 inline-flex rounded-full bg-white/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-white/75">
-              {t('ways.eyebrow')}
-            </span>
+          <div className="mb-10 max-w-2xl">
             <h2 className="font-serif font-semibold text-white" style={{ fontSize: 'clamp(28px, 3.4vw, 42px)', letterSpacing: '-0.02em', lineHeight: 1.12 }}>
               {t('ways.title')}
             </h2>
@@ -210,12 +346,9 @@ export default async function ScheduleGridPage({ params }: PageProps) {
       </section>
 
       {/* ──────────────────────── 5. EXCEL vs SMENGO — BLUE ──────────────────────── */}
-      <section className="bg-[#3b6fd4] px-4 py-20 sm:px-6 sm:py-24">
+      <section className="bg-[#3b6fd4] px-4 py-14 sm:px-6 sm:py-16">
         <div className="mx-auto max-w-5xl">
-          <div className="mb-12 text-center">
-            <span className="mb-3 inline-flex rounded-full bg-white/15 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-white">
-              {t('vs.eyebrow')}
-            </span>
+          <div className="mb-10 text-center">
             <h2 className="font-serif font-semibold text-white" style={{ fontSize: 'clamp(28px, 3.4vw, 42px)', letterSpacing: '-0.02em', lineHeight: 1.12 }}>
               {t('vs.title')}
             </h2>
@@ -249,12 +382,9 @@ export default async function ScheduleGridPage({ params }: PageProps) {
       </section>
 
       {/* ──────────────────────── 6. WORKS WITH THE REST — CREAM ──────────────────────── */}
-      <section className="bg-[#faf4ea] px-4 py-20 sm:px-6 sm:py-24">
+      <section className="bg-[#faf4ea] px-4 py-14 sm:px-6 sm:py-16">
         <div className="mx-auto max-w-6xl">
-          <div className="mb-12 max-w-2xl">
-            <span className="mb-3 inline-flex rounded-full bg-[#7c5cc4]/12 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#7c5cc4]">
-              {t('rest.eyebrow')}
-            </span>
+          <div className="mb-10 max-w-2xl">
             <h2 className="font-serif font-semibold text-[#1f1e1c]" style={{ fontSize: 'clamp(28px, 3.4vw, 42px)', letterSpacing: '-0.02em', lineHeight: 1.12 }}>
               {t('rest.title')}
             </h2>
@@ -269,12 +399,9 @@ export default async function ScheduleGridPage({ params }: PageProps) {
       </section>
 
       {/* ──────────────────────── 7. SOCIAL PROOF + STAT — WHITE ──────────────────────── */}
-      <section className="bg-white px-4 py-20 sm:px-6 sm:py-24">
+      <section className="bg-white px-4 py-14 sm:px-6 sm:py-16">
         <div className="mx-auto max-w-5xl">
           <div className="mb-10 max-w-2xl">
-            <span className="mb-3 inline-flex rounded-full bg-[#1f1e1c]/8 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#1f1e1c]/70">
-              {t('proof.eyebrow')}
-            </span>
             <h2 className="font-serif font-semibold text-[#1f1e1c]" style={{ fontSize: 'clamp(28px, 3.4vw, 42px)', letterSpacing: '-0.02em', lineHeight: 1.12 }}>
               {t('proof.title')}
             </h2>
@@ -342,36 +469,139 @@ export default async function ScheduleGridPage({ params }: PageProps) {
   )
 }
 
-// ──────────────────────── Sub-components ────────────────────────
+// ────────────────── Sub-components ──────────────────
+
+/**
+ * Stacked capability block: centered heading + description + a single row
+ * of check-marked bullets on top, and a full-bleed (viewport-wide) visual
+ * below. Used when the visual itself benefits from horizontal room
+ * (e.g. the roles marquee).
+ */
+function CapStacked({
+  accent, title, desc, bullets, visual,
+}: {
+  accent: string
+  title: string
+  desc: string
+  bullets?: string[]
+  visual: React.ReactNode
+}) {
+  return (
+    <div className="flex flex-col gap-8">
+      <div className="mx-auto max-w-3xl text-center">
+        <h3
+          className="text-[22px] font-semibold text-foreground sm:text-[26px]"
+          style={{ letterSpacing: '-0.018em', lineHeight: 1.18 }}
+        >
+          {title}
+        </h3>
+        <p className="mt-3 text-[15.5px] leading-[1.6] text-foreground/65">
+          {desc}
+        </p>
+        {bullets && bullets.length > 0 && (
+          <ul className="mt-5 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+            {bullets.map((b) => (
+              <li
+                key={b}
+                className="flex items-center gap-2 text-[14.5px] leading-[1.4] text-foreground/80"
+              >
+                <Check
+                  size={16}
+                  strokeWidth={2.6}
+                  className="shrink-0"
+                  style={{ color: accent }}
+                />
+                <span>{b}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      {/* Full-bleed visual: break out of the parent max-w container. */}
+      <div className="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen">
+        {visual}
+      </div>
+    </div>
+  )
+}
 
 function CapRow({
-  side, accent, Icon, title, desc,
+  side, accent, Icon, title, desc, visual, bullets, metric, hideIcon, callout,
 }: {
   side: 'left' | 'right'
   accent: string
   Icon: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>
   title: string
   desc: string
+  visual?: React.ReactNode
+  bullets?: string[]
+  metric?: { value: string; label: string }
+  hideIcon?: boolean
+  callout?: string
 }) {
   return (
-    <div className="grid items-center gap-8 md:grid-cols-2 md:gap-12">
+    <div className="grid items-center gap-10 md:grid-cols-[1fr_1.15fr] md:gap-14">
       <div className={side === 'left' ? 'md:order-1' : 'md:order-2'}>
-        <span
-          className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl"
-          style={{ backgroundColor: `${accent}1f`, color: accent }}
-        >
-          <Icon size={22} strokeWidth={1.8} />
-        </span>
-        <h3 className="text-[22px] font-semibold text-[#1f1e1c] sm:text-[26px]" style={{ letterSpacing: '-0.018em', lineHeight: 1.18 }}>
+        {!hideIcon && (
+          <span
+            className="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-2xl"
+            style={{ backgroundColor: `${accent}1f`, color: accent }}
+          >
+            <Icon size={26} strokeWidth={1.8} />
+          </span>
+        )}
+        <h3 className="text-[22px] font-semibold text-foreground sm:text-[26px]" style={{ letterSpacing: '-0.018em', lineHeight: 1.18 }}>
           {title}
         </h3>
-        <p className="mt-3 max-w-[460px] text-[15.5px] leading-[1.6] text-[#1f1e1c]/65">
+        <p className="mt-3 max-w-[460px] text-[15.5px] leading-[1.6] text-foreground/65">
           {desc}
         </p>
+
+        {bullets && bullets.length > 0 && (
+          <ul className="mt-6 flex flex-col gap-2.5">
+            {bullets.map((b) => (
+              <li key={b} className="flex items-start gap-2.5 text-[14.5px] leading-[1.5] text-foreground/80">
+                <Check
+                  size={16}
+                  strokeWidth={2.6}
+                  className="mt-0.5 shrink-0"
+                  style={{ color: accent }}
+                />
+                <span>{b}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {metric && (
+          <div
+            className="mt-7 inline-flex items-baseline gap-2.5 rounded-2xl border px-4 py-3"
+            style={{
+              borderColor: `${accent}33`,
+              backgroundColor: `${accent}0d`,
+            }}
+          >
+            <span
+              className="font-serif font-bold leading-none"
+              style={{ fontSize: '40px', letterSpacing: '-0.03em', color: accent }}
+            >
+              {metric.value}
+            </span>
+            <span className="text-[13.5px] font-medium leading-[1.3] text-foreground/70">
+              {metric.label}
+            </span>
+          </div>
+        )}
+
+        {callout && (
+          <div className="mt-6 inline-flex max-w-xs items-start gap-2 rounded-xl border border-[#e0a96d]/35 bg-[#e0a96d]/10 px-3.5 py-2.5 text-[13px] leading-snug text-[#8a5515] dark:border-[#e0a96d]/25 dark:bg-[#e0a96d]/8 dark:text-[#d4924a]">
+            {callout}
+          </div>
+        )}
       </div>
 
       <div className={side === 'left' ? 'md:order-2' : 'md:order-1'}>
-        <MiniGridVisual accent={accent} />
+        {visual ?? <MiniGridVisual accent={accent} />}
       </div>
     </div>
   )

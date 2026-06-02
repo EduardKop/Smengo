@@ -144,7 +144,7 @@ export function RolePickerModal({ theme, labels, empName, currentKey, customSect
     ...customSections.map((cs) => ({ key: cs.key, label: cs.name, color: cs.color, isCustom: true })),
   ]
   return (
-    <ModalShell theme={theme} title={`${labels.changeRoleTitle} — ${empName}`} onClose={onClose} width={420}>
+    <ModalShell theme={theme} title={`${labels.changeRoleTitle} — ${empName}`} onClose={onClose} width={340}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         {items.map((it) => {
           const active = it.key === currentKey
@@ -214,6 +214,14 @@ export function AddSectionModal({ theme, labels, onCreate, onClose }: AddSection
   const [customHex, setCustomHex] = useState<string>('#6366f1')
   const colorInputRef = useRef<HTMLInputElement | null>(null)
 
+  // Collision-safe id for new custom sections (rapid double-Enter / double-click safe).
+  const newSectionKey = () => {
+    const rand = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
+    return `cs:${rand}`
+  }
+
   const ALL_PRESETS = [...SOLID_COLORS, ...GRADIENT_COLORS] as { id: string; value: string }[]
   const color = selectedId === 'custom'
     ? customHex
@@ -255,7 +263,7 @@ export function AddSectionModal({ theme, labels, onCreate, onClose }: AddSection
   )
 
   return (
-    <ModalShell theme={theme} title={labels.addSectionTitle} onClose={onClose} width={460}>
+    <ModalShell theme={theme} title={labels.addSectionTitle} onClose={onClose} width={380}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
 
         {/* Name input */}
@@ -284,7 +292,7 @@ export function AddSectionModal({ theme, labels, onCreate, onClose }: AddSection
             }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && canCreate) {
-                onCreate({ key: `cs:${Date.now()}`, name: trimmed, color })
+                onCreate({ key: newSectionKey(), name: trimmed, color })
                 onClose()
               }
             }}
@@ -381,7 +389,7 @@ export function AddSectionModal({ theme, labels, onCreate, onClose }: AddSection
             disabled={!canCreate}
             onClick={() => {
               if (!canCreate) return
-              onCreate({ key: `cs:${Date.now()}`, name: trimmed, color })
+              onCreate({ key: newSectionKey(), name: trimmed, color })
               onClose()
             }}
             style={{
