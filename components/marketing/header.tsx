@@ -60,6 +60,7 @@ export function MarketingHeader() {
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const platformCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const barRef = useRef<HTMLDivElement>(null)
+  const mobileScrollY = useRef(0)
 
   useEffect(() => {
     const ua = navigator.userAgent
@@ -117,6 +118,38 @@ export function MarketingHeader() {
     }
   }, [builtForOpen, platformOpen])
 
+  useEffect(() => {
+    if (!mobileOpen) return
+
+    const lockedScrollY = mobileScrollY.current || window.scrollY
+    const previousBodyStyle = {
+      overflow: document.body.style.overflow,
+      position: document.body.style.position,
+      top: document.body.style.top,
+      width: document.body.style.width,
+    }
+
+    document.body.style.overflow = 'hidden'
+    document.body.style.position = 'fixed'
+    document.body.style.top = `-${lockedScrollY}px`
+    document.body.style.width = '100%'
+
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setMobileOpen(false)
+    }
+
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.body.style.overflow = previousBodyStyle.overflow
+      document.body.style.position = previousBodyStyle.position
+      document.body.style.top = previousBodyStyle.top
+      document.body.style.width = previousBodyStyle.width
+      document.removeEventListener('keydown', onKey)
+      window.scrollTo(0, lockedScrollY)
+      mobileScrollY.current = 0
+    }
+  }, [mobileOpen])
+
   function cancelClose() {
     if (closeTimer.current) {
       clearTimeout(closeTimer.current)
@@ -149,6 +182,10 @@ export function MarketingHeader() {
     setPlatformOpen(true)
   }
 
+  function closeMobileMenu() {
+    setMobileOpen(false)
+  }
+
   function smoothScroll(e: React.MouseEvent<HTMLAnchorElement>, id: string) {
     if (pathname !== '/') return
     e.preventDefault()
@@ -179,7 +216,7 @@ export function MarketingHeader() {
 
   return (
     <header
-      className={`sticky top-0 z-50 w-full transition-[padding] duration-300 ease-[cubic-bezier(.4,0,.2,1)] ${
+      className={`sticky top-0 z-[120] w-full transition-[padding] duration-300 ease-[cubic-bezier(.4,0,.2,1)] ${
         headerScrolled ? 'px-2 pt-3 pb-2 sm:px-3' : 'px-0 pt-0 pb-0'
       }`}
     >
@@ -190,7 +227,7 @@ export function MarketingHeader() {
       */}
       <div
         aria-hidden
-        className={`pointer-events-none absolute top-3 right-2 bottom-2 left-2 mx-auto max-w-6xl rounded-2xl sm:right-3 sm:left-3 ${
+        className={`pointer-events-none absolute top-3 right-2 bottom-2 left-2 mx-auto hidden max-w-6xl rounded-2xl sm:right-3 sm:left-3 md:block ${
           safariPerfMode ? 'bg-background/90' : 'backdrop-blur-sm'
         }`}
         style={{
@@ -304,14 +341,25 @@ export function MarketingHeader() {
             </NextLink>
           </div>
 
-          {/* Mobile toggle */}
-          <button
-            className="flex items-center justify-center md:hidden"
-            onClick={() => setMobileOpen(!mobileOpen)}
-            aria-label="Toggle menu"
-          >
-            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
+          {/* Mobile actions */}
+          <div className="flex items-center gap-2 md:hidden">
+            <ThemeToggle className="h-10 w-10 rounded-full bg-transparent" />
+            <button
+              className="flex h-10 w-10 items-center justify-center rounded-full text-foreground transition-colors hover:bg-muted"
+              onClick={() => {
+                setBuiltForOpen(false)
+                setPlatformOpen(false)
+                setMobileOpen((open) => {
+                  if (!open) mobileScrollY.current = window.scrollY
+                  return !open
+                })
+              }}
+              aria-label="Toggle menu"
+              aria-expanded={mobileOpen}
+            >
+              {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          </div>
         </div>
 
         {/* ── "Platform" expandable panel ── */}
@@ -520,121 +568,152 @@ export function MarketingHeader() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div
-          className={`border-border bg-background border-t px-4 pb-4 md:hidden ${
-            headerScrolled ? 'mx-2 rounded-b-2xl sm:mx-3' : ''
-          }`}
-        >
-          <nav className="flex flex-col gap-1 pt-2">
-            {/* Platform — mobile compact */}
-            <div className="mt-1">
-              <p className="text-muted-foreground px-1 pb-2 text-[11px] font-semibold tracking-[0.08em] uppercase">
-                {t('platform')}
-              </p>
-              <div className="flex flex-col gap-3">
-                {PLATFORM_GROUPS.map((g) => {
-                  const groupKey = g.key as PlatformGroupKey
-                  return (
-                    <div key={g.key} className="flex flex-col gap-1.5">
-                      <span
-                        className="inline-flex w-fit items-center rounded-md px-2 py-1 text-[12px] font-semibold"
-                        style={{
-                          background: `var(${g.bgVar})`,
-                          color: `var(${g.fgVar})`,
-                        }}
-                      >
-                        {tPlat(`groups.${groupKey}.verb`)}
-                      </span>
-                      <div className="grid grid-cols-1 gap-0.5 pl-1">
-                        {g.items.map(({ key, href, Icon }) => (
-                          <Link
-                            key={key}
-                            href={href}
-                            className="text-foreground hover:bg-muted flex items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px]"
-                            onClick={() => setMobileOpen(false)}
-                          >
-                            <Icon
-                              size={15}
-                              strokeWidth={1.75}
-                              style={{ color: `var(${g.fgVar})`, flexShrink: 0 }}
-                            />
-                            <span className="truncate">{tPlat(`items.${key}`)}</span>
-                          </Link>
-                        ))}
+        <div className="fixed inset-0 z-[140] md:hidden">
+          <button
+            aria-label="Close menu"
+            className="absolute inset-0 bg-black/55"
+            onClick={closeMobileMenu}
+          />
+          <div className="bg-background text-foreground absolute inset-x-3 top-3 max-h-[calc(100dvh-1.5rem)] overflow-y-auto rounded-[28px] border border-border shadow-[0_28px_90px_-42px_rgba(0,0,0,0.75)]">
+            <div className="sticky top-0 z-10 border-b border-border bg-background px-5 py-4">
+              <div className="flex items-center justify-between">
+                <Link
+                  href="/"
+                  className="flex items-center gap-2.5"
+                  aria-label="Smengo"
+                  onClick={closeMobileMenu}
+                >
+                  <span
+                    aria-hidden="true"
+                    className="block h-8 w-8 rounded-[10px] bg-[url('/icon-light.png')] bg-cover bg-center dark:hidden"
+                  />
+                  <span
+                    aria-hidden="true"
+                    className="hidden h-8 w-8 rounded-[10px] bg-[url('/icon-dark.png')] bg-cover bg-center dark:block"
+                  />
+                  <span className="text-[15px] font-semibold tracking-[-0.02em]">smengo</span>
+                </Link>
+                <button
+                  className="flex h-10 w-10 items-center justify-center rounded-full text-foreground transition-colors hover:bg-muted"
+                  onClick={closeMobileMenu}
+                  aria-label="Close menu"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+
+            <nav className="flex flex-col gap-1 px-4 pb-5 pt-4">
+              {/* Platform — mobile compact */}
+              <div>
+                <p className="text-muted-foreground px-1 pb-2 text-[11px] font-semibold tracking-[0.08em] uppercase">
+                  {t('platform')}
+                </p>
+                <div className="flex flex-col gap-3">
+                  {PLATFORM_GROUPS.map((g) => {
+                    const groupKey = g.key as PlatformGroupKey
+                    return (
+                      <div key={g.key} className="flex flex-col gap-1.5">
+                        <span
+                          className="inline-flex w-fit items-center rounded-md px-2 py-1 text-[12px] font-semibold"
+                          style={{
+                            background: `var(${g.bgVar})`,
+                            color: `var(${g.fgVar})`,
+                          }}
+                        >
+                          {tPlat(`groups.${groupKey}.verb`)}
+                        </span>
+                        <div className="grid grid-cols-1 gap-0.5 pl-1">
+                          {g.items.map(({ key, href, Icon }) => (
+                            <Link
+                              key={key}
+                              href={href}
+                              className="text-foreground hover:bg-muted flex items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px]"
+                              onClick={closeMobileMenu}
+                            >
+                              <Icon
+                                size={15}
+                                strokeWidth={1.75}
+                                style={{ color: `var(${g.fgVar})`, flexShrink: 0 }}
+                              />
+                              <span className="truncate">{tPlat(`items.${key}`)}</span>
+                            </Link>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )
-                })}
+                    )
+                  })}
+                </div>
               </div>
-            </div>
 
-            <div className="border-border mt-3 border-t pt-2" />
+              <div className="border-border mt-3 border-t pt-2" />
 
-            <Link
-              href="/#how"
-              className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-md px-3 py-2 text-sm"
-              onClick={(e) => {
-                smoothScroll(e, 'how')
-                setMobileOpen(false)
-              }}
-            >
-              {t('how')}
-            </Link>
-            <Link
-              href="/#features"
-              className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-md px-3 py-2 text-sm"
-              onClick={(e) => {
-                smoothScroll(e, 'features')
-                setMobileOpen(false)
-              }}
-            >
-              {t('feat')}
-            </Link>
-            <Link
-              href="/pricing"
-              className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-md px-3 py-2 text-sm"
-              onClick={() => setMobileOpen(false)}
-            >
-              {t('pricing')}
-            </Link>
+              <Link
+                href="/#how"
+                className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-md px-3 py-2 text-sm"
+                onClick={(e) => {
+                  smoothScroll(e, 'how')
+                  closeMobileMenu()
+                }}
+              >
+                {t('how')}
+              </Link>
+              <Link
+                href="/#features"
+                className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-md px-3 py-2 text-sm"
+                onClick={(e) => {
+                  smoothScroll(e, 'features')
+                  closeMobileMenu()
+                }}
+              >
+                {t('feat')}
+              </Link>
+              <Link
+                href="/pricing"
+                className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-md px-3 py-2 text-sm"
+                onClick={closeMobileMenu}
+              >
+                {t('pricing')}
+              </Link>
 
-            {/* Built for — mobile compact 2-col grid */}
-            <div className="border-border mt-2 border-t pt-3">
-              <p className="text-muted-foreground px-1 pb-2 text-[11px] font-semibold tracking-[0.08em] uppercase">
-                {t('builtFor')}
-              </p>
-              <div className="grid grid-cols-2 gap-1">
-                {ALL_ITEMS.map(({ slug, Icon }) => (
-                  <Link
-                    key={slug}
-                    href={`/built-for/${slug}`}
-                    className="text-muted-foreground hover:bg-muted hover:text-foreground flex items-center gap-2 rounded-md px-2 py-2 text-[13px]"
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    <Icon size={20} />
-                    <span className="truncate">{tBuilt(`items.${slug}`)}</span>
-                  </Link>
-                ))}
+              {/* Built for — mobile compact 2-col grid */}
+              <div className="border-border mt-2 border-t pt-3">
+                <p className="text-muted-foreground px-1 pb-2 text-[11px] font-semibold tracking-[0.08em] uppercase">
+                  {t('builtFor')}
+                </p>
+                <div className="grid grid-cols-2 gap-1">
+                  {ALL_ITEMS.map(({ slug, Icon }) => (
+                    <Link
+                      key={slug}
+                      href={`/built-for/${slug}`}
+                      className="text-muted-foreground hover:bg-muted hover:text-foreground flex items-center gap-2 rounded-md px-2 py-2 text-[13px]"
+                      onClick={closeMobileMenu}
+                    >
+                      <Icon size={20} />
+                      <span className="truncate">{tBuilt(`items.${slug}`)}</span>
+                    </Link>
+                  ))}
+                </div>
               </div>
+              <NextLink
+                href="/login"
+                className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-md px-3 py-2 text-sm"
+                onClick={closeMobileMenu}
+              >
+                {t('login')}
+              </NextLink>
+              <NextLink
+                href="/register"
+                className="bg-accent mt-1 rounded-[--radius-sm] px-3 py-2 text-center text-sm font-medium text-white"
+                onClick={closeMobileMenu}
+              >
+                {t('start')}
+              </NextLink>
+            </nav>
+            <div className="border-border flex items-center gap-3 border-t px-7 py-4">
+              <LocaleSwitcher />
+              <ThemeToggle />
             </div>
-            <NextLink
-              href="/login"
-              className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-md px-3 py-2 text-sm"
-              onClick={() => setMobileOpen(false)}
-            >
-              {t('login')}
-            </NextLink>
-            <NextLink
-              href="/register"
-              className="bg-accent mt-1 rounded-[--radius-sm] px-3 py-2 text-center text-sm font-medium text-white"
-              onClick={() => setMobileOpen(false)}
-            >
-              {t('start')}
-            </NextLink>
-          </nav>
-          <div className="mt-3 flex items-center gap-3 px-3">
-            <LocaleSwitcher />
-            <ThemeToggle />
           </div>
         </div>
       )}

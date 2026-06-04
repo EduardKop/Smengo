@@ -10,9 +10,10 @@ import {
 import { routing, type Locale } from '@/i18n/routing'
 import { GridPreview, type GridPreviewLabels } from '@/components/marketing/grid-preview'
 import { ScrollMorphGrid } from '@/components/marketing/scroll-morph-grid'
+import { ParallaxLayer } from '@/components/marketing/parallax-layer'
 import { GridModeDemo } from '@/components/marketing/grid-mode-demo'
-import { CoverageAnimVisual } from '@/components/marketing/coverage-anim-visual'
 import { RolesAnimVisual } from '@/components/marketing/roles-anim-visual'
+import { ScheduleMarqueeCards, type ScheduleMarqueeAlert, type ScheduleMarqueeShift } from '@/components/marketing/schedule-marquee-cards'
 import DragAndDropPreview from '@/dragAnddrop.png'
 import AiPreview from '@/AI.png'
 import PaperRuPreview from '@/paper.png'
@@ -88,6 +89,41 @@ const VS_THEME_LOCK_STYLE = {
   '--border': 'rgba(255,255,255,0.18)',
 } as CSSProperties
 
+type BackdropTone = 'light' | 'warm' | 'ink' | 'blue' | 'green' | 'sand'
+
+const BACKDROP_TONES: Record<
+  BackdropTone,
+  {
+    grid: string
+    track: string
+  }
+> = {
+  light: {
+    grid: 'rgba(31,30,28,0.055)',
+    track: 'rgba(31,30,28,0.10)',
+  },
+  warm: {
+    grid: 'rgba(31,30,28,0.06)',
+    track: 'rgba(134,106,69,0.16)',
+  },
+  ink: {
+    grid: 'rgba(255,255,255,0.055)',
+    track: 'rgba(255,255,255,0.12)',
+  },
+  blue: {
+    grid: 'rgba(255,255,255,0.20)',
+    track: 'rgba(255,255,255,0.22)',
+  },
+  green: {
+    grid: 'rgba(31,30,28,0.055)',
+    track: 'rgba(47,158,111,0.15)',
+  },
+  sand: {
+    grid: 'rgba(31,30,28,0.10)',
+    track: 'rgba(31,30,28,0.18)',
+  },
+}
+
 interface PageProps {
   params: Promise<{ locale: Locale }>
 }
@@ -153,6 +189,30 @@ export default async function ScheduleGridPage({ params }: PageProps) {
 
   const pageUrl = localizedUrl(locale, SCHEDULE_GRID_PATH)
   const paperPreview = locale === 'en' ? PaperEnPreview : locale === 'uk' ? PaperUkPreview : PaperRuPreview
+  const dayShiftWindow = '08:00 - 20:00'
+  const nightShiftWindow = '21:00 - 07:00'
+  const dayOffLabel = locale === 'ru' ? 'Выходной' : locale === 'uk' ? 'Вихідний' : 'Day off'
+  const unassignedSlot = locale === 'en' ? 'Wednesday 6:00 PM' : locale === 'uk' ? 'Середа 18:00' : 'Среда 18:00'
+  const unassignedStatus = locale === 'en' ? 'No staff assigned' : locale === 'uk' ? 'Співробітника не призначено' : 'Сотрудник не назначен'
+  const coverageShiftCards: ScheduleMarqueeShift[] = [
+    { name: 'Anna Petrov',    role: gridLabels.roles.waiter,       time: dayShiftWindow,   tone: 'day' },
+    { name: 'Mark Sidorov',   role: gridLabels.roles.host,         time: nightShiftWindow, tone: 'night' },
+    { name: 'Kate Volkova',   role: gridLabels.roles.barista,      time: dayShiftWindow,   tone: 'day' },
+    { name: 'Ivan Melnikov',  role: gridLabels.roles.cook,         time: nightShiftWindow, tone: 'night' },
+    { name: 'Daria Kos',      role: gridLabels.roles.souschef,     time: dayOffLabel,      tone: 'off' },
+    { name: 'Alex Novikov',   role: gridLabels.roles.courier,      time: nightShiftWindow, tone: 'night' },
+    { name: 'Olga Romanenko', role: gridLabels.roles.floormanager, time: dayShiftWindow,   tone: 'day' },
+    { name: 'Pavel Yurov',    role: gridLabels.roles.shiftlead,    time: nightShiftWindow, tone: 'night' },
+    { name: 'Yulia Lebed',    role: gridLabels.roles.cashier,      time: dayShiftWindow,   tone: 'day' },
+    { name: 'Roma Karpov',    role: gridLabels.roles.cashier,      time: dayOffLabel,      tone: 'off' },
+    { name: 'Lera Tarasova',  role: gridLabels.roles.courier,      time: dayShiftWindow,   tone: 'day' },
+  ]
+  const coverageAlertCard: ScheduleMarqueeAlert = {
+    name: unassignedSlot,
+    role: gridLabels.roles.waiter,
+    status: unassignedStatus,
+  }
+  const coverageCallout = `⚠️ ${unassignedSlot} — ${unassignedStatus}`
   const pageJsonLd = [
     {
       '@context': 'https://schema.org',
@@ -218,20 +278,21 @@ export default async function ScheduleGridPage({ params }: PageProps) {
 
       {/* ──────────────────────── 1. HERO ──────────────────────── */}
       <section className="relative overflow-hidden lg:min-h-[640px]">
+        <ScheduleParallaxBackdrop tone="light" />
         {/* Text column — vertically centered on desktop, sits on the left half */}
         <div className="relative z-10 flex min-h-[inherit] items-center">
-          <div className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 lg:py-0">
-            <div data-hero-text className="max-w-[460px] lg:py-20">
+          <div className="mx-auto w-full max-w-6xl px-4 pb-20 pt-14 sm:px-6 sm:py-20 lg:py-0">
+            <div data-hero-text className="mx-auto max-w-[480px] text-center lg:mx-0 lg:max-w-[460px] lg:py-20 lg:text-left">
               <h1 className="font-serif font-semibold text-foreground" style={{ fontSize: 'clamp(34px, 5vw, 58px)', letterSpacing: '-0.025em', lineHeight: 1.04 }}>
                 {t('hero.title')}
               </h1>
-              <p className="mt-5 text-[17px] leading-[1.6] text-foreground/65">
+              <p className="mx-auto mt-5 max-w-[430px] text-[17px] leading-[1.6] text-foreground/65 lg:mx-0">
                 {t('hero.subtitle')}
               </p>
-              <div data-hero-buttons className="mt-8 flex flex-wrap items-center gap-3">
-                <Link href="/register" className={CTA_PRIMARY}>{t('hero.ctaStart')}</Link>
-                <Link href="/pricing" className={CTA_SECONDARY_ADAPTIVE}>{t('hero.ctaPricing')}</Link>
-                <span className="text-[12.5px] text-foreground/50">{t('hero.hint')}</span>
+              <div data-hero-buttons className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row sm:flex-wrap lg:justify-start">
+                <Link href="/register" className={`${CTA_PRIMARY} w-full max-w-[328px] sm:w-auto`}>{t('hero.ctaStart')}</Link>
+                <Link href="/pricing" className={`${CTA_SECONDARY_ADAPTIVE} w-full max-w-[328px] sm:w-auto`}>{t('hero.ctaPricing')}</Link>
+                <span className="pt-1 text-center text-[12.5px] leading-snug text-foreground/50 sm:pt-0 lg:text-left">{t('hero.hint')}</span>
               </div>
             </div>
           </div>
@@ -248,29 +309,12 @@ export default async function ScheduleGridPage({ params }: PageProps) {
           className="absolute top-[54%] hidden -translate-y-1/2 lg:block"
           style={{ left: '50%', width: '1540px', height: '600px' }}
         />
-
-        {/* Mobile / tablet: standalone static grid below the text */}
-        <div className="relative mt-2 lg:hidden">
-          <div className="mx-auto max-w-6xl px-4 sm:px-6">
-            <div
-              className="overflow-hidden rounded-2xl drop-shadow-[0_20px_40px_rgba(0,0,0,0.15)]"
-              style={{ height: '420px' }}
-            >
-              <div className="h-full overflow-x-auto overflow-y-hidden">
-                <div style={{ position: 'relative', width: '1300px', height: '472px' }}>
-                  <div style={{ position: 'absolute', top: '-52px', left: 0, width: '1300px' }}>
-                    <GridPreview labels={gridLabels} />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </section>
 
       {/* ──────────────────────── 2. INTERACTIVE DEMO — CREAM ──────────────────────── */}
-      <section className="bg-[#faf4ea] px-4 py-14 sm:px-6 sm:py-16">
-        <div className="mx-auto max-w-6xl">
+      <section className="relative overflow-hidden bg-[#faf4ea] px-4 py-14 sm:px-6 sm:py-16">
+        <ScheduleParallaxBackdrop tone="warm" />
+        <div className="relative z-10 mx-auto max-w-6xl">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="font-serif font-semibold text-[#1f1e1c]" style={{ fontSize: 'clamp(28px, 3.6vw, 44px)', letterSpacing: '-0.022em', lineHeight: 1.1 }}>
               {t('demo.title')}
@@ -290,24 +334,23 @@ export default async function ScheduleGridPage({ params }: PageProps) {
           />
 
           {/* Mobile / tablet: standalone static grid */}
-          <div className="relative mt-12 lg:hidden">
-            <div
-              className="overflow-hidden rounded-2xl drop-shadow-[0_20px_40px_rgba(0,0,0,0.15)]"
-              style={{ height: '420px' }}
-            >
-              <div className="h-full overflow-x-auto overflow-y-hidden">
-                <div style={{ position: 'relative', width: '1300px' }}>
-                  <GridPreview labels={gridLabels} />
-                </div>
-              </div>
-            </div>
+          <div
+            className="relative mt-10 lg:hidden"
+            style={{
+              width: 'min(1560px, calc(100vw - 24px))',
+              marginLeft: 'calc(50% - min(780px, calc(50vw - 12px)))',
+              marginRight: 'calc(50% - min(780px, calc(50vw - 12px)))',
+            }}
+          >
+            <GridPreview labels={gridLabels} />
           </div>
         </div>
       </section>
 
       {/* ──────────────────────── 3. CAPABILITIES — WHITE ──────────────────────── */}
-      <section className="bg-white px-4 py-14 dark:bg-background sm:px-6 sm:py-16">
-        <div className="mx-auto max-w-6xl">
+      <section className="relative overflow-hidden bg-white px-4 py-14 dark:bg-background sm:px-6 sm:py-16">
+        <ScheduleParallaxBackdrop tone="light" />
+        <div className="relative z-10 mx-auto max-w-6xl">
           <div className="mx-auto mb-10 max-w-2xl text-center">
             <h2 className="font-serif font-semibold text-foreground" style={{ fontSize: 'clamp(28px, 3.4vw, 42px)', letterSpacing: '-0.02em', lineHeight: 1.12 }}>
               {t('caps.title')}
@@ -343,25 +386,18 @@ export default async function ScheduleGridPage({ params }: PageProps) {
               accent="#2f9e6f"
               Icon={BarChart3}
               hideIcon
+              visualSize="large"
               title={t('caps.i2Title')}
               desc={t('caps.i2Desc')}
               visual={(
-                <CoverageAnimVisual
-                  labels={{
-                    days:       t.raw('caps.gridDays') as string[],
-                    dayShift:   t('caps.gridDayShift'),
-                    nightShift: t('caps.gridNightShift'),
-                    dayOff:     t('caps.gridDayOff'),
-                    unassigned: t('caps.gridUnassigned'),
-                  }}
-                />
+                <ScheduleMarqueeCards shifts={coverageShiftCards} alert={coverageAlertCard} />
               )}
               bullets={[
                 t('caps.i2B1'),
                 t('caps.i2B2'),
                 t('caps.i2B3'),
               ]}
-              callout={t('caps.i2Callout')}
+              callout={coverageCallout}
             />
             <CapStacked
               accent="#7c5cc4"
@@ -386,13 +422,9 @@ export default async function ScheduleGridPage({ params }: PageProps) {
       </section>
 
       {/* ──────────────────────── 4. MANUAL vs ASSISTED ──────────────────────── */}
-      <section className="relative overflow-hidden bg-[#f8f5ee] px-4 py-16 dark:bg-[#111317] sm:px-6 sm:py-20">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[#ded8cc] dark:bg-white/10"
-        />
-        <div className="mx-auto max-w-6xl">
-          <div className="mx-auto mb-10 max-w-3xl text-center">
+      <section className="bg-background px-4 py-20 sm:px-6 sm:py-24">
+        <div className="mx-auto max-w-[1100px]">
+          <div className="mx-auto mb-12 max-w-3xl text-center">
             <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.15em] text-[#866a45] dark:text-[#c6ad86]">
               {t('ways.eyebrow')}
             </p>
@@ -407,32 +439,19 @@ export default async function ScheduleGridPage({ params }: PageProps) {
             </p>
           </div>
 
-          <div className="grid gap-5 lg:grid-cols-[1fr_auto_1fr]">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <ChoiceCard
-              accent="#d7a365"
-              badge={t('ways.manualBadge')}
+              accent="#a07649"
+              eyebrow={t('ways.manualBadge')}
               title={t('ways.manualTitle')}
               desc={t('ways.manualDesc')}
               bullets={[t('ways.manualB1'), t('ways.manualB2'), t('ways.manualB3')]}
               metric={t('ways.manualMetric')}
               preview="manual"
             />
-            <div className="relative hidden w-14 items-center justify-center lg:flex" aria-hidden="true">
-              <div className="absolute inset-y-8 left-1/2 w-px -translate-x-1/2 bg-[#d8d0c1] dark:bg-white/10" />
-              <span
-                className="relative rounded-full border border-[#d8d0c1] bg-[#f8f5ee] px-2 py-1 text-[11px] font-semibold text-[#7b746b] dark:border-white/10 dark:bg-[#111317] dark:text-[#a8a096]"
-              >
-                {t('ways.orLabel')}
-              </span>
-            </div>
-            <div className="flex items-center gap-3 lg:hidden" aria-hidden="true">
-              <div className="h-px flex-1 bg-[#d8d0c1] dark:bg-white/10" />
-              <span className="rounded-full border border-[#d8d0c1] px-2 py-1 text-[11px] font-semibold text-[#7b746b] dark:border-white/10 dark:text-[#a8a096]">{t('ways.orLabel')}</span>
-              <div className="h-px flex-1 bg-[#d8d0c1] dark:bg-white/10" />
-            </div>
             <ChoiceCard
-              accent="#8f7c5f"
-              badge={t('ways.aiBadge')}
+              accent="#e0a96d"
+              eyebrow={t('ways.aiBadge')}
               title={t('ways.aiTitle')}
               desc={t('ways.aiDesc')}
               bullets={[t('ways.aiB1'), t('ways.aiB2'), t('ways.aiB3')]}
@@ -441,11 +460,11 @@ export default async function ScheduleGridPage({ params }: PageProps) {
             />
           </div>
 
-          <div className="mx-auto mt-6 flex max-w-3xl flex-col items-center gap-3 rounded-[20px] border border-[#ded8cc] bg-[#fffdf8] px-5 py-4 text-center shadow-[0_16px_45px_-34px_rgba(31,30,28,0.38)] dark:border-white/10 dark:bg-[#171a1f] sm:flex-row sm:text-left">
+          <div className="mx-auto mt-8 flex max-w-3xl flex-col items-center gap-3 text-center sm:flex-row sm:justify-center sm:text-left">
             <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#e7f2ea] text-[#2d7a55] dark:bg-[#243329] dark:text-[#9ac4aa]">
               <Check size={17} strokeWidth={2.7} />
             </span>
-            <p className="text-[14.5px] leading-[1.5] text-[#514d47] dark:text-[#bdb7ae]">
+            <p className="text-[15px] leading-[1.55] text-[#514d47] dark:text-[#bdb7ae]">
               <span className="font-semibold text-[#20201e] dark:text-[#f2eee7]">{t('ways.resultTitle')}</span>{' '}
               {t('ways.resultText')}
             </p>
@@ -458,15 +477,7 @@ export default async function ScheduleGridPage({ params }: PageProps) {
         className="relative overflow-hidden bg-[#3b6fd4] px-4 py-16 text-white sm:px-6 sm:py-20"
         style={VS_THEME_LOCK_STYLE}
       >
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 opacity-[0.16]"
-          style={{
-            backgroundImage:
-              'linear-gradient(to right, rgba(255,255,255,0.28) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.22) 1px, transparent 1px)',
-            backgroundSize: '56px 56px',
-          }}
-        />
+        <ScheduleParallaxBackdrop tone="blue" />
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-x-0 top-0 h-40"
@@ -558,8 +569,9 @@ export default async function ScheduleGridPage({ params }: PageProps) {
       </section>
 
       {/* ──────────────────────── 6. WORKS WITH THE REST — CREAM ──────────────────────── */}
-      <section className="bg-[#f6f1e8] px-4 py-16 dark:bg-[#111317] sm:px-6 sm:py-20">
-        <div className="mx-auto max-w-6xl">
+      <section className="relative overflow-hidden bg-[#f6f1e8] px-4 py-16 dark:bg-[#111317] sm:px-6 sm:py-20">
+        <ScheduleParallaxBackdrop tone="green" />
+        <div className="relative z-10 mx-auto max-w-6xl">
           <div className="mb-10 max-w-3xl">
             <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.16em] text-[#866a45] dark:text-[#c6ad86]">
               {t('rest.eyebrow')}
@@ -581,8 +593,9 @@ export default async function ScheduleGridPage({ params }: PageProps) {
       </section>
 
       {/* ──────────────────────── 7. SOCIAL PROOF + STAT — WHITE ──────────────────────── */}
-      <section className="bg-[#fbfaf5] px-4 py-16 dark:bg-[#0f1114] sm:px-6 sm:py-20">
-        <div className="mx-auto max-w-6xl">
+      <section className="relative overflow-hidden bg-[#fbfaf5] px-4 py-16 dark:bg-[#0f1114] sm:px-6 sm:py-20">
+        <ScheduleParallaxBackdrop tone="light" />
+        <div className="relative z-10 mx-auto max-w-6xl">
           <div className="mb-10 max-w-3xl">
             <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.16em] text-[#61725d] dark:text-[#a9b99e]">
               {t('proof.eyebrow')}
@@ -616,16 +629,7 @@ export default async function ScheduleGridPage({ params }: PageProps) {
 
       {/* ──────────────────────── 8. FINAL CTA — SAND ──────────────────────── */}
       <section className="relative overflow-hidden bg-[#e0a96d] px-4 py-24 sm:px-6 sm:py-28">
-        {/* Subtle grid-pattern background */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 opacity-[0.07]"
-          style={{
-            backgroundImage:
-              'linear-gradient(to right, #1f1e1c 1px, transparent 1px), linear-gradient(to bottom, #1f1e1c 1px, transparent 1px)',
-            backgroundSize: '48px 48px',
-          }}
-        />
+        <ScheduleParallaxBackdrop tone="sand" />
         <div className="relative mx-auto max-w-3xl text-center">
           <h2 className="font-serif font-semibold text-[#1f1e1c]" style={{ fontSize: 'clamp(32px, 4.6vw, 54px)', letterSpacing: '-0.025em', lineHeight: 1.08 }}>
             {t('final.title')}
@@ -647,6 +651,49 @@ export default async function ScheduleGridPage({ params }: PageProps) {
 }
 
 // ────────────────── Sub-components ──────────────────
+
+function ScheduleParallaxBackdrop({ tone }: { tone: BackdropTone }) {
+  const colors = BACKDROP_TONES[tone]
+
+  return (
+    <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+      <ParallaxLayer
+        speed={0.035}
+        maxOffset={32}
+        className="absolute inset-x-0 -inset-y-20"
+      >
+        <div
+          className="h-full w-full opacity-70"
+          style={{
+            backgroundImage:
+              `linear-gradient(to right, ${colors.grid} 1px, transparent 1px), ` +
+              `linear-gradient(to bottom, ${colors.grid} 1px, transparent 1px)`,
+            backgroundSize: '72px 72px',
+          }}
+        />
+      </ParallaxLayer>
+
+      <ParallaxLayer
+        speed={-0.055}
+        maxOffset={48}
+        className="absolute inset-x-0 top-4 hidden h-[430px] md:block"
+      >
+        <div className="relative mx-auto h-full max-w-6xl">
+          {[18, 34, 50, 66, 82].map((top) => (
+            <span
+              key={top}
+              className="absolute left-[-8%] h-px w-[116%]"
+              style={{
+                top: `${top}%`,
+                background: `linear-gradient(to right, transparent, ${colors.track}, transparent)`,
+              }}
+            />
+          ))}
+        </div>
+      </ParallaxLayer>
+    </div>
+  )
+}
 
 /**
  * Stacked capability block: centered heading + description + a single row
@@ -703,7 +750,7 @@ function CapStacked({
 }
 
 function CapRow({
-  side, accent, Icon, title, desc, visual, bullets, metric, hideIcon, callout,
+  side, accent, Icon, title, desc, visual, bullets, metric, hideIcon, callout, visualSize = 'default',
 }: {
   side: 'left' | 'right'
   accent: string
@@ -715,10 +762,17 @@ function CapRow({
   metric?: { value: string; label: string }
   hideIcon?: boolean
   callout?: string
+  visualSize?: 'default' | 'large'
 }) {
+  const gridClassName = visualSize === 'large'
+    ? side === 'right'
+      ? 'grid min-w-0 items-center gap-7 md:grid-cols-[minmax(0,1fr)_minmax(300px,0.95fr)] md:gap-10 lg:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.95fr)]'
+      : 'grid min-w-0 items-center gap-7 md:grid-cols-[minmax(300px,0.95fr)_minmax(0,1fr)] md:gap-10 lg:grid-cols-[minmax(360px,0.95fr)_minmax(0,1.08fr)]'
+    : 'grid min-w-0 items-center gap-8 md:grid-cols-[1fr_1.15fr] md:gap-14'
+
   return (
-    <div className="grid items-center gap-10 md:grid-cols-[1fr_1.15fr] md:gap-14">
-      <div className={side === 'left' ? 'md:order-1' : 'md:order-2'}>
+    <div className={gridClassName}>
+      <div className={side === 'left' ? 'min-w-0 md:order-1' : 'min-w-0 md:order-2'}>
         {!hideIcon && (
           <span
             className="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-2xl"
@@ -727,24 +781,24 @@ function CapRow({
             <Icon size={26} strokeWidth={1.8} />
           </span>
         )}
-        <h3 className="text-[22px] font-semibold text-foreground sm:text-[26px]" style={{ letterSpacing: '-0.018em', lineHeight: 1.18 }}>
+        <h3 className="max-w-full text-balance break-words text-[21px] font-semibold text-foreground sm:text-[26px]" style={{ letterSpacing: '-0.018em', lineHeight: 1.18 }}>
           {title}
         </h3>
-        <p className="mt-3 max-w-[460px] text-[15.5px] leading-[1.6] text-foreground/65">
+        <p className="mt-3 max-w-[460px] break-words text-[15px] leading-[1.6] text-foreground/65 sm:text-[15.5px]">
           {desc}
         </p>
 
         {bullets && bullets.length > 0 && (
-          <ul className="mt-6 flex flex-col gap-2.5">
+          <ul className="mt-6 flex min-w-0 flex-col gap-2.5">
             {bullets.map((b) => (
-              <li key={b} className="flex items-start gap-2.5 text-[14.5px] leading-[1.5] text-foreground/80">
+              <li key={b} className="flex min-w-0 items-start gap-2.5 text-[14px] leading-[1.5] text-foreground/80 sm:text-[14.5px]">
                 <Check
                   size={16}
                   strokeWidth={2.6}
                   className="mt-0.5 shrink-0"
                   style={{ color: accent }}
                 />
-                <span>{b}</span>
+                <span className="min-w-0 break-words">{b}</span>
               </li>
             ))}
           </ul>
@@ -771,13 +825,13 @@ function CapRow({
         )}
 
         {callout && (
-          <div className="mt-6 inline-flex max-w-xs items-start gap-2 rounded-xl border border-[#e0a96d]/35 bg-[#e0a96d]/10 px-3.5 py-2.5 text-[13px] leading-snug text-[#8a5515] dark:border-[#e0a96d]/25 dark:bg-[#e0a96d]/8 dark:text-[#d4924a]">
+          <div className="mt-6 inline-flex w-full max-w-[34rem] items-start gap-2 rounded-xl border border-[#e0a96d]/35 bg-[#e0a96d]/10 px-3.5 py-2.5 text-[13px] leading-snug text-[#8a5515] dark:border-[#e0a96d]/25 dark:bg-[#e0a96d]/8 dark:text-[#d4924a]">
             {callout}
           </div>
         )}
       </div>
 
-      <div className={side === 'left' ? 'md:order-2' : 'md:order-1'}>
+      <div className={side === 'left' ? 'min-w-0 md:order-2' : 'min-w-0 md:order-1'}>
         {visual ?? <MiniGridVisual accent={accent} />}
       </div>
     </div>
@@ -809,47 +863,87 @@ function MiniGridVisual({ accent }: { accent: string }) {
 }
 
 function ChoiceCard({
-  accent, badge, title, desc, bullets, metric, preview,
+  accent, eyebrow, title, desc, bullets, metric, preview,
 }: {
   accent: string
-  badge: string
+  eyebrow: string
   title: string
   desc: string
   bullets: string[]
   metric: string
   preview: 'manual' | 'ai'
 }) {
-  const step = preview === 'manual' ? '01' : '02'
+  const isAi = preview === 'ai'
+  const panelStyle = {
+    background: isAi ? '#1f1e1c' : '#eae6df',
+    color: isAi ? '#f5f3ef' : '#1f1e1c',
+  }
 
   return (
-    <div className="rounded-[24px] border border-[#ded8cc] bg-[#fffdf8] p-6 shadow-[0_22px_60px_-46px_rgba(31,30,28,0.42)] dark:border-white/10 dark:bg-[#171a1f]">
-      <div className="mb-5 flex items-center justify-between gap-4">
-        <div className="inline-flex rounded-full bg-[#efe6d6] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#866a45] dark:bg-white/8 dark:text-[#c6ad86]">
-          {badge}
-        </div>
-        <div className="font-mono text-[12px] font-semibold text-[#9b9287] dark:text-[#77736c]">{step}</div>
-      </div>
-      <h3 className="text-[24px] font-semibold leading-tight text-[#20201e] dark:text-[#f2eee7]">{title}</h3>
-      <p className="mt-3 text-[15px] leading-[1.6] text-[#6d675d] dark:text-[#aaa39a]">{desc}</p>
+    <article className="flex min-w-0 flex-col overflow-hidden rounded-3xl p-8 sm:p-10" style={panelStyle}>
+      <p
+        className="mb-4"
+        style={{
+          color: isAi ? '#f5f3ef' : '#1f1e1c',
+          fontFamily: 'var(--font-handwriting, cursive)',
+          fontSize: 'clamp(22px, 2.2vw, 28px)',
+          fontWeight: 700,
+          lineHeight: 1,
+        }}
+      >
+        {eyebrow}
+      </p>
 
-      <ChoicePreview variant={preview} />
+      <h3
+        className="font-sans font-bold"
+        style={{
+          color: isAi ? '#f5f3ef' : '#1f1e1c',
+          fontSize: 'clamp(22px, 2.2vw, 30px)',
+          letterSpacing: '-0.02em',
+          lineHeight: 1.16,
+        }}
+      >
+        {title}
+      </h3>
+      <p
+        className="mt-4 text-[15px] leading-[1.6] sm:text-[16px]"
+        style={{ color: isAi ? 'rgba(245,243,239,0.74)' : 'rgba(31,30,28,0.68)' }}
+      >
+        {desc}
+      </p>
 
-      <ul className="mt-6 flex flex-col gap-3">
+      <ul className="mt-7 flex flex-col gap-4" role="list">
         {bullets.map((b) => (
-          <li key={b} className="flex items-start gap-2.5 text-[14.5px] leading-[1.45] text-[#514d47] dark:text-[#bdb7ae]">
-            <Check size={15} strokeWidth={2.5} className="mt-0.5 shrink-0" style={{ color: accent }} />
-            <span>{b}</span>
+          <li key={b} className="flex items-start gap-3">
+            <span
+              aria-hidden="true"
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
+              style={{ background: isAi ? '#e0a96d' : '#1f1e1c' }}
+            >
+              <Check
+                size={14}
+                strokeWidth={3}
+                style={{ color: isAi ? '#1f1e1c' : '#f5f3ef' }}
+              />
+            </span>
+            <span
+              className="text-[15px] leading-snug sm:text-[16px]"
+              style={{ color: isAi ? '#f5f3ef' : '#1f1e1c' }}
+            >
+              {b}
+            </span>
           </li>
         ))}
       </ul>
 
-      <div
-        className="mt-6 rounded-[18px] border px-4 py-3 text-[13.5px] font-semibold leading-snug"
-        style={{ borderColor: `${accent}2e`, backgroundColor: `${accent}14`, color: accent }}
-      >
+      <p className="mt-6 text-[15px] font-semibold leading-snug sm:text-[16px]" style={{ color: accent }}>
         {metric}
+      </p>
+
+      <div className="-mx-7 -mb-7 mt-auto pt-8 sm:-mx-9 sm:-mb-9">
+        <ChoicePreview variant={preview} />
       </div>
-    </div>
+    </article>
   )
 }
 
@@ -858,8 +952,11 @@ function ChoicePreview({ variant }: { variant: 'manual' | 'ai' }) {
 
   return (
     <div
-      className="mt-6 overflow-hidden rounded-[18px] border border-[#ded8cc] bg-[#f8f5ee] dark:border-white/10 dark:bg-[#111317]"
-      style={{ aspectRatio: '1512 / 1040' }}
+      className="overflow-hidden rounded-2xl border bg-[#f8f5ee] shadow-[0_18px_40px_-30px_rgba(31,30,28,0.45)]"
+      style={{
+        aspectRatio: '1512 / 1040',
+        borderColor: variant === 'ai' ? 'rgba(255,255,255,0.16)' : '#d8d0c1',
+      }}
       aria-hidden="true"
     >
       <Image

@@ -1,16 +1,27 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { type CSSProperties, useEffect, useState } from 'react'
 
 // Labels kept for backwards-compat with the page that still passes them in.
 type Mode = 'compact' | 'detail' | 'extended'
 export type GridModeDemoLabels = Record<Mode, string>
 
-// Fixed extended-mode dimensions.
-const ROW_H       = 58
 const DAY_COUNT   = 8
-const NAME_W      = 92
-const CONTAINER_H = 600
+const GRID_MODE_STYLE = {
+  '--grid-mode-h': 'clamp(420px, 108vw, 600px)',
+  '--grid-mode-row-h': 'clamp(39px, 10.4vw, 58px)',
+  '--grid-mode-name-w': 'clamp(76px, 23vw, 92px)',
+  '--grid-mode-pad-y': 'clamp(14px, 4.6vw, 22px)',
+  '--grid-mode-pad-x': 'clamp(10px, 3.8vw, 18px)',
+  '--grid-mode-gap': 'clamp(2px, 0.8vw, 3px)',
+  '--grid-mode-day-font': 'clamp(7.5px, 2.15vw, 9px)',
+  '--grid-mode-name-font': 'clamp(9px, 2.45vw, 10.5px)',
+  '--grid-mode-role-font': 'clamp(6.8px, 1.9vw, 8.2px)',
+  '--grid-mode-time-font': 'clamp(7.6px, 2.15vw, 9.5px)',
+  '--grid-mode-hours-font': 'clamp(6.4px, 1.75vw, 7.8px)',
+  '--grid-mode-emoji-font': 'clamp(12px, 3.6vw, 17px)',
+  '--grid-mode-back-role-font': 'clamp(5.8px, 1.7vw, 7.2px)',
+} as CSSProperties
 
 // Door-flip timing.
 const FLIP_MS    = 700   // CSS transition duration
@@ -47,7 +58,7 @@ const EMPS: {
   { name: 'Yulia', role: 'Хостес',   emoji: '🎀',   color: 7, pattern: shift([1,0,1,0,1,0,1, 0,1,0,1,0,0,0, 1,0,1,0,1,0,0, 1,0,1,0,1,0,1], 16, 23) },
 ]
 
-const fmtShort = (s: Shift) => `${s.start}–${s.end}`
+const fmtShort = (s: Shift) => `${s.start}\n${s.end}`
 const fmtHours = (s: Shift) => `${s.end - s.start}год`
 
 function usePrefersReducedMotion() {
@@ -116,11 +127,11 @@ export function GridModeDemo(_props: { labels?: GridModeDemoLabels }) {
   const days = Array.from({ length: DAY_COUNT }, (_, i) => i + 1)
 
   return (
-    <div className="relative" aria-hidden="true">
+    <div className="relative" style={GRID_MODE_STYLE} aria-hidden="true">
       <div
         className="relative overflow-hidden rounded-2xl border"
         style={{
-          height: CONTAINER_H,
+          height: 'var(--grid-mode-h)',
           background:  'var(--grid-chrome)',
           borderColor: 'var(--border)',
           boxShadow:   '0 4px 32px rgba(0,0,0,0.06)',
@@ -128,19 +139,24 @@ export function GridModeDemo(_props: { labels?: GridModeDemoLabels }) {
       >
         <div
           className="flex h-full flex-col"
-          style={{ paddingTop: 22, paddingBottom: 22, paddingLeft: 18, paddingRight: 18 }}
+          style={{
+            paddingTop: 'var(--grid-mode-pad-y)',
+            paddingBottom: 'var(--grid-mode-pad-y)',
+            paddingLeft: 'var(--grid-mode-pad-x)',
+            paddingRight: 'var(--grid-mode-pad-x)',
+          }}
         >
           {/* Grid centers in remaining space */}
           <div className="flex flex-1 flex-col justify-center">
             {/* Day-number header */}
-            <div className="mb-1.5 flex items-center gap-[3px]">
-              <div className="shrink-0" style={{ width: NAME_W }} />
+            <div className="mb-1.5 flex items-center" style={{ gap: 'var(--grid-mode-gap)' }}>
+              <div className="shrink-0" style={{ width: 'var(--grid-mode-name-w)' }} />
               {days.map((d, i) => (
                 <div
                   key={d}
                   className="flex-1 text-center font-semibold"
                   style={{
-                    fontSize: 10,
+                    fontSize: 'var(--grid-mode-day-font)',
                     color: i % 7 >= 5 ? '#d97757' : 'var(--grid-dept-fg)',
                   }}
                 >
@@ -150,15 +166,15 @@ export function GridModeDemo(_props: { labels?: GridModeDemoLabels }) {
             </div>
 
             {/* Employee rows */}
-            <div className="flex flex-col gap-[3px]">
+            <div className="flex flex-col" style={{ gap: 'var(--grid-mode-gap)' }}>
               {EMPS.map((emp, ei) => {
                 const fill = PALETTE[emp.color]
                 return (
-                  <div key={emp.name} className="flex items-center gap-[3px]">
+                  <div key={emp.name} className="flex items-center" style={{ gap: 'var(--grid-mode-gap)' }}>
                     {/* Name label */}
                     <div
                       className="flex shrink-0 items-center gap-1.5"
-                      style={{ width: NAME_W }}
+                      style={{ width: 'var(--grid-mode-name-w)' }}
                     >
                       <span
                         className="shrink-0 rounded-full"
@@ -167,13 +183,13 @@ export function GridModeDemo(_props: { labels?: GridModeDemoLabels }) {
                       <div className="min-w-0 flex-1 leading-tight">
                         <div
                           className="truncate font-medium"
-                          style={{ fontSize: 11, color: 'var(--grid-dept-fg)' }}
+                          style={{ fontSize: 'var(--grid-mode-name-font)', color: 'var(--grid-dept-fg)' }}
                         >
                           {emp.name}
                         </div>
                         <div
                           className="truncate"
-                          style={{ fontSize: 9, color: 'var(--grid-dept-fg)', opacity: 0.55 }}
+                          style={{ fontSize: 'var(--grid-mode-role-font)', color: 'var(--grid-dept-fg)', opacity: 0.55 }}
                         >
                           {emp.role}
                         </div>
@@ -193,7 +209,7 @@ export function GridModeDemo(_props: { labels?: GridModeDemoLabels }) {
                             key={ci}
                             className="flex-1 rounded-[5px]"
                             style={{
-                              height: ROW_H,
+                              height: 'var(--grid-mode-row-h)',
                               background: isWeekend ? 'var(--grid-weekend)' : 'var(--grid-cell)',
                               boxShadow: 'inset 0 0 0 1px var(--grid-row-divider)',
                             }}
@@ -205,7 +221,7 @@ export function GridModeDemo(_props: { labels?: GridModeDemoLabels }) {
                         <div
                           key={ci}
                           className="flex-1"
-                          style={{ height: ROW_H, perspective: 700 }}
+                          style={{ height: 'var(--grid-mode-row-h)', perspective: 700 }}
                         >
                           <div
                             style={{
@@ -233,14 +249,14 @@ export function GridModeDemo(_props: { labels?: GridModeDemoLabels }) {
                                 fontVariantNumeric: 'tabular-nums',
                                 letterSpacing: '-0.01em',
                                 lineHeight: 1.1,
-                                padding: '0 4px',
+                                padding: '0 clamp(2px, 0.9vw, 4px)',
                                 backfaceVisibility: 'hidden',
                                 WebkitBackfaceVisibility: 'hidden',
                                 overflow: 'hidden',
                               }}
                             >
-                              <div style={{ fontSize: 11, fontWeight: 600 }}>{fmtShort(cell)}</div>
-                              <div style={{ fontSize: 9, opacity: 0.85, marginTop: 1 }}>
+                              <div style={{ fontSize: 'var(--grid-mode-time-font)', fontWeight: 600, whiteSpace: 'pre-line' }}>{fmtShort(cell)}</div>
+                              <div style={{ fontSize: 'var(--grid-mode-hours-font)', opacity: 0.85, marginTop: 1 }}>
                                 {fmtHours(cell)}
                               </div>
                             </div>
@@ -266,12 +282,12 @@ export function GridModeDemo(_props: { labels?: GridModeDemoLabels }) {
                                 overflow: 'hidden',
                               }}
                             >
-                              <div style={{ fontSize: 20, lineHeight: 1 }}>{emp.emoji}</div>
+                              <div style={{ fontSize: 'var(--grid-mode-emoji-font)', lineHeight: 1 }}>{emp.emoji}</div>
                               <div
                                 style={{
                                   marginTop: 3,
-                                  fontSize: 8.5,
-                                  fontWeight: 700,
+                                  fontSize: 'var(--grid-mode-back-role-font)',
+                                  fontWeight: 650,
                                   letterSpacing: '0.01em',
                                   textAlign: 'center',
                                   maxWidth: '100%',
