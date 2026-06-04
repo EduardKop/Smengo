@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ComponentType } from 'react'
 import {
   Settings2, Pencil, X, Check, ChevronDown, RotateCcw,
   Sun, Sunset, Moon, TreePalm, Thermometer, AlertCircle, AlertTriangle,
-  Palette,
+  Palette, Sparkles,
 } from 'lucide-react'
 import { ClassicGrid } from './classic-grid'
 import {
@@ -122,6 +122,10 @@ export type GridPreviewLabels = {
   empCalendarSummaryWorked: string
   empCalendarSummaryOff: string
   empCalendarSummaryHours: string
+  aiPrompt: string
+  aiRun: string
+  aiDone: string
+  aiOptimizedSummary: string
 }
 
 export const MONTH_DEMO = Array.from({ length: 31 }, (_, i) => {
@@ -163,6 +167,16 @@ export function rotateSchedule(s: string, offset: number): string {
 }
 
 const STATUS_OPTIONS: Exclude<Status, never>[] = ['W', 'V', 'S', 'D', 'U', '-']
+const AI_OPTIMIZED_CELLS: Array<{ name: string; day: number; status: Status }> = [
+  { name: 'Daria Kos', day: PROBLEM_DAY_IDX, status: 'W' },
+  { name: 'Alex Novikov', day: PROBLEM_DAY_IDX, status: 'W' },
+  { name: 'Mark Sidorov', day: 8, status: 'D' },
+  { name: 'Mark Sidorov', day: 9, status: 'W' },
+  { name: 'Alex Novikov', day: 4, status: 'W' },
+  { name: 'Kate Volkova', day: 4, status: 'D' },
+  { name: 'Roma Karpov', day: 10, status: 'W' },
+  { name: 'Yulia Lebed', day: 8, status: 'D' },
+]
 
 export type WorkMeta = {
   bg: string
@@ -190,8 +204,8 @@ function statusIcon(code: Status): ComponentType<{ size?: number; style?: React.
 }
 
 // Dashed orange edge marking the problem column. Applied per-cell so it scrolls naturally.
-function problemColumnStyle(ci: number): React.CSSProperties {
-  if (ci !== PROBLEM_DAY_IDX) return {}
+function problemColumnStyle(ci: number, highlighted = true): React.CSSProperties {
+  if (!highlighted || ci !== PROBLEM_DAY_IDX) return {}
   return {
     borderLeft: '1.5px dashed var(--accent)',
     borderRight: '1.5px dashed var(--accent)',
@@ -207,6 +221,47 @@ function cellTooltip(code: Status, shift: ShiftType, labels: GridPreviewLabels):
   if (code === 'U') return labels.shifts.unfilled
   if (code === 'W') return labels.shifts[shift]
   return ''
+}
+
+export function setEmployeeRowDragImage(e: React.DragEvent<HTMLElement>, rowEl: HTMLElement | null) {
+  if (!rowEl || typeof document === 'undefined') return
+
+  const rect = rowEl.getBoundingClientRect()
+  const isTableRow = rowEl.tagName.toLowerCase() === 'tr'
+  const wrapper = document.createElement(isTableRow ? 'table' : 'div')
+  const clone = rowEl.cloneNode(true) as HTMLElement
+
+  if (isTableRow) {
+    const tbody = document.createElement('tbody')
+    tbody.appendChild(clone)
+    wrapper.appendChild(tbody)
+    wrapper.style.borderCollapse = 'collapse'
+  } else {
+    wrapper.appendChild(clone)
+  }
+
+  Object.assign(wrapper.style, {
+    position: 'fixed',
+    left: `${rect.left}px`,
+    top: `${rect.top}px`,
+    width: `${rect.width}px`,
+    pointerEvents: 'none',
+    zIndex: '9999',
+    opacity: '0.96',
+    filter: 'drop-shadow(0 16px 24px rgba(0,0,0,0.18))',
+  })
+  Object.assign(clone.style, {
+    width: `${rect.width}px`,
+    background: 'var(--grid-cell)',
+  })
+
+  document.body.appendChild(wrapper)
+  e.dataTransfer.setDragImage(
+    wrapper,
+    Math.max(0, Math.min(e.clientX - rect.left, rect.width)),
+    Math.max(0, Math.min(e.clientY - rect.top, rect.height)),
+  )
+  window.setTimeout(() => wrapper.remove(), 0)
 }
 
 export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
@@ -234,6 +289,9 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
   const [editMode, setEditMode] = useState(false)
   const [editCell, setEditCell] = useState<{ name: string; day: number; px: number; py: number } | null>(null)
   const [overrides, setOverrides] = useState<Record<string, Status>>({})
+  const [aiOverrides, setAiOverrides] = useState<Record<string, Status>>({})
+  const [aiState, setAiState] = useState<'idle' | 'running' | 'done'>('idle')
+  const [aiRun, setAiRun] = useState(0)
   const [demoEmps, setDemoEmps] = useState<EmpDef[]>([])
 
   // Custom sections + role overrides + custom order per employee (persisted)
@@ -248,14 +306,17 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
 
   // Persist to localStorage
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem('smengo:demo:gridState')
-      if (!raw) return
-      const parsed = JSON.parse(raw) as { sections?: CustomSection[]; overrides?: Record<string, RoleOrSectionKey>; order?: string[] }
-      if (parsed.sections) setCustomSections(parsed.sections)
-      if (parsed.overrides) setEmpRoleOverrides(parsed.overrides)
-      if (parsed.order) setEmpOrder(parsed.order)
-    } catch { /* ignore */ }
+    const id = requestAnimationFrame(() => {
+      try {
+        const raw = localStorage.getItem('smengo:demo:gridState')
+        if (!raw) return
+        const parsed = JSON.parse(raw) as { sections?: CustomSection[]; overrides?: Record<string, RoleOrSectionKey>; order?: string[] }
+        if (parsed.sections) setCustomSections(parsed.sections)
+        if (parsed.overrides) setEmpRoleOverrides(parsed.overrides)
+        if (parsed.order) setEmpOrder(parsed.order)
+      } catch { /* ignore */ }
+    })
+    return () => cancelAnimationFrame(id)
   }, [])
   useEffect(() => {
     try {
@@ -309,6 +370,9 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
     setDeptFilter('all')
     setEditMode(false)
     setOverrides({})
+    setAiOverrides({})
+    setAiState('idle')
+    setAiRun(0)
   }
   function onMoveEmp(srcName: string, targetName: string | null, targetGroupKey: RoleOrSectionKey | null) {
     if (!srcName) return
@@ -344,12 +408,21 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
   const notifRef = useRef<HTMLDivElement | null>(null)
   const userRef = useRef<HTMLDivElement | null>(null)
   const toastTimer = useRef<number | null>(null)
+  const aiApplyTimer = useRef<number | null>(null)
+  const aiDoneTimer = useRef<number | null>(null)
 
   useEffect(() => {
     if (!timerRunning) return
     const id = window.setInterval(() => setTimerSec((s) => s + 1), 1000)
     return () => window.clearInterval(id)
   }, [timerRunning])
+
+  useEffect(() => {
+    return () => {
+      if (aiApplyTimer.current) window.clearTimeout(aiApplyTimer.current)
+      if (aiDoneTimer.current) window.clearTimeout(aiDoneTimer.current)
+    }
+  }, [])
 
   useEffect(() => {
     if (!notifOpen) return
@@ -452,16 +525,50 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
   const monthOffset = (monthIdx - 2) * 3
 
   const allEmps = [...BASE_EMPLOYEES, ...demoEmps]
+  const aiOptimized = aiState === 'done'
+  const coverageSummary = aiState === 'done' ? labels.aiOptimizedSummary : labels.coverageSummary
+  const optimizedCellKeys = AI_OPTIMIZED_CELLS.reduce<Record<string, true>>((acc, cell) => {
+    acc[`${cell.name}-${cell.day}`] = true
+    return acc
+  }, {})
 
   function statusOf(name: string, dayIdx: number, base: string): Status {
     const key = `${name}-${dayIdx}-${monthIdx}`
     if (overrides[key]) return overrides[key]
+    if (aiOverrides[key]) return aiOverrides[key]
     const rotated = rotateSchedule(base, monthOffset)
     return (rotated[dayIdx] ?? 'W') as Status
   }
 
   function setStatusOf(name: string, dayIdx: number, s: Status) {
     setOverrides((prev) => ({ ...prev, [`${name}-${dayIdx}-${monthIdx}`]: s }))
+  }
+
+  function runAiOptimization() {
+    if (aiState !== 'idle') return
+    if (aiApplyTimer.current) window.clearTimeout(aiApplyTimer.current)
+    if (aiDoneTimer.current) window.clearTimeout(aiDoneTimer.current)
+    setSelectedEmp(null)
+    setEditCell(null)
+    setEditMode(false)
+    setAiState('running')
+    setAiRun((n) => n + 1)
+
+    aiApplyTimer.current = window.setTimeout(() => {
+      setAiOverrides((prev) => {
+        const next = { ...prev }
+        for (const cell of AI_OPTIMIZED_CELLS) {
+          next[`${cell.name}-${cell.day}-${monthIdx}`] = cell.status
+        }
+        return next
+      })
+      setShowGrid(true)
+      setAiRun((n) => n + 1)
+    }, 540)
+
+    aiDoneTimer.current = window.setTimeout(() => {
+      setAiState('done')
+    }, 1450)
   }
 
   const CHIP_LBL: Record<Exclude<Status, '-'>, string> = {
@@ -696,6 +803,7 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
         </div>
       </div>
 
+      <div className="smengo-ai-grid-stage" data-ai-state={aiState} style={{ position: 'relative' }}>
       {theme === 'classic' ? (
         <ClassicGrid
           labels={labels}
@@ -712,14 +820,12 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
           showGrid={showGrid}
           sticky={sticky}
           customSections={customSections}
-          empRoleOverrides={empRoleOverrides}
           empOrder={empOrder}
           getEmpRoleKey={getEmpRoleKey}
           getRoleLabel={getRoleLabel}
           getRoleColor={getRoleColor}
           onOpenRolePicker={(name) => setRolePickerFor(name)}
           onOpenAddSection={() => setAddSectionOpen(true)}
-          onReset={handleReset}
           onMoveEmp={onMoveEmp}
           dragEmp={dragEmp}
           setDragEmp={setDragEmp}
@@ -727,6 +833,11 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
           setDragOverEmp={setDragOverEmp}
           dragOverGroup={dragOverGroup}
           setDragOverGroup={setDragOverGroup}
+          optimizedOverrides={aiOverrides}
+          optimizedCellKeys={optimizedCellKeys}
+          optimizationRun={aiRun}
+          optimizationState={aiState}
+          coverageSummary={coverageSummary}
         />
       ) : (
       <div
@@ -875,7 +986,7 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
                     color: 'var(--foreground)', lineHeight: 1.35,
                   }}>
                     <AlertCircle style={{ width: 14, height: 14, color: 'var(--accent)', flexShrink: 0, marginTop: 1 }} />
-                    <span>{labels.coverageSummary}</span>
+                    <span>{coverageSummary}</span>
                   </div>
                 </div>
               )}
@@ -1108,6 +1219,9 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
             dragOverGroup={dragOverGroup}
             setDragOverGroup={setDragOverGroup}
             onMoveEmp={onMoveEmp}
+            optimizedCellKeys={optimizedCellKeys}
+            optimizationRun={aiRun}
+            optimizationState={aiState}
           />
         ) : (
           <DetailGrid
@@ -1147,6 +1261,9 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
             dragOverGroup={dragOverGroup}
             setDragOverGroup={setDragOverGroup}
             onMoveEmp={onMoveEmp}
+            optimizedCellKeys={optimizedCellKeys}
+            optimizationRun={aiRun}
+            optimizationState={aiState}
           />
         )}
 
@@ -1155,21 +1272,29 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
           style={{
             display: 'flex', alignItems: 'center', gap: 8,
             padding: '8px 12px',
-            background: contrast ? 'rgba(224, 155, 58, 0.12)' : 'rgba(224, 155, 58, 0.08)',
-            borderTop: '1px solid rgba(224, 155, 58, 0.30)',
+            background: aiOptimized
+              ? 'color-mix(in oklab, var(--success) 13%, transparent)'
+              : contrast ? 'rgba(224, 155, 58, 0.12)' : 'rgba(224, 155, 58, 0.08)',
+            borderTop: aiOptimized
+              ? '1px solid color-mix(in oklab, var(--success) 32%, transparent)'
+              : '1px solid rgba(224, 155, 58, 0.30)',
           }}
         >
           <span
             style={{
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               width: 16, height: 16, borderRadius: '50%',
-              background: 'var(--warning)', color: '#fff',
+              background: aiOptimized ? 'var(--success)' : 'var(--warning)', color: '#fff',
             }}
           >
-            <AlertTriangle style={{ width: 10, height: 10, strokeWidth: 2.5 }} />
+            {aiOptimized ? (
+              <Check style={{ width: 10, height: 10, strokeWidth: 3 }} />
+            ) : (
+              <AlertTriangle style={{ width: 10, height: 10, strokeWidth: 2.5 }} />
+            )}
           </span>
-          <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--warning)' }}>
-            {labels.coverageSummary}
+          <span style={{ fontSize: 11, fontWeight: 500, color: aiOptimized ? 'var(--success)' : 'var(--warning)' }}>
+            {coverageSummary}
           </span>
         </div>
 
@@ -1298,6 +1423,14 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
         )}
       </div>
       )}
+      {aiState === 'running' && (
+        <div aria-hidden="true" className="smengo-ai-scan-layer">
+          <span />
+        </div>
+      )}
+      </div>
+
+      <AiOptimizeBar labels={labels} state={aiState} onRun={runAiOptimization} />
 
       {/* Role picker modal (themed) */}
       {rolePickerFor && (
@@ -1374,9 +1507,7 @@ function EmployeeCalendarOverlay({
   const open = !!empName && !!emp
   const [mounted, setMounted] = useState(false)
   useEffect(() => {
-    if (!open) { setMounted(false); return }
-    // Trigger enter animation on next frame
-    const id = requestAnimationFrame(() => setMounted(true))
+    const id = requestAnimationFrame(() => setMounted(open))
     return () => cancelAnimationFrame(id)
   }, [open])
   useEffect(() => {
@@ -1607,12 +1738,56 @@ function SettingRow({
   )
 }
 
+function AiOptimizeBar({
+  labels, state, onRun,
+}: {
+  labels: GridPreviewLabels
+  state: 'idle' | 'running' | 'done'
+  onRun: () => void
+}) {
+  const locked = state !== 'idle'
+  return (
+    <div
+      data-ai-toolbar
+      className="mx-auto mb-5 mt-3 w-full max-w-[820px] px-1 sm:mb-6 sm:mt-4"
+      data-ai-state={state}
+    >
+      <div className="smengo-ai-command">
+        <div className="smengo-ai-input-wrap">
+          <Sparkles className="smengo-ai-command-icon" size={16} strokeWidth={1.9} />
+          <input
+            aria-label={labels.aiPrompt}
+            readOnly
+            disabled={locked}
+            value={labels.aiPrompt}
+            className="smengo-ai-input"
+          />
+        </div>
+        <button
+          type="button"
+          disabled={locked}
+          onClick={onRun}
+          aria-label={locked ? labels.aiDone : labels.aiRun}
+          className="smengo-ai-run-btn"
+        >
+          {locked ? (
+            <Check size={17} strokeWidth={2.8} />
+          ) : (
+            <span>{labels.aiRun}</span>
+          )}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 /* ── Detail / Extended mode ────────────────────────────────────── */
 function DetailGrid({
   mode, groups, statusOf, labels, chipLbl, chipLblFull, chipBg, chipFg, contrast, weekendBg,
   showTimes, merged, showGrid, sticky, showTelegram, showRoleChips, onEmpClick, onToggleProjects, onProjectClick, editMode, onCellEdit,
   getEmpRoleKey, getRoleLabel, getRoleColor, onOpenRolePicker,
   dragEmp, setDragEmp, dragOverEmp, setDragOverEmp, dragOverGroup, setDragOverGroup, onMoveEmp,
+  optimizedCellKeys, optimizationRun, optimizationState,
 }: {
   mode: Mode
   groups: { key: string; name: string; min?: number; rows: EmpDef[] }[]
@@ -1646,6 +1821,9 @@ function DetailGrid({
   dragOverGroup: string | null
   setDragOverGroup: (v: string | null) => void
   onMoveEmp: (srcName: string, targetName: string | null, targetGroupKey: RoleOrSectionKey | null) => void
+  optimizedCellKeys: Record<string, true>
+  optimizationRun: number
+  optimizationState: 'idle' | 'running' | 'done'
 }) {
   const [hoveredRun, setHoveredRun] = useState<string | null>(null)
   const dayKey = (k: keyof GridPreviewLabels['days']) => labels.days[k]
@@ -1656,6 +1834,8 @@ function DetailGrid({
   const nameColWMax = isExt ? (sticky ? 240 : 168) : (sticky ? 220 : 148)
   const nameColWMin = isExt ? 130 : 110
   const nameColW = `clamp(${nameColWMin}px, 34vw, ${nameColWMax}px)`
+  const dndEnabled = editMode
+  const showProblemColumn = optimizationRun <= 1
 
   function workLabel(emp: EmpDef): string {
     if (!showTimes) return isExt ? chipLblFull.W : chipLbl.W
@@ -1698,7 +1878,7 @@ function DetailGrid({
             </th>
             {MONTH_DEMO.map((d, ci) => {
               const isWkd = d.k === 'sat' || d.k === 'sun'
-              const isProblem = ci === PROBLEM_DAY_IDX
+              const isProblem = ci === PROBLEM_DAY_IDX && showProblemColumn
               return (
                 <th
                   key={d.n}
@@ -1708,7 +1888,7 @@ function DetailGrid({
                     color: 'var(--muted-foreground)',
                     position: 'relative',
                     overflow: 'hidden',
-                    ...problemColumnStyle(ci),
+                    ...problemColumnStyle(ci, showProblemColumn),
                   }}
                 >
                   <div style={{ fontWeight: 500, fontSize: 11 }}>{d.n}</div>
@@ -1740,12 +1920,19 @@ function DetailGrid({
         </thead>
         <tbody>
           {groups.flatMap((dept, di) => [
-            ...(sticky ? [] : [(
+            ...(!dndEnabled && sticky ? [] : [(
             <tr key={`dept-${dept.key}-${di}`}>
               <td
-                onDragOver={(e) => { if (dragEmp) { e.preventDefault(); setDragOverGroup(dept.key) } }}
+                onDragOver={(e) => {
+                  if (dndEnabled && dragEmp) {
+                    e.preventDefault()
+                    e.dataTransfer.dropEffect = 'move'
+                    setDragOverGroup(dept.key)
+                  }
+                }}
                 onDragLeave={() => setDragOverGroup(null)}
                 onDrop={(e) => {
+                  if (!dndEnabled) return
                   e.preventDefault()
                   if (dragEmp) onMoveEmp(dragEmp, null, dept.key as RoleOrSectionKey)
                   setDragEmp(null); setDragOverEmp(null); setDragOverGroup(null)
@@ -1753,13 +1940,13 @@ function DetailGrid({
                 style={{
                   position: 'sticky', left: 0, zIndex: 6,
                   padding: '4px 10px',
-                  background: dragOverGroup === dept.key ? 'var(--accent-soft)' : 'var(--grid-dept-bg)',
+                  background: dndEnabled && dragOverGroup === dept.key ? 'var(--accent-soft)' : 'var(--grid-dept-bg)',
                   width: nameColW, minWidth: nameColW,
                   fontSize: 10, fontWeight: 600,
                   color: 'var(--grid-dept-fg)',
                   textTransform: 'uppercase', letterSpacing: '0.05em',
                   whiteSpace: 'nowrap',
-                  outline: dragOverGroup === dept.key ? '2px dashed var(--accent)' : 'none',
+                  outline: dndEnabled && dragOverGroup === dept.key ? '2px dashed var(--accent)' : 'none',
                   outlineOffset: -2,
                   transition: 'background 0.12s',
                 }}
@@ -1776,16 +1963,22 @@ function DetailGrid({
                   </span>
                 )}
               </td>
-              <td colSpan={MONTH_DEMO.length + 2} style={{ background: dragOverGroup === dept.key ? 'var(--accent-soft)' : 'var(--grid-dept-bg)' }} />
+              <td colSpan={MONTH_DEMO.length + 2} style={{ background: dndEnabled && dragOverGroup === dept.key ? 'var(--accent-soft)' : 'var(--grid-dept-bg)' }} />
             </tr>
             )]),
             ...dept.rows.map((emp, ei) => (
-              <tr key={`${dept.key}-${ei}`} style={{ borderBottom: '1px solid var(--grid-row-divider)' }}>
+              <tr key={`${dept.key}-${ei}`} data-employee-row={emp.name} style={{ borderBottom: '1px solid var(--grid-row-divider)' }}>
                 <td
-                  onDragOver={(e) => { if (!sticky && dragEmp && dragEmp !== emp.name) { e.preventDefault(); setDragOverEmp(emp.name) } }}
+                  onDragOver={(e) => {
+                    if (dndEnabled && dragEmp && dragEmp !== emp.name) {
+                      e.preventDefault()
+                      e.dataTransfer.dropEffect = 'move'
+                      setDragOverEmp(emp.name)
+                    }
+                  }}
                   onDragLeave={() => { if (dragOverEmp === emp.name) setDragOverEmp(null) }}
                   onDrop={(e) => {
-                    if (sticky) return
+                    if (!dndEnabled) return
                     e.preventDefault()
                     if (dragEmp && dragEmp !== emp.name) onMoveEmp(dragEmp, emp.name, dept.key as RoleOrSectionKey)
                     setDragEmp(null); setDragOverEmp(null); setDragOverGroup(null)
@@ -1795,16 +1988,13 @@ function DetailGrid({
                     background: 'var(--grid-cell)',
                     padding: '6px 10px', fontWeight: 500,
                     color: 'var(--foreground)', whiteSpace: 'nowrap', overflow: 'hidden',
-                    borderTop: !sticky && dragOverEmp === emp.name ? '2px solid var(--accent)' : '2px solid transparent',
-                    opacity: dragEmp === emp.name ? 0.4 : 1,
+                    borderTop: dndEnabled && dragOverEmp === emp.name ? '2px solid var(--accent)' : '2px solid transparent',
+                    opacity: dndEnabled && dragEmp === emp.name ? 0.4 : 1,
                   }}
                 >
                   <div
                     className="flex items-center gap-2"
-                    draggable={!sticky}
-                    onDragStart={(e) => { if (!sticky) { setDragEmp(emp.name); e.dataTransfer.effectAllowed = 'move' } }}
-                    onDragEnd={() => { setDragEmp(null); setDragOverEmp(null); setDragOverGroup(null) }}
-                    style={{ cursor: !sticky ? 'grab' : 'default' }}
+                    style={{ cursor: 'default' }}
                   >
                     {sticky && (
                       <span className="hidden sm:inline-flex"
@@ -1824,9 +2014,27 @@ function DetailGrid({
                     <Avatar name={emp.name} size={18} />
                     <button
                       type="button"
-                      onClick={() => onEmpClick(emp.name)}
+                      draggable={dndEnabled}
+                      onClick={() => { if (!dndEnabled) onEmpClick(emp.name) }}
+                      onDragStart={(e) => {
+                        if (!dndEnabled) {
+                          e.preventDefault()
+                          return
+                        }
+                        setDragEmp(emp.name)
+                        e.dataTransfer.effectAllowed = 'move'
+                        e.dataTransfer.setData('text/plain', emp.name)
+                        setEmployeeRowDragImage(e, e.currentTarget.closest('[data-employee-row]') as HTMLElement | null)
+                      }}
+                      onDragEnd={() => { setDragEmp(null); setDragOverEmp(null); setDragOverGroup(null) }}
                       className="cursor-pointer truncate bg-transparent p-0 text-left transition-colors hover:text-accent"
-                      style={{ border: 0, color: 'inherit', font: 'inherit' }}
+                      style={{
+                        border: 0,
+                        color: 'inherit',
+                        cursor: dndEnabled ? 'grab' : 'pointer',
+                        font: 'inherit',
+                        userSelect: dndEnabled ? 'none' : 'auto',
+                      }}
                     >
                       {emp.name}
                     </button>
@@ -1879,6 +2087,7 @@ function DetailGrid({
                     const raw = code as Exclude<Status, '-'>
                     const runKey = `${emp.name}-${ri}`
                     const isHovered = hoveredRun === runKey
+                    const isOptimizedRun = optimizationState !== 'idle' && optimizationRun > 1 && indices.some((i) => optimizedCellKeys[`${emp.name}-${i % 14}`])
                     return (
                       <td
                         key={`run-${ri}`}
@@ -1890,6 +2099,7 @@ function DetailGrid({
                           position: 'relative',
                           background: allWkd ? weekendBg : 'var(--grid-cell)',
                           borderRight: showGrid ? '1px solid var(--border)' : 'none',
+                          animation: isOptimizedRun ? 'smengo-ai-cell-pop 760ms cubic-bezier(.22,1,.36,1)' : 'none',
                         }}
                       >
                         {isHovered && span > 1 && (
@@ -1930,6 +2140,7 @@ function DetailGrid({
                   const isOff = raw === '-' || raw === undefined
                   const cellInteractive = editMode
                   const tip = isOff ? '' : cellTooltip(raw, emp.shift, labels)
+                  const isOptimizedCell = optimizationState !== 'idle' && optimizationRun > 1 && optimizedCellKeys[`${emp.name}-${ci % 14}`]
                   return (
                     <td
                       key={d.n}
@@ -1946,6 +2157,7 @@ function DetailGrid({
                         outline: editMode ? '1px dashed var(--accent)' : 'none',
                         outlineOffset: editMode ? -2 : 0,
                         cursor: cellInteractive ? 'pointer' : 'default',
+                        animation: isOptimizedCell ? 'smengo-ai-cell-pop 760ms cubic-bezier(.22,1,.36,1)' : 'none',
                       }}
                     >
                       {isOff ? (
@@ -2056,6 +2268,7 @@ function CompactGrid({
   showTimes, merged, showGrid, sticky, showTelegram, showRoleChips, onEmpClick, editMode, onToggleProjects, onProjectClick, onCellEdit,
   getEmpRoleKey, getRoleLabel, getRoleColor, onOpenRolePicker,
   dragEmp, setDragEmp, dragOverEmp, setDragOverEmp, dragOverGroup, setDragOverGroup, onMoveEmp,
+  optimizedCellKeys, optimizationRun, optimizationState,
 }: {
   groups: { key: string; name: string; min?: number; rows: EmpDef[] }[]
   statusOf: (name: string, dayIdx: number, base: string) => Status
@@ -2086,10 +2299,15 @@ function CompactGrid({
   dragOverGroup: string | null
   setDragOverGroup: (v: string | null) => void
   onMoveEmp: (srcName: string, targetName: string | null, targetGroupKey: RoleOrSectionKey | null) => void
+  optimizedCellKeys: Record<string, true>
+  optimizationRun: number
+  optimizationState: 'idle' | 'running' | 'done'
 }) {
   const [hoveredRun, setHoveredRun] = useState<string | null>(null)
   const nameColWMax = sticky ? 220 : 168
   const nameColW = `clamp(110px, 34vw, ${nameColWMax}px)`
+  const dndEnabled = editMode
+  const showProblemColumn = optimizationRun <= 1
   return (
     <div style={{ overflowX: 'auto' }}>
       <table style={{ borderCollapse: 'collapse', width: 'max-content', minWidth: '100%', fontSize: 10, tableLayout: 'fixed' }}>
@@ -2125,7 +2343,7 @@ function CompactGrid({
             </th>
             {MONTH_DEMO.map((d, ci) => {
               const isWkd = d.k === 'sat' || d.k === 'sun'
-              const isProblem = ci === PROBLEM_DAY_IDX
+              const isProblem = ci === PROBLEM_DAY_IDX && showProblemColumn
               return (
                 <th
                   key={d.n}
@@ -2136,7 +2354,7 @@ function CompactGrid({
                     fontWeight: 500, fontSize: 9.5,
                     position: 'relative',
                     overflow: 'hidden',
-                    ...problemColumnStyle(ci),
+                    ...problemColumnStyle(ci, showProblemColumn),
                   }}
                 >
                   <div style={{ fontWeight: 500, fontSize: 9.5 }}>{d.n}</div>
@@ -2168,12 +2386,19 @@ function CompactGrid({
         </thead>
         <tbody>
           {groups.flatMap((dept, di) => [
-            ...(sticky ? [] : [(
+            ...(!dndEnabled && sticky ? [] : [(
             <tr key={`dept-${dept.key}-${di}`}>
               <td
-                onDragOver={(e) => { if (dragEmp) { e.preventDefault(); setDragOverGroup(dept.key) } }}
+                onDragOver={(e) => {
+                  if (dndEnabled && dragEmp) {
+                    e.preventDefault()
+                    e.dataTransfer.dropEffect = 'move'
+                    setDragOverGroup(dept.key)
+                  }
+                }}
                 onDragLeave={() => setDragOverGroup(null)}
                 onDrop={(e) => {
+                  if (!dndEnabled) return
                   e.preventDefault()
                   if (dragEmp) onMoveEmp(dragEmp, null, dept.key as RoleOrSectionKey)
                   setDragEmp(null); setDragOverEmp(null); setDragOverGroup(null)
@@ -2181,13 +2406,13 @@ function CompactGrid({
                 style={{
                   position: 'sticky', left: 0, zIndex: 6,
                   padding: '3px 10px',
-                  background: dragOverGroup === dept.key ? 'var(--accent-soft)' : 'var(--grid-dept-bg)',
+                  background: dndEnabled && dragOverGroup === dept.key ? 'var(--accent-soft)' : 'var(--grid-dept-bg)',
                   width: nameColW, minWidth: nameColW,
                   fontSize: 9.5, fontWeight: 600,
                   color: 'var(--grid-dept-fg)',
                   textTransform: 'uppercase', letterSpacing: '0.05em',
                   whiteSpace: 'nowrap',
-                  outline: dragOverGroup === dept.key ? '2px dashed var(--accent)' : 'none',
+                  outline: dndEnabled && dragOverGroup === dept.key ? '2px dashed var(--accent)' : 'none',
                   outlineOffset: -2,
                   transition: 'background 0.12s',
                 }}
@@ -2199,16 +2424,22 @@ function CompactGrid({
                 }} />
                 ▸ {dept.name}
               </td>
-              <td colSpan={MONTH_DEMO.length + 2} style={{ background: dragOverGroup === dept.key ? 'var(--accent-soft)' : 'var(--grid-dept-bg)' }} />
+              <td colSpan={MONTH_DEMO.length + 2} style={{ background: dndEnabled && dragOverGroup === dept.key ? 'var(--accent-soft)' : 'var(--grid-dept-bg)' }} />
             </tr>
             )]),
             ...dept.rows.map((emp, ei) => (
-              <tr key={`${dept.key}-${ei}`} style={{ borderBottom: '1px solid var(--grid-row-divider)' }}>
+              <tr key={`${dept.key}-${ei}`} data-employee-row={emp.name} style={{ borderBottom: '1px solid var(--grid-row-divider)' }}>
                 <td
-                  onDragOver={(e) => { if (!sticky && dragEmp && dragEmp !== emp.name) { e.preventDefault(); setDragOverEmp(emp.name) } }}
+                  onDragOver={(e) => {
+                    if (dndEnabled && dragEmp && dragEmp !== emp.name) {
+                      e.preventDefault()
+                      e.dataTransfer.dropEffect = 'move'
+                      setDragOverEmp(emp.name)
+                    }
+                  }}
                   onDragLeave={() => { if (dragOverEmp === emp.name) setDragOverEmp(null) }}
                   onDrop={(e) => {
-                    if (sticky) return
+                    if (!dndEnabled) return
                     e.preventDefault()
                     if (dragEmp && dragEmp !== emp.name) onMoveEmp(dragEmp, emp.name, dept.key as RoleOrSectionKey)
                     setDragEmp(null); setDragOverEmp(null); setDragOverGroup(null)
@@ -2218,16 +2449,13 @@ function CompactGrid({
                     background: 'var(--grid-cell)',
                     padding: '3px 10px', fontWeight: 500,
                     color: 'var(--foreground)', whiteSpace: 'nowrap', fontSize: 11, overflow: 'hidden',
-                    borderTop: !sticky && dragOverEmp === emp.name ? '2px solid var(--accent)' : '2px solid transparent',
-                    opacity: dragEmp === emp.name ? 0.4 : 1,
+                    borderTop: dndEnabled && dragOverEmp === emp.name ? '2px solid var(--accent)' : '2px solid transparent',
+                    opacity: dndEnabled && dragEmp === emp.name ? 0.4 : 1,
                   }}
                 >
                   <div
                     className="flex items-center justify-between gap-2"
-                    draggable={!sticky}
-                    onDragStart={(e) => { if (!sticky) { setDragEmp(emp.name); e.dataTransfer.effectAllowed = 'move' } }}
-                    onDragEnd={() => { setDragEmp(null); setDragOverEmp(null); setDragOverGroup(null) }}
-                    style={{ cursor: !sticky ? 'grab' : 'default' }}
+                    style={{ cursor: 'default' }}
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       {sticky && (
@@ -2248,9 +2476,27 @@ function CompactGrid({
                       <Avatar name={emp.name} size={16} />
                       <button
                         type="button"
-                        onClick={() => onEmpClick(emp.name)}
+                        draggable={dndEnabled}
+                        onClick={() => { if (!dndEnabled) onEmpClick(emp.name) }}
+                        onDragStart={(e) => {
+                          if (!dndEnabled) {
+                            e.preventDefault()
+                            return
+                          }
+                          setDragEmp(emp.name)
+                          e.dataTransfer.effectAllowed = 'move'
+                          e.dataTransfer.setData('text/plain', emp.name)
+                          setEmployeeRowDragImage(e, e.currentTarget.closest('[data-employee-row]') as HTMLElement | null)
+                        }}
+                        onDragEnd={() => { setDragEmp(null); setDragOverEmp(null); setDragOverGroup(null) }}
                         className="cursor-pointer truncate bg-transparent p-0 text-left transition-colors hover:text-accent"
-                        style={{ border: 0, color: 'inherit', font: 'inherit' }}
+                        style={{
+                          border: 0,
+                          color: 'inherit',
+                          cursor: dndEnabled ? 'grab' : 'pointer',
+                          font: 'inherit',
+                          userSelect: dndEnabled ? 'none' : 'auto',
+                        }}
                       >
                         {emp.name}
                       </button>
@@ -2303,6 +2549,7 @@ function CompactGrid({
                     const allWkd = indices.every(i => { const d = MONTH_DEMO[i]; return d.k === 'sat' || d.k === 'sun' })
                     const runKey = `${emp.name}-${ri}`
                     const isHovered = hoveredRun === runKey
+                    const isOptimizedRun = optimizationState !== 'idle' && optimizationRun > 1 && indices.some((i) => optimizedCellKeys[`${emp.name}-${i % 14}`])
                     return (
                       <td
                         key={`run-${ri}`}
@@ -2314,6 +2561,7 @@ function CompactGrid({
                           position: 'relative',
                           background: allWkd ? weekendBg : 'var(--grid-cell)',
                           borderRight: showGrid ? '1px solid var(--border)' : 'none',
+                          animation: isOptimizedRun ? 'smengo-ai-cell-pop 760ms cubic-bezier(.22,1,.36,1)' : 'none',
                         }}
                       >
                         {isHovered && span > 1 && (
@@ -2347,6 +2595,7 @@ function CompactGrid({
                   const isWkd = d.k === 'sat' || d.k === 'sun'
                   const isOff = code === '-' || code === undefined
                   const tip = isOff ? '' : cellTooltip(code, emp.shift, labels)
+                  const isOptimizedCell = optimizationState !== 'idle' && optimizationRun > 1 && optimizedCellKeys[`${emp.name}-${ci % 14}`]
                   return (
                     <td
                       key={d.n}
@@ -2362,6 +2611,7 @@ function CompactGrid({
                         outline: editMode ? '1px dashed var(--accent)' : 'none',
                         outlineOffset: editMode ? -1 : 0,
                         cursor: editMode ? 'pointer' : 'default',
+                        animation: isOptimizedCell ? 'smengo-ai-cell-pop 760ms cubic-bezier(.22,1,.36,1)' : 'none',
                       }}
                     >
                       {isOff ? (

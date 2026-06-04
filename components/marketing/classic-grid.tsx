@@ -4,11 +4,11 @@ import { useEffect, useRef, useState, type ComponentType } from 'react'
 import {
   Search, ChevronLeft, ChevronRight, ChevronDown, MoreHorizontal,
   TreePalm, Thermometer, AlertCircle, Home,
-  Bell, Pencil, RotateCcw,
+  Bell, Pencil,
 } from 'lucide-react'
 import {
-  type GridPreviewLabels, type EmpDef, type Status, type DeptKey, type Mode, type RoleKey,
-  Avatar, BASE_EMPLOYEES, MONTH_DEMO, PROBLEM_DAY_IDX, rotateSchedule, workMeta,
+  type GridPreviewLabels, type EmpDef, type Status, type DeptKey, type Mode,
+  Avatar, BASE_EMPLOYEES, MONTH_DEMO, PROBLEM_DAY_IDX, rotateSchedule, setEmployeeRowDragImage, workMeta,
 } from './grid-preview'
 import type { CustomSection, RoleOrSectionKey } from './grid-shared'
 
@@ -27,14 +27,12 @@ type Props = {
   showGrid: boolean
   sticky: boolean
   customSections: CustomSection[]
-  empRoleOverrides: Record<string, RoleOrSectionKey>
   empOrder: string[]
   getEmpRoleKey: (emp: EmpDef) => RoleOrSectionKey
   getRoleLabel: (key: RoleOrSectionKey) => string
   getRoleColor: (key: RoleOrSectionKey) => string
   onOpenRolePicker: (name: string) => void
   onOpenAddSection: () => void
-  onReset: () => void
   onMoveEmp: (srcName: string, targetName: string | null, targetGroupKey: RoleOrSectionKey | null) => void
   dragEmp: string | null
   setDragEmp: (v: string | null) => void
@@ -42,6 +40,11 @@ type Props = {
   setDragOverEmp: (v: string | null) => void
   dragOverGroup: string | null
   setDragOverGroup: (v: string | null) => void
+  optimizedOverrides: Record<string, Status>
+  optimizedCellKeys: Record<string, true>
+  optimizationRun: number
+  optimizationState: 'idle' | 'running' | 'done'
+  coverageSummary: string
 }
 
 type StatusVisual = {
@@ -72,10 +75,11 @@ export function ClassicGrid({
   labels, mode, monthIdx, setMonthIdx, deptFilter,
   showTimer, showToday,
   contrast, strongWeekend, showTimes, merged, showGrid, sticky,
-  customSections, empRoleOverrides, empOrder,
+  customSections, empOrder,
   getEmpRoleKey, getRoleLabel, getRoleColor,
-  onOpenRolePicker, onOpenAddSection, onReset, onMoveEmp,
+  onOpenRolePicker, onOpenAddSection, onMoveEmp,
   dragEmp, setDragEmp, dragOverEmp, setDragOverEmp, dragOverGroup, setDragOverGroup,
+  optimizedOverrides, optimizedCellKeys, optimizationRun, optimizationState, coverageSummary,
 }: Props) {
   const [timerRunning, setTimerRunning] = useState(false)
   const [timerSec, setTimerSec] = useState(0)
@@ -140,6 +144,7 @@ export function ClassicGrid({
   function statusOf(name: string, fullDayIdx: number, base: string): Status {
     const key = `${name}-${fullDayIdx}-${monthIdx}`
     if (overrides[key]) return overrides[key]
+    if (optimizedOverrides[key]) return optimizedOverrides[key]
     const rotated = rotateSchedule(base, monthOffset)
     return (rotated[fullDayIdx % 14] ?? 'W') as Status
   }
@@ -158,6 +163,8 @@ export function ClassicGrid({
   const stickyW = `clamp(140px, 42vw, ${stickyWMax}px)`
   const iconSize = mode === 'compact' ? 12 : mode === 'detail' ? 14 : 16
   const timeSize = mode === 'compact' ? 9 : mode === 'detail' ? 10 : 11
+  const dndEnabled = editMode
+  const showProblemColumn = optimizationRun <= 1
 
   // Stats for "Today" header chip
   let onShift = 0, offToday = 0
@@ -331,7 +338,7 @@ export function ClassicGrid({
                   color: 'var(--foreground)', lineHeight: 1.35,
                 }}>
                   <AlertCircle style={{ width: 14, height: 14, color: 'var(--accent)', flexShrink: 0, marginTop: 1 }} />
-                  <span>{labels.coverageSummary}</span>
+                  <span>{coverageSummary}</span>
                 </div>
               </div>
             )}
@@ -479,7 +486,7 @@ export function ClassicGrid({
                 </span>
               </div>
               {MONTH_DEMO.map((d, ci) => {
-                const isProblem = ci === PROBLEM_DAY_IDX
+                const isProblem = ci === PROBLEM_DAY_IDX && showProblemColumn
                 const isWeekend = d.k === 'sat' || d.k === 'sun'
                 return (
                   <div
@@ -527,7 +534,7 @@ export function ClassicGrid({
             {/* Body rows */}
             {(() => {
               const visRows: Array<{ type: 'emp'; emp: EmpDef } | { type: 'role'; rk: RoleOrSectionKey }> = []
-              if (!sticky) {
+              if (dndEnabled || !sticky) {
                 const seen = new Set<RoleOrSectionKey>()
                 const orderUsed: RoleOrSectionKey[] = []
                 for (const empItem of orderedEmps) {
@@ -550,13 +557,20 @@ export function ClassicGrid({
               }
               return visRows.map((row) => {
                 if (row.type === 'role') {
-                  const isOver = dragOverGroup === String(row.rk)
+                  const isOver = dndEnabled && dragOverGroup === String(row.rk)
                   return (
                     <div
                       key={`role-${String(row.rk)}`}
-                      onDragOver={(e) => { if (dragEmp) { e.preventDefault(); setDragOverGroup(String(row.rk)) } }}
+                      onDragOver={(e) => {
+                        if (dndEnabled && dragEmp) {
+                          e.preventDefault()
+                          e.dataTransfer.dropEffect = 'move'
+                          setDragOverGroup(String(row.rk))
+                        }
+                      }}
                       onDragLeave={() => setDragOverGroup(null)}
                       onDrop={(e) => {
+                        if (!dndEnabled) return
                         e.preventDefault()
                         if (dragEmp) onMoveEmp(dragEmp, null, row.rk)
                         setDragEmp(null); setDragOverEmp(null); setDragOverGroup(null)
@@ -602,15 +616,22 @@ export function ClassicGrid({
                 }
                 const emp = row.emp
                 const empRoleKey = getEmpRoleKey(emp)
-                const isDraggingThis = dragEmp === emp.name
-                const isOverThis = !sticky && dragOverEmp === emp.name
+                const isDraggingThis = dndEnabled && dragEmp === emp.name
+                const isOverThis = dndEnabled && dragOverEmp === emp.name
                 return (
               <div
                 key={emp.name}
-                onDragOver={(e) => { if (!sticky && dragEmp && dragEmp !== emp.name) { e.preventDefault(); setDragOverEmp(emp.name) } }}
+                data-employee-row={emp.name}
+                onDragOver={(e) => {
+                  if (dndEnabled && dragEmp && dragEmp !== emp.name) {
+                    e.preventDefault()
+                    e.dataTransfer.dropEffect = 'move'
+                    setDragOverEmp(emp.name)
+                  }
+                }}
                 onDragLeave={() => setDragOverEmp(dragOverEmp === emp.name ? null : dragOverEmp)}
                 onDrop={(e) => {
-                  if (sticky) return
+                  if (!dndEnabled) return
                   e.preventDefault()
                   if (dragEmp && dragEmp !== emp.name) onMoveEmp(dragEmp, emp.name, empRoleKey)
                   setDragEmp(null); setDragOverEmp(null); setDragOverGroup(null)
@@ -624,9 +645,6 @@ export function ClassicGrid({
                 }}
               >
                 <div
-                  draggable={!sticky}
-                  onDragStart={(e) => { if (!sticky) { setDragEmp(emp.name); e.dataTransfer.effectAllowed = 'move' } }}
-                  onDragEnd={() => { setDragEmp(null); setDragOverEmp(null); setDragOverGroup(null) }}
                   style={{
                     width: stickyW, flexShrink: 0,
                     padding: '8px 12px',
@@ -636,16 +654,30 @@ export function ClassicGrid({
                     left: 0,
                     background: 'var(--surface)',
                     zIndex: 2,
-                    cursor: !sticky ? 'grab' : 'default',
+                    cursor: 'default',
                   }}
                 >
                   <Avatar name={emp.name} size={32} />
                   <div style={{ minWidth: 0, lineHeight: 1.25 }}>
                     <div
+                      draggable={dndEnabled}
+                      onDragStart={(e) => {
+                        if (!dndEnabled) {
+                          e.preventDefault()
+                          return
+                        }
+                        setDragEmp(emp.name)
+                        e.dataTransfer.effectAllowed = 'move'
+                        e.dataTransfer.setData('text/plain', emp.name)
+                        setEmployeeRowDragImage(e, e.currentTarget.closest('[data-employee-row]') as HTMLElement | null)
+                      }}
+                      onDragEnd={() => { setDragEmp(null); setDragOverEmp(null); setDragOverGroup(null) }}
                       style={{
                         fontSize: nameSize, fontWeight: 600,
                         color: 'var(--foreground)',
                         whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                        cursor: dndEnabled ? 'grab' : 'default',
+                        userSelect: dndEnabled ? 'none' : 'auto',
                       }}
                     >
                       {emp.name}
@@ -676,10 +708,11 @@ export function ClassicGrid({
                 </div>
                 {MONTH_DEMO.map((d, ci) => {
                   const s = statusOf(emp.name, ci, emp.s)
-                  const isProblem = ci === PROBLEM_DAY_IDX
+                  const isProblem = ci === PROBLEM_DAY_IDX && showProblemColumn
                   const isWeekend = d.k === 'sat' || d.k === 'sun'
                   const cellKey = `${emp.name}-${ci}`
                   const hovered = hoverCell === cellKey
+                  const isOptimizedCell = optimizationState !== 'idle' && optimizationRun > 1 && optimizedCellKeys[cellKey]
                   const vis = s !== 'W' && s !== '-' ? STATUS_VIS[s] : null
                   const mergedLeft = vis && isMergedSame(emp.name, ci, emp.s)
                   const mergedRight = vis && isMergedSameRight(emp.name, ci, emp.s)
@@ -723,6 +756,7 @@ export function ClassicGrid({
                         outline: editMode ? '1px dashed var(--accent)' : 'none',
                         outlineOffset: editMode ? -2 : 0,
                         transition: 'background 0.12s',
+                        animation: isOptimizedCell ? 'smengo-ai-cell-pop 760ms cubic-bezier(.22,1,.36,1)' : 'none',
                       }}
                       title={s === 'V' ? labels.shifts.vacation
                         : s === 'S' ? labels.shifts.sick

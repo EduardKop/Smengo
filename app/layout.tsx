@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, Source_Serif_4, Geist, Caveat, Press_Start_2P, VT323 } from 'next/font/google'
+import { cookies } from 'next/headers'
+import { Inter, Source_Serif_4, Geist, Caveat, Press_Start_2P, VT323, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 import { cn } from "@/lib/utils"
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages, getLocale } from 'next-intl/server'
-import { themeInitScript } from '@/components/theme-toggle'
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
@@ -39,6 +39,13 @@ const vt323 = VT323({
   subsets: ['latin'],
   display: 'swap',
   weight: ['400'],
+})
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: '--font-jetbrains-mono',
+  subsets: ['latin', 'cyrillic'],
+  display: 'swap',
+  weight: ['400', '500', '600', '700'],
 })
 
 export const metadata: Metadata = {
@@ -84,14 +91,22 @@ export default async function RootLayout({
 }>) {
   const locale = await getLocale()
   const messages = await getMessages()
+  const themeCookie = (await cookies()).get('theme')?.value
+  const theme = themeCookie === 'dark' || themeCookie === 'light' ? themeCookie : undefined
 
   return (
-    <html lang={locale} suppressHydrationWarning className={cn("h-full", "antialiased", inter.variable, sourceSerif.variable, caveat.variable, "font-sans", geist.variable, pressStart.variable, vt323.variable)}>
+    <html
+      lang={locale}
+      suppressHydrationWarning
+      className={cn("h-full", "antialiased", inter.variable, sourceSerif.variable, caveat.variable, "font-sans", geist.variable, pressStart.variable, vt323.variable, jetbrainsMono.variable, theme === 'dark' && 'dark')}
+      style={theme ? { colorScheme: theme } : undefined}
+    >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(orgJsonLd).replace(/</g, '\\u003c'),
+          }}
         />
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">

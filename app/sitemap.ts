@@ -11,6 +11,7 @@ function urlFor(locale: string, path: string): string {
 export default function sitemap(): MetadataRoute.Sitemap {
   const paths: Array<{ path: string; priority: number; changeFrequency: 'weekly' | 'monthly' }> = [
     { path: '', priority: 1.0, changeFrequency: 'weekly' },
+    { path: '/platform/schedule-grid', priority: 0.85, changeFrequency: 'monthly' },
     { path: '/pricing', priority: 0.8, changeFrequency: 'monthly' },
   ]
 

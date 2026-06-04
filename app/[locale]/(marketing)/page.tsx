@@ -232,6 +232,10 @@ export default async function LandingPage({
     empCalendarSummaryWorked: tg('empCalendarSummaryWorked'),
     empCalendarSummaryOff: tg('empCalendarSummaryOff'),
     empCalendarSummaryHours: tg('empCalendarSummaryHours'),
+    aiPrompt: tg('aiPrompt'),
+    aiRun: tg('aiRun'),
+    aiDone: tg('aiDone'),
+    aiOptimizedSummary: tg('aiOptimizedSummary'),
   }
 
   const industries = [
@@ -971,4 +975,3 @@ function FeatureSvg({ n }: { n: number }) {
     </svg>
   )
 }
-

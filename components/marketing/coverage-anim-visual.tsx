@@ -142,17 +142,19 @@ export function CoverageAnimVisual({ labels }: { labels: CoverageLabels }) {
                 style={{ background: bg }}
               >
                 <span
-                  className="absolute inset-0 flex items-center justify-center p-1.5 text-center font-mono font-bold"
+                  className="absolute inset-0 flex items-center justify-center p-1.5 text-center font-mono font-bold tabular-nums"
                   style={{
                     color: textColor,
-                    fontSize: '11px',
-                    lineHeight: 1.4,
+                    fontSize: '15px',
+                    lineHeight: 1.15,
+                    letterSpacing: '-0.02em',
                     whiteSpace: 'pre-line',
                     opacity: showLabels ? 0 : 1,
                     transition: `opacity ${FADE_MS}ms ease`,
+                    textShadow: isDay ? '0 1px 2px rgba(0,0,0,0.18)' : '0 1px 2px rgba(0,0,0,0.25)',
                   }}
                 >
-                  {isDay ? '09:00\n–19:00' : '19:00\n–08:00'}
+                  {isDay ? '09:00\n19:00' : '19:00\n08:00'}
                 </span>
 
                 <span

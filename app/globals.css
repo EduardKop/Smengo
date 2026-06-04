@@ -172,7 +172,7 @@ html {
   /* Fonts */
   --font-sans: var(--font-inter);
   --font-serif: var(--font-lora);
-  --font-mono: ui-monospace, "Cascadia Code", monospace;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, "Cascadia Code", monospace;
 
   /* Animations */
   --animate-gradient: gradient 4s ease-in-out infinite alternate;
@@ -212,6 +212,170 @@ body {
 @keyframes smengo-backdrop-in {
   from { opacity: 0; backdrop-filter: blur(0); -webkit-backdrop-filter: blur(0); }
   to   { opacity: 1; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+}
+@keyframes smengo-ai-grid-build {
+  0%   { transform: translateY(0) scale(1); filter: saturate(1); }
+  36%  { transform: translateY(-2px) scale(1.004); filter: saturate(1.14) brightness(1.02); }
+  72%  { transform: translateY(1px) scale(0.998); filter: saturate(1.08); }
+  100% { transform: translateY(0) scale(1); filter: saturate(1); }
+}
+@keyframes smengo-ai-scan {
+  from { transform: translateX(-120%) skewX(-14deg); opacity: 0; }
+  18%  { opacity: 1; }
+  78%  { opacity: 1; }
+  to   { transform: translateX(120%) skewX(-14deg); opacity: 0; }
+}
+@keyframes smengo-ai-cell-pop {
+  0%   { transform: scale(0.96); box-shadow: inset 0 0 0 0 color-mix(in oklab, var(--success) 0%, transparent); }
+  42%  { transform: scale(1.045); box-shadow: inset 0 0 0 999px color-mix(in oklab, var(--success) 17%, transparent); }
+  100% { transform: scale(1); box-shadow: inset 0 0 0 0 color-mix(in oklab, var(--success) 0%, transparent); }
+}
+@keyframes smengo-ai-border-beam {
+  to { transform: rotate(1turn); }
+}
+.smengo-ai-grid-stage[data-ai-state="running"] {
+  animation: smengo-ai-grid-build 1.35s cubic-bezier(.22,1,.36,1);
+}
+.smengo-ai-scan-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 35;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: var(--radius);
+}
+.smengo-ai-scan-layer span {
+  position: absolute;
+  inset: -20% auto -20% 0;
+  width: 42%;
+  background:
+    linear-gradient(90deg, transparent, color-mix(in oklab, var(--accent) 18%, transparent), transparent),
+    linear-gradient(90deg, transparent, color-mix(in oklab, var(--success) 20%, transparent), transparent);
+  filter: blur(1px);
+  animation: smengo-ai-scan 1.18s cubic-bezier(.22,1,.36,1) both;
+}
+.smengo-ai-command {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 54px;
+  padding: 7px;
+  border: 1px solid color-mix(in oklab, var(--border) 84%, var(--accent) 16%);
+  border-radius: 22px;
+  background: color-mix(in oklab, var(--surface) 96%, var(--accent) 4%);
+  box-shadow:
+    0 20px 52px -38px rgb(31 30 28 / 0.48),
+    inset 0 1px 0 rgb(255 255 255 / 0.36);
+}
+.smengo-ai-command::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: -42%;
+  background:
+    conic-gradient(
+      from 0deg,
+      transparent 0deg,
+      transparent 238deg,
+      color-mix(in oklab, var(--accent) 0%, transparent) 250deg,
+      color-mix(in oklab, var(--accent) 82%, white 18%) 273deg,
+      color-mix(in oklab, var(--success) 64%, var(--accent) 36%) 292deg,
+      transparent 318deg,
+      transparent 360deg
+    );
+  animation: smengo-ai-border-beam 6.5s linear infinite;
+}
+.smengo-ai-command::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 2px;
+  border-radius: 20px;
+  background: color-mix(in oklab, var(--surface) 98%, var(--accent) 2%);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--border) 80%, transparent);
+}
+.smengo-ai-input-wrap {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 17px;
+  background: transparent;
+  color: var(--foreground);
+}
+.smengo-ai-command-icon {
+  flex-shrink: 0;
+  color: color-mix(in oklab, var(--accent) 78%, var(--muted-foreground) 22%);
+}
+.smengo-ai-input {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--foreground);
+  font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0;
+  cursor: default;
+}
+.smengo-ai-input:disabled {
+  opacity: 0.72;
+  -webkit-text-fill-color: color-mix(in oklab, var(--foreground) 72%, transparent);
+}
+.smengo-ai-run-btn {
+  position: relative;
+  z-index: 1;
+  height: 40px;
+  min-width: 112px;
+  border: 0;
+  border-radius: 17px;
+  background: linear-gradient(180deg, color-mix(in oklab, var(--accent) 88%, white 12%), var(--accent));
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 18px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow:
+    0 12px 24px -18px color-mix(in oklab, var(--accent) 90%, black),
+    inset 0 1px 0 rgb(255 255 255 / 0.25);
+  transition: transform 150ms ease, filter 150ms ease, opacity 150ms ease;
+}
+.smengo-ai-run-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(0.98) saturate(1.06);
+}
+.smengo-ai-run-btn:disabled {
+  min-width: 52px;
+  cursor: default;
+  background: linear-gradient(180deg, color-mix(in oklab, var(--success) 86%, white 14%), var(--success));
+  opacity: 1;
+}
+@media (max-width: 520px) {
+  .smengo-ai-command {
+    grid-template-columns: 1fr;
+  }
+  .smengo-ai-run-btn {
+    width: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .smengo-ai-grid-stage[data-ai-state="running"],
+  .smengo-ai-scan-layer span {
+    animation: none;
+  }
 }
 
 @keyframes fade-in-up {
@@ -337,8 +501,3 @@ body[data-grid-locked='true'] [data-hero-text] > * {
 body[data-grid-locked='true'] [data-hero-buttons] {
   justify-content: center;
 }
-
-
-
-
-

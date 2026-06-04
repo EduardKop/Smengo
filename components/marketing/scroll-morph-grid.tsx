@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { GridPreview, type GridPreviewLabels } from './grid-preview'
 
 const NATURAL_W = 1400
@@ -18,6 +19,76 @@ interface ScrollMorphGridProps {
   demoSlotId: string
 }
 
+type SafariStaticSlots = {
+  demo: HTMLElement
+}
+
+function isSafariBrowser() {
+  const ua = window.navigator.userAgent
+  return (
+    window.navigator.vendor === 'Apple Computer, Inc.' &&
+    /Safari/.test(ua) &&
+    !/Chrome|Chromium|CriOS|FxiOS|Edg|OPR/.test(ua)
+  )
+}
+
+function SafariDemoGrid({ labels }: { labels: GridPreviewLabels }) {
+  const gridRef = useRef<HTMLDivElement>(null)
+  const [bubbleWidth, setBubbleWidth] = useState(() => Math.min(window.innerWidth - 32, 1800))
+  const [naturalHeight, setNaturalHeight] = useState(620)
+  const scale = bubbleWidth / NATURAL_W
+
+  useEffect(() => {
+    const updateBubbleWidth = () => setBubbleWidth(Math.min(window.innerWidth - 32, 1800))
+
+    updateBubbleWidth()
+    window.addEventListener('resize', updateBubbleWidth)
+
+    return () => window.removeEventListener('resize', updateBubbleWidth)
+  }, [])
+
+  useEffect(() => {
+    const grid = gridRef.current
+    if (!grid) return
+
+    const updateHeight = () => {
+      const nextHeight = grid.offsetHeight
+      if (nextHeight > 0) setNaturalHeight(nextHeight)
+    }
+
+    updateHeight()
+    const ro = new ResizeObserver(updateHeight)
+    ro.observe(grid)
+
+    return () => ro.disconnect()
+  }, [])
+
+  return (
+    <div
+      className="overflow-hidden rounded-2xl drop-shadow-[0_24px_50px_rgba(0,0,0,0.14)] dark:drop-shadow-[0_24px_50px_rgba(0,0,0,0.5)]"
+      style={{
+        position: 'relative',
+        left: '50%',
+        width: bubbleWidth + 'px',
+        height: naturalHeight * scale + 'px',
+        transform: 'translateX(-50%)',
+      }}
+    >
+      <div
+        style={{
+          width: NATURAL_W + 'px',
+          transform: `scale(${scale})`,
+          transformOrigin: 'top left',
+        }}
+      >
+        <div ref={gridRef}>
+          <GridPreview labels={labels} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /**
  * Renders a single real <GridPreview /> as a fixed-positioned card that
  * interpolates its position, size, and top-crop between two anchor slots
@@ -31,11 +102,36 @@ export function ScrollMorphGrid({ labels, heroSlotId, demoSlotId }: ScrollMorphG
   const wrapRef = useRef<HTMLDivElement>(null)
   const innerRef = useRef<HTMLDivElement>(null)
   const gridRef = useRef<HTMLDivElement>(null)
+  const [safariStaticSlots, setSafariStaticSlots] = useState<SafariStaticSlots | null>(null)
   // Cached references to the GridPreview's top controls (mode pill + settings/theme buttons).
   // We fade them in only once the grid is seated, so they don't drift around mid-morph.
   const topBarRef = useRef<HTMLElement | null>(null)
+  const aiBarRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
+    const hero = document.getElementById(heroSlotId)
+    const demo = document.getElementById(demoSlotId)
+    if (!hero || !demo) return
+
+    if (isSafariBrowser()) {
+      const demoHeight = demo.style.height
+      const demoTransition = demo.style.transition
+
+      demo.style.height = 'auto'
+      demo.style.transition = 'none'
+      document.body.dataset.gridLocked = 'true'
+      document.body.dataset.gridSafariStatic = 'true'
+      const frame = requestAnimationFrame(() => setSafariStaticSlots({ demo }))
+
+      return () => {
+        cancelAnimationFrame(frame)
+        demo.style.height = demoHeight
+        demo.style.transition = demoTransition
+        delete document.body.dataset.gridLocked
+        delete document.body.dataset.gridSafariStatic
+      }
+    }
+
     // Marketing scroll-animation always starts from the top.
     // If the browser restores a scroll position on reload, quietly reset it
     // before any layout reads so the grid starts from its hero slot state.
@@ -43,12 +139,10 @@ export function ScrollMorphGrid({ labels, heroSlotId, demoSlotId }: ScrollMorphG
       window.scrollTo({ top: 0, behavior: 'instant' })
     }
 
-    const hero = document.getElementById(heroSlotId)
-    const demo = document.getElementById(demoSlotId)
     const wrap = wrapRef.current
     const inner = innerRef.current
     const grid = gridRef.current
-    if (!hero || !demo || !wrap || !inner || !grid) return
+    if (!wrap || !inner || !grid) return
 
     // Find the GridPreview's top controls row (`<div className="mb-4 …">` with the mode pill).
     // It always sits as the first child of the first relative wrapper.
@@ -59,6 +153,15 @@ export function ScrollMorphGrid({ labels, heroSlotId, demoSlotId }: ScrollMorphG
       topBar.style.transition = 'opacity 320ms ease-out'
       topBar.style.opacity = '0'
       topBarRef.current = topBar
+    }
+
+    const aiBar = grid.querySelector('[data-ai-toolbar]') as HTMLElement | null
+    if (aiBar) {
+      aiBar.style.transition = 'opacity 360ms ease-out, transform 360ms ease-out'
+      aiBar.style.opacity = '0'
+      aiBar.style.transform = 'translateY(10px)'
+      aiBar.style.pointerEvents = 'none'
+      aiBarRef.current = aiBar
     }
 
     let raf = 0
@@ -143,12 +246,33 @@ export function ScrollMorphGrid({ labels, heroSlotId, demoSlotId }: ScrollMorphG
 
       wrap.style.opacity = '1'
 
+      // While locked, keep the slot's CSS height in sync with the bubble's
+      // actual visible height. The grid's offsetHeight can change after lock
+      // (e.g. the top toolbar fades in adding ~52px), so without this the
+      // bubble grows beyond the slot and visually overlaps content below.
+      if (locked) {
+        const slot = document.querySelector('[data-demo-slot]') as HTMLElement | null
+        if (slot) {
+          const { bh } = bubbleDims()
+          const desired = Math.round(bh)
+          const current = parseFloat(slot.style.height) || 0
+          if (Math.abs(desired - current) > 1) {
+            slot.style.height = desired + 'px'
+          }
+        }
+      }
+
       // Seated state: when fully settled, become interactive and reveal the top toolbar.
       const isSeated = t >= 0.999
       if (isSeated !== seated) {
         seated = isSeated
         wrap.style.pointerEvents = seated ? 'auto' : 'none'
         if (topBarRef.current) topBarRef.current.style.opacity = seated ? '1' : '0'
+        if (aiBarRef.current) {
+          aiBarRef.current.style.opacity = seated ? '1' : '0'
+          aiBarRef.current.style.transform = seated ? 'translateY(0)' : 'translateY(10px)'
+          aiBarRef.current.style.pointerEvents = seated ? 'auto' : 'none'
+        }
 
         // First time we seat → lock the page state until reload.
         // The morph never reverses (t pinned to 1) but scroll itself is NOT blocked.
@@ -161,6 +285,8 @@ export function ScrollMorphGrid({ labels, heroSlotId, demoSlotId }: ScrollMorphG
 
           // Grow the slot's CSS height to the bubble height so the layout below reflows
           // and there's no empty gap. Slot has its own height-only CSS transition.
+          // (Slot height is also re-synced every frame below to track grid growth,
+          //  e.g. when the top toolbar fades in and adds ~52px.)
           const slot = document.querySelector('[data-demo-slot]') as HTMLElement | null
           if (slot) {
             const { bh } = bubbleDims()
@@ -211,31 +337,38 @@ export function ScrollMorphGrid({ labels, heroSlotId, demoSlotId }: ScrollMorphG
   }, [heroSlotId, demoSlotId])
 
   return (
-    <div
-      ref={wrapRef}
-      className="fixed left-0 top-0 z-10 hidden overflow-hidden drop-shadow-[0_24px_50px_rgba(0,0,0,0.16)] dark:drop-shadow-[0_24px_50px_rgba(0,0,0,0.55)] lg:block"
-      style={{
-        width: 0,
-        height: 0,
-        opacity: 0,
-        pointerEvents: 'none',
-        willChange: 'transform, top, left, width, height',
-      }}
-    >
-      <div
-        ref={innerRef}
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: NATURAL_W + 'px',
-          transformOrigin: 'top left',
-        }}
-      >
-        <div ref={gridRef}>
-          <GridPreview labels={labels} />
+    <>
+      {safariStaticSlots &&
+        createPortal(<SafariDemoGrid labels={labels} />, safariStaticSlots.demo)}
+
+      {!safariStaticSlots && (
+        <div
+          ref={wrapRef}
+          className="fixed left-0 top-0 z-[70] hidden overflow-hidden drop-shadow-[0_24px_50px_rgba(0,0,0,0.16)] dark:drop-shadow-[0_24px_50px_rgba(0,0,0,0.55)] lg:block"
+          style={{
+            width: 0,
+            height: 0,
+            opacity: 0,
+            pointerEvents: 'none',
+            willChange: 'transform, top, left, width, height',
+          }}
+        >
+          <div
+            ref={innerRef}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: NATURAL_W + 'px',
+              transformOrigin: 'top left',
+            }}
+          >
+            <div ref={gridRef}>
+              <GridPreview labels={labels} />
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      )}
+    </>
   )
 }

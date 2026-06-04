@@ -4,12 +4,46 @@ import { useEffect, useState } from 'react'
 import { Moon, Sun } from 'lucide-react'
 
 type Theme = 'light' | 'dark'
+const THEME_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
+
+function getCookieTheme(): Theme | null {
+  if (typeof document === 'undefined') return null
+  const value = document.cookie
+    .split('; ')
+    .find((row) => row.startsWith('theme='))
+    ?.split('=')[1]
+
+  return value === 'light' || value === 'dark' ? value : null
+}
 
 function getInitial(): Theme {
   if (typeof window === 'undefined') return 'light'
-  const saved = localStorage.getItem('theme') as Theme | null
-  if (saved === 'light' || saved === 'dark') return saved
+  try {
+    const saved = localStorage.getItem('theme') as Theme | null
+    if (saved === 'light' || saved === 'dark') return saved
+  } catch {
+    // Ignore unavailable storage and fall back to cookie/system preference.
+  }
+  const cookieTheme = getCookieTheme()
+  if (cookieTheme) return cookieTheme
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+}
+
+function hasStoredTheme() {
+  try {
+    return localStorage.getItem('theme') === 'light' || localStorage.getItem('theme') === 'dark'
+  } catch {
+    return false
+  }
+}
+
+function persist(theme: Theme) {
+  try {
+    localStorage.setItem('theme', theme)
+  } catch {
+    // Ignore unavailable storage; the cookie still keeps SSR in sync.
+  }
+  document.cookie = `theme=${theme}; path=/; max-age=${THEME_COOKIE_MAX_AGE}; SameSite=Lax`
 }
 
 function apply(theme: Theme) {
@@ -38,6 +72,7 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage unavailable in SSR; must hydrate after mount
     setTheme(t)
     apply(t)
+    if (hasStoredTheme() || getCookieTheme()) persist(t)
     setMounted(true)
   }, [])
 
@@ -45,7 +80,7 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
     const next: Theme = theme === 'dark' ? 'light' : 'dark'
     setTheme(next)
     apply(next)
-    localStorage.setItem('theme', next)
+    persist(next)
   }
 
   return (
@@ -63,8 +98,3 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
     </button>
   )
 }
-
-/** Inline script — sets `dark` class before paint to avoid flash. */
-export const themeInitScript = `
-(function(){try{var s=localStorage.getItem('theme');var t=s==='dark'||s==='light'?s:(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');if(t==='dark')document.documentElement.classList.add('dark');document.documentElement.style.colorScheme=t;}catch(e){}})();
-`
