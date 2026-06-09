@@ -48,3 +48,4 @@ supabase/.temp/
 
 # supabase local temp files
 supabase/.temp/
+.gstack/

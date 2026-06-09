@@ -3,12 +3,14 @@
 import { useEffect, useRef, useState, type ComponentType } from 'react'
 import {
   Search, ChevronLeft, ChevronRight, ChevronDown, MoreHorizontal,
-  TreePalm, Thermometer, AlertCircle, Home,
+  TreePalm, Thermometer, AlertCircle, Home, Sun, Moon,
   Bell, Pencil,
 } from 'lucide-react'
 import {
   type GridPreviewLabels, type EmpDef, type Status, type DeptKey, type Mode,
-  Avatar, BASE_EMPLOYEES, MONTH_DEMO, PROBLEM_DAY_IDX, rotateSchedule, setEmployeeRowDragImage, workMeta,
+  type GridTab, type EmployeeDirectoryView,
+  Avatar, BASE_EMPLOYEES, monthDays, PROBLEM_DAY_IDX, rotateSchedule, scheduleOffsetForMonth, setEmployeeRowDragImage, workMeta,
+  DemoTabs, EmployeeDirectory, EmployeeViewToggle, TodayStatusChip, specialtyLabelFor, employeeDisplayName,
 } from './grid-preview'
 import type { CustomSection, RoleOrSectionKey } from './grid-shared'
 
@@ -45,6 +47,10 @@ type Props = {
   optimizationRun: number
   optimizationState: 'idle' | 'running' | 'done'
   coverageSummary: string
+  activeTab: GridTab
+  onTabChange: (tab: GridTab) => void
+  employeeView: EmployeeDirectoryView
+  onEmployeeViewChange: (view: EmployeeDirectoryView) => void
 }
 
 type StatusVisual = {
@@ -80,6 +86,7 @@ export function ClassicGrid({
   onOpenRolePicker, onOpenAddSection, onMoveEmp,
   dragEmp, setDragEmp, dragOverEmp, setDragOverEmp, dragOverGroup, setDragOverGroup,
   optimizedOverrides, optimizedCellKeys, optimizationRun, optimizationState, coverageSummary,
+  activeTab, onTabChange, employeeView, onEmployeeViewChange,
 }: Props) {
   const [timerRunning, setTimerRunning] = useState(false)
   const [timerSec, setTimerSec] = useState(0)
@@ -118,7 +125,8 @@ export function ClassicGrid({
   }, [notifOpen])
 
   const monthLabel = labels.months[monthIdx]
-  const monthOffset = (monthIdx - 2) * 3
+  const monthOffset = scheduleOffsetForMonth(monthIdx)
+  const days = monthDays(monthIdx)
 
   // Filter employees by department
   const baseDeptOrder: Exclude<DeptKey, 'all'>[] =
@@ -154,16 +162,16 @@ export function ClassicGrid({
   }
 
   // Mode-dependent dimensions: detail/extended show times + wider cells
-  const rowH = mode === 'compact' ? 44 : mode === 'detail' ? 58 : 76
-  const colW = mode === 'compact' ? 48 : mode === 'detail' ? 60 : 80
-  const cellPad = mode === 'compact' ? 3 : 4
+  const rowH = mode === 'compact' ? 44 : mode === 'detail' ? 58 : 80
+  const colW = mode === 'compact' ? 48 : mode === 'detail' ? 60 : 124
+  const cellPad = mode === 'compact' ? 3 : mode === 'detail' ? 4 : 5
   const nameSize = mode === 'compact' ? 12 : 13
   const roleSize = mode === 'compact' ? 10 : 11
   const stickyWMax = mode === 'compact' ? 220 : mode === 'detail' ? 250 : 280
   const stickyW = `clamp(140px, 42vw, ${stickyWMax}px)`
   const iconSize = mode === 'compact' ? 12 : mode === 'detail' ? 14 : 16
   const timeSize = mode === 'compact' ? 9 : mode === 'detail' ? 10 : 11
-  const dndEnabled = editMode
+  const dndEnabled = false
   const showProblemColumn = optimizationRun <= 1
 
   // Stats for "Today" header chip
@@ -194,6 +202,13 @@ export function ClassicGrid({
       : 'color-mix(in oklab, var(--classic-grid-line) 40%, transparent)'
   }
 
+  function fullWindowParts(window: string): [string, string] {
+    const parts = window
+      .split('–')
+      .map((part) => `${part.trim().padStart(2, '0')}:00`)
+    return [parts[0] ?? '', parts[1] ?? '']
+  }
+
   // Returns true when current cell continues a same-status run from previous day (for merged setting)
   function isMergedSame(empName: string, ci: number, base: string): boolean {
     if (!merged || ci === 0) return false
@@ -203,10 +218,15 @@ export function ClassicGrid({
   }
 
   function isMergedSameRight(empName: string, ci: number, base: string): boolean {
-    if (!merged || ci >= MONTH_DEMO.length - 1) return false
+    if (!merged || ci >= days.length - 1) return false
     const next = statusOf(empName, ci + 1, base)
     const curr = statusOf(empName, ci, base)
     return next === curr && curr !== 'W' && curr !== '-'
+  }
+
+  function displayNameForKey(name: string): string {
+    const emp = orderedEmps.find((item) => item.name === name)
+    return emp ? employeeDisplayName(emp, labels) : name
   }
 
   return (
@@ -233,36 +253,16 @@ export function ClassicGrid({
           borderBottom: '1px solid var(--classic-grid-line)',
           background: 'var(--surface)',
           gap: 10,
+          flexWrap: 'wrap',
         }}
       >
+        <span style={{ fontSize: 11, color: 'var(--muted-foreground)', fontWeight: 500 }}>
+          smengo · {monthLabel}
+        </span>
+        <DemoTabs active={activeTab} labels={labels} onChange={onTabChange} variant="classic" />
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
           {showToday && (
-            <span
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 8,
-                fontSize: 11,
-                background: 'color-mix(in oklab, var(--muted) 50%, transparent)',
-                border: '1px solid var(--border)',
-                borderRadius: 999,
-                padding: '3px 10px',
-                fontVariantNumeric: 'tabular-nums',
-                color: 'var(--muted-foreground)',
-              }}
-            >
-              <span style={{ fontWeight: 500 }}>{labels.chromeToday}</span>
-              <span style={{ width: 1, height: 10, background: 'var(--classic-grid-line)' }} />
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#5cb89a' }} />
-                <span style={{ color: 'var(--foreground)', fontWeight: 600 }}>{onShift}</span>
-                <span>{labels.chromeOnShift}</span>
-              </span>
-              <span style={{ opacity: 0.4 }}>·</span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#7d8896' }} />
-                <span style={{ color: 'var(--foreground)', fontWeight: 600 }}>{offToday}</span>
-                <span>{labels.chromeOffToday}</span>
-              </span>
-            </span>
+            <TodayStatusChip labels={labels} onShift={onShift} offToday={offToday} classic />
           )}
           {showTimer && (
             <>
@@ -279,7 +279,7 @@ export function ClassicGrid({
               <button
                 type="button"
                 onClick={() => setTimerRunning((v) => !v)}
-                aria-label={timerRunning ? 'Pause' : 'Start'}
+                aria-label={timerRunning ? labels.ariaTimerPause : labels.ariaTimerStart}
                 className="cursor-pointer transition-transform hover:scale-110"
                 style={{
                   width: 22, height: 22, borderRadius: '50%',
@@ -305,7 +305,7 @@ export function ClassicGrid({
             <button
               type="button"
               onClick={() => setNotifOpen((v) => !v)}
-              aria-label="Notifications"
+              aria-label={labels.ariaNotifications}
               className="cursor-pointer transition-colors hover:opacity-80"
               style={{
                 background: 'transparent', border: 0, padding: 2,
@@ -343,7 +343,7 @@ export function ClassicGrid({
               </div>
             )}
           </div>
-          <Avatar name="Olga Romanenko" size={24} />
+              <Avatar name="Olga Romanenko" size={24} />
         </div>
       </div>
 
@@ -357,112 +357,153 @@ export function ClassicGrid({
             flexWrap: 'wrap',
           }}
         >
-          <button
-            type="button"
-            onClick={prevMonth}
-            aria-label="Previous month"
-            className="cursor-pointer transition-colors hover:bg-muted"
-            style={{
-              width: 32, height: 32, borderRadius: 6, border: 0,
-              background: 'transparent', color: 'var(--muted-foreground)',
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            }}
-          >
-            <ChevronLeft size={18} />
-          </button>
-          <h3
-            style={{
-              margin: 0,
-              fontSize: 22, fontWeight: 500,
-              color: 'var(--foreground)',
-              letterSpacing: '-0.01em',
-              fontFamily: 'ui-serif, Georgia, "Times New Roman", serif',
-              minWidth: 140, textAlign: 'center',
-            }}
-          >
-            {monthLabel}
-          </h3>
-          <button
-            type="button"
-            onClick={nextMonth}
-            aria-label="Next month"
-            className="cursor-pointer transition-colors hover:bg-muted"
-            style={{
-              width: 32, height: 32, borderRadius: 6, border: 0,
-              background: 'transparent', color: 'var(--muted-foreground)',
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            }}
-          >
-            <ChevronRight size={18} />
-          </button>
+          {activeTab === 'schedule' ? (
+            <>
+              <button
+                type="button"
+                onClick={prevMonth}
+                aria-label={labels.ariaPrevMonth}
+                className="cursor-pointer transition-colors hover:bg-muted"
+                style={{
+                  width: 32, height: 32, borderRadius: 6, border: 0,
+                  background: 'transparent', color: 'var(--muted-foreground)',
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <h3
+                style={{
+                  margin: 0,
+                  fontSize: 22, fontWeight: 500,
+                  color: 'var(--foreground)',
+                  letterSpacing: '-0.01em',
+                  fontFamily: 'ui-serif, Georgia, "Times New Roman", serif',
+                  minWidth: 140, textAlign: 'center',
+                }}
+              >
+                {monthLabel}
+              </h3>
+              <button
+                type="button"
+                onClick={nextMonth}
+                aria-label={labels.ariaNextMonth}
+                className="cursor-pointer transition-colors hover:bg-muted"
+                style={{
+                  width: 32, height: 32, borderRadius: 6, border: 0,
+                  background: 'transparent', color: 'var(--muted-foreground)',
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                <ChevronRight size={18} />
+              </button>
 
-          <div style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 12 }}>
-            <button
-              type="button"
-              onClick={onOpenAddSection}
-              className="cursor-pointer transition-colors hover:bg-muted"
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                padding: '6px 12px',
-                border: '1px solid var(--border)',
-                borderRadius: 6,
-                background: 'transparent',
-                color: 'var(--foreground)',
-                fontSize: 12, fontWeight: 500,
-              }}
-            >
-              {labels.addSectionBtn}
-            </button>
-            <button
-              type="button"
-              onClick={() => { setEditMode((v) => !v); setEditCell(null) }}
-              className="cursor-pointer transition-colors"
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                padding: '6px 12px',
-                border: '1px solid var(--border)',
-                borderRadius: 6,
-                background: editMode ? 'var(--accent)' : 'transparent',
-                color: editMode ? '#fff' : 'var(--foreground)',
-                fontSize: 12, fontWeight: 500,
-              }}
-            >
-              <Pencil size={12} />
-              {editMode ? labels.editDone : labels.editBtn}
-            </button>
-            <button
-              type="button"
-              className="cursor-pointer transition-colors hover:bg-muted"
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 4,
-                padding: '4px 10px',
-                border: 0, background: 'transparent',
-                color: 'var(--foreground)', fontSize: 12, fontWeight: 500,
-              }}
-            >
-              A → Z <ChevronDown size={12} />
-            </button>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--foreground)', fontSize: 12, fontWeight: 500 }}>
-              {labels.classicTeams}: <span style={{ color: 'var(--muted-foreground)' }}>{labels.classicAll}</span>
-            </span>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--foreground)', fontSize: 12, fontWeight: 500 }}>
-              {labels.classicAbsence}: <span style={{ color: 'var(--muted-foreground)' }}>{labels.classicAll}</span>
-            </span>
-            <button
-              type="button"
-              aria-label="More"
-              className="cursor-pointer transition-colors hover:bg-muted"
-              style={{
-                width: 28, height: 28, borderRadius: 6, border: 0,
-                background: 'transparent', color: 'var(--muted-foreground)',
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              }}
-            >
-              <MoreHorizontal size={16} />
-            </button>
-          </div>
+              <div style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={onOpenAddSection}
+                  className="cursor-pointer transition-colors hover:bg-muted"
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    padding: '6px 12px',
+                    border: '1px solid var(--border)',
+                    borderRadius: 6,
+                    background: 'transparent',
+                    color: 'var(--foreground)',
+                    fontSize: 12, fontWeight: 500,
+                  }}
+                >
+                  {labels.addSectionBtn}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setEditMode((v) => !v); setEditCell(null) }}
+                  className="cursor-pointer transition-colors"
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    padding: '6px 12px',
+                    border: '1px solid var(--border)',
+                    borderRadius: 6,
+                    background: editMode ? 'var(--accent)' : 'transparent',
+                    color: editMode ? '#fff' : 'var(--foreground)',
+                    fontSize: 12, fontWeight: 500,
+                  }}
+                >
+                  <Pencil size={12} />
+                  {editMode ? labels.editDone : labels.editBtn}
+                </button>
+                <button
+                  type="button"
+                  className="cursor-pointer transition-colors hover:bg-muted"
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 4,
+                    padding: '4px 10px',
+                    border: 0, background: 'transparent',
+                    color: 'var(--foreground)', fontSize: 12, fontWeight: 500,
+                  }}
+                >
+                  A → Z <ChevronDown size={12} />
+                </button>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--foreground)', fontSize: 12, fontWeight: 500 }}>
+                  {labels.classicTeams}: <span style={{ color: 'var(--muted-foreground)' }}>{labels.classicAll}</span>
+                </span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--foreground)', fontSize: 12, fontWeight: 500 }}>
+                  {labels.classicAbsence}: <span style={{ color: 'var(--muted-foreground)' }}>{labels.classicAll}</span>
+                </span>
+                <button
+                  type="button"
+                  aria-label={labels.ariaMore}
+                  className="cursor-pointer transition-colors hover:bg-muted"
+                  style={{
+                    width: 28, height: 28, borderRadius: 6, border: 0,
+                    background: 'transparent', color: 'var(--muted-foreground)',
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                >
+                  <MoreHorizontal size={16} />
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <h3
+                style={{
+                  margin: 0,
+                  fontSize: 22, fontWeight: 500,
+                  color: 'var(--foreground)',
+                  letterSpacing: '-0.01em',
+                  fontFamily: 'ui-serif, Georgia, "Times New Roman", serif',
+                }}
+              >
+                {labels.employeesTab}
+              </h3>
+              <div style={{ marginLeft: 'auto' }}>
+                <EmployeeViewToggle
+                  labels={labels}
+                  view={employeeView}
+                  onChange={onEmployeeViewChange}
+                  variant="classic"
+                />
+              </div>
+            </>
+          )}
         </div>
 
+        {activeTab === 'employees' ? (
+          <EmployeeDirectory
+            employees={orderedEmps}
+            labels={labels}
+            view={employeeView}
+            mode={mode}
+            getEmpRoleKey={getEmpRoleKey}
+            getEmpSpecialty={(emp) => specialtyLabelFor(emp.specialty, labels)}
+            getRoleLabel={getRoleLabel}
+            getRoleColor={getRoleColor}
+            getSpecialtyColor={() => 'var(--accent)'}
+            variant="classic"
+          />
+        ) : (
+        <>
         {/* Grid */}
         <div style={{ overflowX: 'auto', padding: '0 0 14px' }}>
           <div style={{ display: 'block', width: 'max-content', minWidth: '100%', position: 'relative' }}>
@@ -485,7 +526,7 @@ export function ClassicGrid({
                   {labels.classicSearch}
                 </span>
               </div>
-              {MONTH_DEMO.map((d, ci) => {
+              {days.map((d, ci) => {
                 const isProblem = ci === PROBLEM_DAY_IDX && showProblemColumn
                 const isWeekend = d.k === 'sat' || d.k === 'sun'
                 return (
@@ -608,7 +649,7 @@ export function ClassicGrid({
                         }} />
                         {getRoleLabel(row.rk)}
                       </div>
-                      {MONTH_DEMO.map((_, ci) => (
+                      {days.map((_, ci) => (
                         <div key={ci} style={{ width: colW, flexShrink: 0, height: 24 }} />
                       ))}
                     </div>
@@ -680,7 +721,7 @@ export function ClassicGrid({
                         userSelect: dndEnabled ? 'none' : 'auto',
                       }}
                     >
-                      {emp.name}
+                      {employeeDisplayName(emp, labels)}
                     </div>
                     <button
                       type="button"
@@ -706,7 +747,7 @@ export function ClassicGrid({
                     </button>
                   </div>
                 </div>
-                {MONTH_DEMO.map((d, ci) => {
+                {days.map((d, ci) => {
                   const s = statusOf(emp.name, ci, emp.s)
                   const isProblem = ci === PROBLEM_DAY_IDX && showProblemColumn
                   const isWeekend = d.k === 'sat' || d.k === 'sun'
@@ -719,9 +760,10 @@ export function ClassicGrid({
                   const wm = workMeta(emp.shift, labels)
 
                   return (
-                    <div
-                      key={ci}
-                      onMouseEnter={() => setHoverCell(cellKey)}
+	                    <div
+	                      key={ci}
+	                      className={editMode ? 'smengo-schedule-edit-cell' : undefined}
+	                      onMouseEnter={() => setHoverCell(cellKey)}
                       onMouseLeave={() => setHoverCell((h) => (h === cellKey ? null : h))}
                       onClick={(e) => {
                         if (!editMode) return
@@ -749,72 +791,252 @@ export function ClassicGrid({
                             ? '1px solid var(--classic-grid-line)'
                             : 'none',
                         borderRight: isProblem ? '1px dashed var(--classic-gap-edge)' : 'none',
-                        cursor: editMode ? 'pointer' : 'default',
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        justifyContent: 'flex-start',
-                        outline: editMode ? '1px dashed var(--accent)' : 'none',
-                        outlineOffset: editMode ? -2 : 0,
-                        transition: 'background 0.12s',
-                        animation: isOptimizedCell ? 'smengo-ai-cell-pop 760ms cubic-bezier(.22,1,.36,1)' : 'none',
-                      }}
-                      title={s === 'V' ? labels.shifts.vacation
+	                        cursor: editMode ? 'pointer' : 'default',
+	                        display: 'flex',
+	                        alignItems: 'flex-start',
+	                        justifyContent: 'flex-start',
+	                        position: 'relative',
+	                        transition: 'background 0.12s',
+	                        animation: isOptimizedCell ? 'smengo-ai-cell-pop 760ms cubic-bezier(.22,1,.36,1)' : 'none',
+	                      }}
+                      title={mode === 'extended' && s === 'W' ? ''
+                        : s === 'V' ? labels.shifts.vacation
                         : s === 'S' ? labels.shifts.sick
                         : s === 'D' ? labels.shifts.dayoff
                         : s === 'U' ? labels.shifts.unfilled
                         : s === 'W' ? labels.shifts[emp.shift]
                         : ''}
                     >
-                      {vis && (
-                        <span
-                          style={{
-                            width: mergedLeft ? `calc(100% + ${2 * cellPad}px)` : '100%',
-                            alignSelf: 'stretch',
-                            background: cellBg(s as Exclude<Status, 'W' | '-'>),
-                            color: cellFg(s as Exclude<Status, 'W' | '-'>),
-                            borderRadius: 6,
-                            borderTopLeftRadius: mergedLeft ? 0 : 6,
-                            borderBottomLeftRadius: mergedLeft ? 0 : 6,
-                            borderTopRightRadius: mergedRight ? 0 : 6,
-                            borderBottomRightRadius: mergedRight ? 0 : 6,
-                            marginLeft: mergedLeft ? -(2 * cellPad) : 0,
-                            display: 'inline-flex',
-                            flexDirection: 'column',
-                            alignItems: 'flex-start',
-                            justifyContent: 'flex-start',
-                            padding: mode === 'compact' ? 3 : 5,
-                            boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
-                            gap: 2,
-                          }}
-                        >
-                          {!mergedLeft && <vis.Icon size={iconSize} strokeWidth={2.2} />}
-                          {showTimes && !mergedLeft && (
-                            <span style={{ fontSize: timeSize, fontWeight: 600, lineHeight: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', maxWidth: '100%' }}>
-                              {mode !== 'compact'
-                                ? (s === 'V' ? labels.shifts.vacation
-                                  : s === 'S' ? labels.shifts.sick
-                                  : s === 'D' ? labels.shifts.dayoff
-                                  : labels.shifts.unfilled)
-                                : (s === 'V' ? labels.statusVac
-                                  : s === 'S' ? labels.statusSick
-                                  : s === 'D' ? labels.statusOff
-                                  : labels.statusUncovered)}
+                      {mode === 'extended' ? (() => {
+                        const cardWidth = mergedLeft ? `calc(100% + ${2 * cellPad}px)` : '100%'
+                        const cardMarginLeft = mergedLeft ? -(2 * cellPad) : 0
+                        const cardRadius = 8
+                        const radiusStyle = {
+                          borderTopLeftRadius: mergedLeft ? 0 : cardRadius,
+                          borderBottomLeftRadius: mergedLeft ? 0 : cardRadius,
+                          borderTopRightRadius: mergedRight ? 0 : cardRadius,
+                          borderBottomRightRadius: mergedRight ? 0 : cardRadius,
+                        }
+
+                        if (s === 'W') {
+                          const ShiftIcon = emp.shift === 'night' ? Moon : Sun
+                          const [shiftStart, shiftEnd] = fullWindowParts(wm.window)
+                          return (
+                            <span
+                              style={{
+                                position: 'relative',
+                                width: cardWidth,
+                                alignSelf: 'stretch',
+                                marginLeft: cardMarginLeft,
+                                background: wm.bg,
+                                color: '#fff',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                padding: 8,
+                                boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
+                                ...radiusStyle,
+                              }}
+                            >
+                              {!mergedLeft && (
+                                <>
+                                  <span
+                                    className="inline-flex shrink-0 items-center justify-center rounded-full bg-white/15"
+                                    style={{ position: 'absolute', top: 8, left: 8, width: 24, height: 24 }}
+                                  >
+                                    <ShiftIcon size={15} strokeWidth={2.5} className="text-white" />
+                                  </span>
+                                  <span
+                                    style={{
+                                      minWidth: 0,
+                                      maxWidth: '100%',
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      color: '#fff',
+                                      fontSize: 18,
+                                      fontWeight: 700,
+                                      lineHeight: 1.02,
+                                      whiteSpace: 'nowrap',
+                                      transform: 'translateX(12px)',
+                                    }}
+                                  >
+                                    {showTimes ? (
+                                      <>
+                                        <span>{shiftStart}</span>
+                                        <span>{shiftEnd}</span>
+                                      </>
+                                    ) : wm.name}
+                                  </span>
+                                </>
+                              )}
+                            </span>
+                          )
+                        }
+
+                        if (s === 'D') {
+                          return (
+                            <span
+                              style={{
+                                width: cardWidth,
+                                alignSelf: 'stretch',
+                                marginLeft: cardMarginLeft,
+                                background: STATUS_VIS.D.bg,
+                                color: '#fff',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                padding: '7px 10px',
+                                fontSize: 15,
+                                fontWeight: 750,
+                                lineHeight: 1.05,
+                                boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
+                                ...radiusStyle,
+                              }}
+                            >
+                              {!mergedLeft && labels.shifts.dayoff}
+                            </span>
+                          )
+                        }
+
+                        if (vis) {
+                          const statusCode = s as Exclude<Status, 'W' | '-'>
+                          const isUncovered = s === 'U'
+                          if (s === 'V' || s === 'S') {
+                            const StatusIcon = s === 'S' ? Thermometer : vis.Icon
+                            const label = s === 'S' ? labels.shifts.sick : labels.shifts.vacation
+                            return (
+                              <span
+                                style={{
+                                  position: 'relative',
+                                  width: cardWidth,
+                                  alignSelf: 'stretch',
+                                  marginLeft: cardMarginLeft,
+                                  background: STATUS_VIS[statusCode].bg,
+                                  color: '#fff',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  padding: '7px 10px',
+                                  boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
+                                  ...radiusStyle,
+                                }}
+                              >
+                                {!mergedLeft && (
+                                  <>
+                                    <span
+                                      className="inline-flex shrink-0 items-center justify-center rounded-full bg-white/15"
+                                      style={{ position: 'absolute', top: 8, left: 8, width: 24, height: 24 }}
+                                    >
+                                      <StatusIcon size={s === 'S' ? 14 : 15} strokeWidth={2.5} className="text-white" />
+                                    </span>
+                                    <span
+                                      style={{
+                                        color: '#fff',
+                                        fontSize: 15,
+                                        fontWeight: 750,
+                                        lineHeight: 1.05,
+                                        textAlign: 'center',
+                                        whiteSpace: 'normal',
+                                        overflowWrap: 'anywhere',
+                                        transform: 'translateY(10px)',
+                                      }}
+                                    >
+                                      {label}
+                                    </span>
+                                  </>
+                                )}
+                              </span>
+                            )
+                          }
+
+                          return (
+                            <span
+                              style={{
+                                width: cardWidth,
+                                alignSelf: 'stretch',
+                                marginLeft: cardMarginLeft,
+                                background: isUncovered ? 'transparent' : STATUS_VIS[statusCode].bg,
+                                color: isUncovered ? 'var(--st-uncovered)' : '#fff',
+                                border: isUncovered ? '1.5px dashed var(--st-uncovered)' : 'none',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 8,
+                                padding: '6px 10px',
+                                fontSize: 15,
+                                fontWeight: 750,
+                                lineHeight: 1,
+                                boxShadow: isUncovered ? 'none' : '0 1px 2px rgba(0,0,0,0.08)',
+                                ...radiusStyle,
+                              }}
+                            >
+                              {!mergedLeft && (
+                                <>
+                                  {isUncovered && <AlertCircle size={14} strokeWidth={2.4} />}
+                                  <span>{labels.statusUncovered}</span>
+                                </>
+                              )}
+                            </span>
+                          )
+                        }
+
+                        return null
+                      })() : (
+                        <>
+                          {vis && (
+                            <span
+                              style={{
+                                width: mergedLeft ? `calc(100% + ${2 * cellPad}px)` : '100%',
+                                alignSelf: 'stretch',
+                                background: cellBg(s as Exclude<Status, 'W' | '-'>),
+                                color: cellFg(s as Exclude<Status, 'W' | '-'>),
+                                borderRadius: 6,
+                                borderTopLeftRadius: mergedLeft ? 0 : 6,
+                                borderBottomLeftRadius: mergedLeft ? 0 : 6,
+                                borderTopRightRadius: mergedRight ? 0 : 6,
+                                borderBottomRightRadius: mergedRight ? 0 : 6,
+                                marginLeft: mergedLeft ? -(2 * cellPad) : 0,
+                                display: 'inline-flex',
+                                flexDirection: 'column',
+                                alignItems: 'flex-start',
+                                justifyContent: 'flex-start',
+                                padding: mode === 'compact' ? 3 : 5,
+                                boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
+                                gap: 2,
+                              }}
+                            >
+                              {!mergedLeft && <vis.Icon size={iconSize} strokeWidth={2.2} />}
+                              {showTimes && !mergedLeft && (
+                                <span style={{ fontSize: timeSize, fontWeight: 600, lineHeight: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', maxWidth: '100%' }}>
+                                  {mode !== 'compact'
+                                    ? (s === 'V' ? labels.shifts.vacation
+                                      : s === 'S' ? labels.shifts.sick
+                                      : s === 'D' ? labels.shifts.dayoff
+                                      : labels.shifts.unfilled)
+                                    : (s === 'V' ? labels.statusVac
+                                      : s === 'S' ? labels.statusSick
+                                      : s === 'D' ? labels.statusOff
+                                      : labels.statusUncovered)}
+                                </span>
+                              )}
                             </span>
                           )}
-                        </span>
-                      )}
-                      {!vis && s === 'W' && showTimes && (
-                        <span
-                          style={{
-                            fontSize: timeSize, fontWeight: 600,
-                            color: 'var(--muted-foreground)',
-                            opacity: 0.7,
-                            padding: 2,
-                            lineHeight: 1,
-                          }}
-                        >
-                          {wm.window}
-                        </span>
+                          {!vis && s === 'W' && showTimes && (
+                            <span
+                              style={{
+                                fontSize: timeSize, fontWeight: 600,
+                                color: 'var(--muted-foreground)',
+                                opacity: 0.7,
+                                padding: 2,
+                                lineHeight: 1,
+                              }}
+                            >
+                              {wm.window}
+                            </span>
+                          )}
+                        </>
                       )}
                     </div>
                   )
@@ -825,10 +1047,12 @@ export function ClassicGrid({
             })()}
           </div>
         </div>
+        </>
+        )}
       </div>
 
       {/* Cell-edit popover */}
-      {editCell && (
+      {activeTab === 'schedule' && editCell && (
         <div
           ref={editCellRef}
           className="fixed z-[9999] rounded-lg border border-border shadow-xl"
@@ -842,7 +1066,7 @@ export function ClassicGrid({
           }}
         >
           <div className="mb-1 text-center text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            {editCell.name}
+            {displayNameForKey(editCell.name)}
           </div>
           <div className="flex gap-1">
             {STATUS_OPTIONS.map((s) => {

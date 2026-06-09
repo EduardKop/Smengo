@@ -1,10 +1,16 @@
 'use client'
 
 import { type CSSProperties, useEffect, useState } from 'react'
+import type { EmployeeNameKey } from './grid-preview'
 
 // Labels kept for backwards-compat with the page that still passes them in.
 type Mode = 'compact' | 'detail' | 'extended'
-export type GridModeDemoLabels = Record<Mode, string>
+type DemoRoleKey = 'cook' | 'manager' | 'cashier' | 'barista' | 'admin' | 'waiter' | 'courier' | 'hostess'
+export type GridModeDemoLabels = Record<Mode, string> & {
+  employeeNames?: Partial<Record<EmployeeNameKey, string>>
+  roles?: Partial<Record<DemoRoleKey, string>>
+  hourSuffix?: string
+}
 
 const DAY_COUNT   = 8
 const GRID_MODE_STYLE = {
@@ -43,23 +49,25 @@ function shift(arr: number[], start: number, end: number): Cell[] {
 
 const EMPS: {
   name: string
+  nameKey: EmployeeNameKey
   role: string
+  roleKey: DemoRoleKey
   emoji: string
   color: number
   pattern: Cell[]
 }[] = [
-  { name: 'Anna',  role: 'Кухар',    emoji: '👩‍🍳', color: 0, pattern: shift([1,1,0,1,1,1,0, 1,1,0,1,1,0,0, 1,1,1,1,1,0,0, 1,1,0,1,1,1,0],  9, 17) },
-  { name: 'Mark',  role: 'Менеджер', emoji: '💼',   color: 1, pattern: shift([1,1,1,0,1,1,1, 1,1,1,0,0,1,0, 1,1,1,0,1,0,0, 1,1,1,0,1,1,1], 10, 19) },
-  { name: 'Kate',  role: 'Касир',    emoji: '💳',   color: 2, pattern: shift([0,1,1,1,1,0,0, 0,1,1,1,1,0,0, 0,1,1,1,1,0,0, 0,1,1,1,1,0,0],  8, 16) },
-  { name: 'Ivan',  role: 'Бариста',  emoji: '☕',   color: 3, pattern: shift([1,0,0,1,1,0,1, 1,1,0,0,1,0,0, 1,0,0,1,1,0,0, 1,0,0,1,1,0,1], 12, 22) },
-  { name: 'Daria', role: 'Адмін',    emoji: '🗂️',   color: 4, pattern: shift([1,1,0,0,1,0,0, 1,1,1,0,0,0,0, 1,1,0,0,1,0,0, 1,1,0,0,1,0,0],  9, 18) },
-  { name: 'Olga',  role: 'Офіціант', emoji: '🍽️',   color: 5, pattern: shift([1,1,1,1,0,1,0, 1,1,1,1,0,0,0, 1,1,1,1,0,0,0, 1,1,1,1,0,1,0], 14, 22) },
-  { name: 'Pavel', role: 'Кур\u02bcєр', emoji: '🛵', color: 6, pattern: shift([0,0,1,1,1,1,1, 0,1,1,1,1,0,0, 0,0,1,1,1,0,0, 0,0,1,1,1,1,1], 11, 20) },
-  { name: 'Yulia', role: 'Хостес',   emoji: '🎀',   color: 7, pattern: shift([1,0,1,0,1,0,1, 0,1,0,1,0,0,0, 1,0,1,0,1,0,0, 1,0,1,0,1,0,1], 16, 23) },
+  { name: 'Anna',  nameKey: 'annaPetrov',    role: 'Cook',    roleKey: 'cook',    emoji: '👩‍🍳', color: 0, pattern: shift([1,1,0,1,1,1,0, 1,1,0,1,1,0,0, 1,1,1,1,1,0,0, 1,1,0,1,1,1,0],  9, 17) },
+  { name: 'Mark',  nameKey: 'markSidorov',   role: 'Manager', roleKey: 'manager', emoji: '💼',   color: 1, pattern: shift([1,1,1,0,1,1,1, 1,1,1,0,0,1,0, 1,1,1,0,1,0,0, 1,1,1,0,1,1,1], 10, 19) },
+  { name: 'Kate',  nameKey: 'kateVolkova',   role: 'Cashier', roleKey: 'cashier', emoji: '💳',   color: 2, pattern: shift([0,1,1,1,1,0,0, 0,1,1,1,1,0,0, 0,1,1,1,1,0,0, 0,1,1,1,1,0,0],  8, 16) },
+  { name: 'Ivan',  nameKey: 'ivanMelnikov',  role: 'Barista', roleKey: 'barista', emoji: '☕',   color: 3, pattern: shift([1,0,0,1,1,0,1, 1,1,0,0,1,0,0, 1,0,0,1,1,0,0, 1,0,0,1,1,0,1], 12, 22) },
+  { name: 'Daria', nameKey: 'dariaKos',      role: 'Admin',   roleKey: 'admin',   emoji: '🗂️',   color: 4, pattern: shift([1,1,0,0,1,0,0, 1,1,1,0,0,0,0, 1,1,0,0,1,0,0, 1,1,0,0,1,0,0],  9, 18) },
+  { name: 'Olga',  nameKey: 'olgaRomanenko', role: 'Waiter',  roleKey: 'waiter',  emoji: '🍽️',   color: 5, pattern: shift([1,1,1,1,0,1,0, 1,1,1,1,0,0,0, 1,1,1,1,0,0,0, 1,1,1,1,0,1,0], 14, 22) },
+  { name: 'Pavel', nameKey: 'pavelYurov',    role: 'Courier', roleKey: 'courier', emoji: '🛵',   color: 6, pattern: shift([0,0,1,1,1,1,1, 0,1,1,1,1,0,0, 0,0,1,1,1,0,0, 0,0,1,1,1,1,1], 11, 20) },
+  { name: 'Yulia', nameKey: 'yuliaLebed',    role: 'Hostess', roleKey: 'hostess', emoji: '🎀',   color: 7, pattern: shift([1,0,1,0,1,0,1, 0,1,0,1,0,0,0, 1,0,1,0,1,0,0, 1,0,1,0,1,0,1], 16, 23) },
 ]
 
 const fmtShort = (s: Shift) => `${s.start}\n${s.end}`
-const fmtHours = (s: Shift) => `${s.end - s.start}год`
+const fmtHours = (s: Shift, suffix: string) => `${s.end - s.start}${suffix}`
 
 function usePrefersReducedMotion() {
   const [reduced, setReduced] = useState(false)
@@ -84,10 +92,10 @@ const ON_KEYS: string[] = (() => {
   return out
 })()
 
-export function GridModeDemo(_props: { labels?: GridModeDemoLabels }) {
-  void _props
+export function GridModeDemo({ labels }: { labels?: GridModeDemoLabels }) {
   const reduced = usePrefersReducedMotion()
   const [flipped, setFlipped] = useState<Set<string>>(new Set())
+  const hourSuffix = labels?.hourSuffix ?? 'h'
 
   useEffect(() => {
     if (reduced) return
@@ -169,6 +177,9 @@ export function GridModeDemo(_props: { labels?: GridModeDemoLabels }) {
             <div className="flex flex-col" style={{ gap: 'var(--grid-mode-gap)' }}>
               {EMPS.map((emp, ei) => {
                 const fill = PALETTE[emp.color]
+                const translatedName = labels?.employeeNames?.[emp.nameKey]
+                const displayName = translatedName ? translatedName.split(/\s+/)[0] : emp.name
+                const displayRole = labels?.roles?.[emp.roleKey] ?? emp.role
                 return (
                   <div key={emp.name} className="flex items-center" style={{ gap: 'var(--grid-mode-gap)' }}>
                     {/* Name label */}
@@ -185,13 +196,13 @@ export function GridModeDemo(_props: { labels?: GridModeDemoLabels }) {
                           className="truncate font-medium"
                           style={{ fontSize: 'var(--grid-mode-name-font)', color: 'var(--grid-dept-fg)' }}
                         >
-                          {emp.name}
+                          {displayName}
                         </div>
                         <div
                           className="truncate"
                           style={{ fontSize: 'var(--grid-mode-role-font)', color: 'var(--grid-dept-fg)', opacity: 0.55 }}
                         >
-                          {emp.role}
+                          {displayRole}
                         </div>
                       </div>
                     </div>
@@ -257,7 +268,7 @@ export function GridModeDemo(_props: { labels?: GridModeDemoLabels }) {
                             >
                               <div style={{ fontSize: 'var(--grid-mode-time-font)', fontWeight: 600, whiteSpace: 'pre-line' }}>{fmtShort(cell)}</div>
                               <div style={{ fontSize: 'var(--grid-mode-hours-font)', opacity: 0.85, marginTop: 1 }}>
-                                {fmtHours(cell)}
+                                {fmtHours(cell, hourSuffix)}
                               </div>
                             </div>
 
@@ -296,7 +307,7 @@ export function GridModeDemo(_props: { labels?: GridModeDemoLabels }) {
                                   whiteSpace: 'nowrap',
                                 }}
                               >
-                                {emp.role}
+                                {displayRole}
                               </div>
                             </div>
                           </div>
