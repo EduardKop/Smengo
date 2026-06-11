@@ -16,7 +16,7 @@ export async function MarketingFooter() {
   return (
     <footer className="border-t border-border" style={{ background: 'var(--surface)' }}>
       <div className="mx-auto max-w-[1100px] px-4 py-14 sm:px-6">
-        <div className="grid grid-cols-2 gap-6 sm:gap-10 sm:[grid-template-columns:1.6fr_1fr_1fr_1fr]">
+        <div className="grid grid-cols-2 gap-6 sm:gap-10 sm:[grid-template-columns:1.6fr_1fr_1fr]">
           {/* Brand */}
           <div className="col-span-2 max-w-[260px] sm:col-span-1">
             <Link
@@ -48,8 +48,7 @@ export async function MarketingFooter() {
             </span>
             <ScrollLink id="features" className={colLink}>{t('productFeatures')}</ScrollLink>
             <Link href="/pricing" className={colLink}>{t('productPricing')}</Link>
-            <Link href="/changelog" className={colLink}>{t('productChangelog')}</Link>
-            <Link href="/roadmap" className={colLink}>{t('productRoadmap')}</Link>
+            <Link href="/platform/schedule-grid" className={colLink}>{tNav('platform')}</Link>
           </div>
 
           {/* Company */}
@@ -57,19 +56,7 @@ export async function MarketingFooter() {
             <span className={colLabel} style={{ letterSpacing: '0.08em', color: 'var(--subtle)' }}>
               {t('company')}
             </span>
-            <Link href="/about" className={colLink}>{t('companyAbout')}</Link>
-            <Link href="/blog" className={colLink}>{t('companyBlog')}</Link>
-            <Link href="/contact" className={colLink}>{t('companyContact')}</Link>
-          </div>
-
-          {/* Legal */}
-          <div className="flex flex-col gap-2">
-            <span className={colLabel} style={{ letterSpacing: '0.08em', color: 'var(--subtle)' }}>
-              {t('legal')}
-            </span>
-            <Link href="/terms" className={colLink}>{t('terms')}</Link>
-            <Link href="/privacy" className={colLink}>{t('privacy')}</Link>
-            <Link href="/refund" className={colLink}>{t('legalRefund')}</Link>
+            <a href="mailto:hello@smengo.com" className={colLink}>{t('companyContact')}</a>
           </div>
         </div>
 

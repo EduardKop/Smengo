@@ -18,6 +18,7 @@ import { ParallaxLayer } from '@/components/marketing/parallax-layer'
 import { SketchHighlight } from '@/components/marketing/sketch-highlight'
 import { SpinningText } from '@/components/marketing/spinning-text'
 import { ParallaxChips } from '@/components/marketing/parallax-chips'
+import { ComingSoon } from '@/components/marketing/coming-soon'
 
 
 export const revalidate = 3600
@@ -75,39 +76,10 @@ export default async function BuiltForPage({
 
   // Only restaurants has full content for now
   if (slug !== 'restaurants') {
-    return <ComingSoonPage label={label} Icon={Icon} />
+    return <ComingSoon locale={locale} label={label} icon={<Icon size={36} />} variant="industry" />
   }
 
-  return <RestaurantsPage label={label} Icon={Icon} locale={locale} />
-}
-
-// ──────────────────────────────────────────────────────────────────────
-// Coming-soon placeholder for non-restaurants pages
-// ──────────────────────────────────────────────────────────────────────
-function ComingSoonPage({ label, Icon }: { label: string; Icon: (p: { size?: number }) => React.ReactElement }) {
-  return (
-    <div className="mx-auto max-w-3xl px-6 py-32 text-center">
-      <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/60">
-        <Icon size={40} />
-      </div>
-      <h1 className="font-serif text-4xl font-semibold tracking-tight text-foreground">
-        {label}
-      </h1>
-      <p className="mt-4 text-muted-foreground">
-        {/* TODO: нужен контент — короткое промо-описание сегмента (1–2 предложения) для placeholder-страниц,
-            пока готовим полноценный лендинг отрасли. */}
-        Страница для этой отрасли в разработке. Smengo уже отлично работает для таких команд — напишите нам, чтобы получить персональную демонстрацию.
-      </p>
-      <div className="mt-8">
-        <Link
-          href="/register"
-          className="inline-flex items-center rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-white hover:bg-[var(--accent-hover)]"
-        >
-          Попробовать бесплатно
-        </Link>
-      </div>
-    </div>
-  )
+  return <RestaurantsPage label={label} locale={locale} />
 }
 
 // ──────────────────────────────────────────────────────────────────────
@@ -115,11 +87,9 @@ function ComingSoonPage({ label, Icon }: { label: string; Icon: (p: { size?: num
 // ──────────────────────────────────────────────────────────────────────
 async function RestaurantsPage({
   label,
-  Icon,
   locale,
 }: {
   label: string
-  Icon: (p: { size?: number }) => React.ReactElement
   locale: Locale
 }) {
   const img = '/img/restaurants'

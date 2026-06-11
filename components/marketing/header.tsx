@@ -293,7 +293,7 @@ export function MarketingHeader() {
               />
             </Link>
 
-            <nav className="hidden items-center gap-6 md:flex">
+            <nav className="hidden items-center gap-6 lg:flex">
               <PlatformMenu
                 open={platformOpen}
                 onOpen={openPlatform}
@@ -301,7 +301,7 @@ export function MarketingHeader() {
               />
               <Link
                 href="/pricing"
-                className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+                className="text-muted-foreground hover:text-foreground whitespace-nowrap text-sm transition-colors"
               >
                 {t('pricing')}
               </Link>
@@ -309,14 +309,14 @@ export function MarketingHeader() {
               <Link
                 href="/#how"
                 onClick={(e) => smoothScroll(e, 'how')}
-                className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+                className="text-muted-foreground hover:text-foreground whitespace-nowrap text-sm transition-colors"
               >
                 {t('how')}
               </Link>
               <Link
                 href="/#features"
                 onClick={(e) => smoothScroll(e, 'features')}
-                className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+                className="text-muted-foreground hover:text-foreground whitespace-nowrap text-sm transition-colors"
               >
                 {t('feat')}
               </Link>
@@ -324,25 +324,25 @@ export function MarketingHeader() {
           </div>
 
           {/* Desktop actions */}
-          <div className="hidden items-center gap-3 md:flex">
+          <div className="hidden items-center gap-3 lg:flex">
             <LocaleSwitcher />
             <ThemeToggle />
             <NextLink
               href="/login"
-              className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+              className="text-muted-foreground hover:text-foreground whitespace-nowrap text-sm transition-colors"
             >
               {t('login')}
             </NextLink>
             <NextLink
               href="/register"
-              className="bg-accent rounded-lg px-[18px] py-[9px] text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]"
+              className="bg-accent whitespace-nowrap rounded-lg px-[18px] py-[9px] text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]"
             >
               {t('start')}
             </NextLink>
           </div>
 
           {/* Mobile actions */}
-          <div className="flex items-center gap-2 md:hidden">
+          <div className="flex items-center gap-2 lg:hidden">
             <ThemeToggle className="h-10 w-10 rounded-full bg-transparent" />
             <button
               className="flex h-10 w-10 items-center justify-center rounded-full text-foreground transition-colors hover:bg-muted"
@@ -364,7 +364,7 @@ export function MarketingHeader() {
 
         {/* ── "Platform" expandable panel ── */}
         <div
-          className="absolute z-10 hidden md:block"
+          className="absolute z-10 hidden lg:block"
           style={{
             top: '100%',
             left: headerScrolled ? -1 : 0,
@@ -472,7 +472,7 @@ export function MarketingHeader() {
 
         {/* ── "Built for" expandable panel — absolute, never pushes page content ── */}
         <div
-          className="absolute z-10 hidden md:block"
+          className="absolute z-10 hidden lg:block"
           style={{
             top: '100%',
             // Extend 1px past the bar's border box so the panel's side borders
@@ -568,7 +568,7 @@ export function MarketingHeader() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-[140] md:hidden">
+        <div className="fixed inset-0 z-[140] lg:hidden">
           <button
             aria-label="Close menu"
             className="absolute inset-0 bg-black/55"

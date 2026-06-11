@@ -66,18 +66,26 @@ export async function generateMetadata({
   }
 }
 
-const jsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'SoftwareApplication',
-  name: 'Smengo',
-  applicationCategory: 'BusinessApplication',
-  description: 'Умный планировщик смен для команд 15–300 человек',
-  operatingSystem: 'Web',
-  offers: [
-    { '@type': 'Offer', name: 'Старт', price: '0', priceCurrency: 'USD' },
-    { '@type': 'Offer', name: 'Команда', price: '29', priceCurrency: 'USD' },
-    { '@type': 'Offer', name: 'Бизнес', price: '79', priceCurrency: 'USD' },
-  ],
+// Display currency per locale: uk → UAH, остальные → USD.
+// Keep prices in sync with components/marketing/pricing-cards.tsx (CURRENCIES).
+function buildJsonLd(locale: Locale, description: string, planNames: [string, string, string]) {
+  const uah = locale === 'uk'
+  const currency = uah ? 'UAH' : 'USD'
+  const prices = uah ? ['0', '1199', '3299'] : ['0', '29', '79']
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'Smengo',
+    applicationCategory: 'BusinessApplication',
+    description,
+    operatingSystem: 'Web',
+    offers: planNames.map((name, i) => ({
+      '@type': 'Offer',
+      name,
+      price: prices[i],
+      priceCurrency: currency,
+    })),
+  }
 }
 
 const WHY_ITEMS = [
@@ -262,6 +270,28 @@ export default async function LandingPage({
     chromeOffToday: tg('chromeOffToday'),
     chromeToday: tg('chromeToday'),
     themeLabel: tg('themeLabel'),
+    iconColorsLabel: tg('iconColorsLabel'),
+    iconColorLabel: tg('iconColorLabel'),
+    textColorLabel: tg('textColorLabel'),
+    customByThemeLabel: tg('customByThemeLabel'),
+    siteThemeLight: tg('siteThemeLight'),
+    siteThemeDark: tg('siteThemeDark'),
+    badgesLabel: tg('badgesLabel'),
+    badgeAddLabel: tg('badgeAddLabel'),
+    badgePlaceholder: tg('badgePlaceholder'),
+    badgeRegister: tg('badgeRegister'),
+    badgeHall: tg('badgeHall'),
+    badgeDelivery: tg('badgeDelivery'),
+    badgeVip: tg('badgeVip'),
+    badgeTraining: tg('badgeTraining'),
+    customPhraseLabel: tg('customPhraseLabel'),
+    customSectors2: tg('customSectors2'),
+    customSectors3: tg('customSectors3'),
+    customAnyPhrase: tg('customAnyPhrase'),
+    customPhraseN: tg.raw('customPhraseN') as string,
+    customEmojiLabel: tg('customEmojiLabel'),
+    customLogoLabel: tg('customLogoLabel'),
+    favoriteBtn: tg('favoriteBtn'),
     themeStandard: tg('themeStandard'),
     themeClassic: tg('themeClassic'),
     classicTeams: tg('classicTeams'),
@@ -331,7 +361,15 @@ export default async function LandingPage({
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            buildJsonLd(locale, t('seo.ogLandingDescription'), [
+              t('plans.startName'),
+              t('plans.teamName'),
+              t('plans.bizName'),
+            ]),
+          ),
+        }}
       />
 
       {/* ── HERO ──────────────────────────────────────────────── */}
@@ -855,7 +893,7 @@ export default async function LandingPage({
                 t('plans.bizF6'),
               ]}
               cta={t('plans.bizCta')}
-              href="/contact"
+              href="mailto:hello@smengo.com"
               highlighted={false}
             />
           </div>
@@ -940,16 +978,18 @@ function PlanCard({
           </li>
         ))}
       </ul>
-      <Link
-        href={href}
-        className={`mt-auto block rounded-lg px-4 py-2.5 text-center text-sm font-medium transition-colors ${
+      {(() => {
+        const ctaClass = `mt-auto block rounded-lg px-4 py-2.5 text-center text-sm font-medium transition-colors ${
           highlighted
             ? 'bg-accent text-white hover:bg-[var(--accent-hover)]'
             : 'border border-border bg-background text-foreground hover:bg-muted/60'
-        }`}
-      >
-        {cta}
-      </Link>
+        }`
+        return href.startsWith('mailto:') ? (
+          <a href={href} className={ctaClass}>{cta}</a>
+        ) : (
+          <Link href={href} className={ctaClass}>{cta}</Link>
+        )
+      })()}
     </div>
   )
 }

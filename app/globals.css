@@ -58,6 +58,22 @@ html {
   --shadow-md: 0 4px 6px -1px rgb(31 30 28 / 0.08), 0 2px 4px -2px rgb(31 30 28 / 0.06);
   --shadow-lg: 0 10px 15px -3px rgb(31 30 28 / 0.08), 0 4px 6px -4px rgb(31 30 28 / 0.05);
 
+  /* Overlays: popovers, dropdowns, modals (light) */
+  --overlay-scrim: rgba(22, 20, 16, 0.36);
+  --pop-bg: rgba(255, 255, 255, 0.93);
+  --pop-border: rgba(31, 30, 28, 0.09);
+  --pop-shadow:
+    0 0 0 1px rgba(31, 30, 28, 0.03),
+    0 2px 6px -2px rgba(31, 30, 28, 0.08),
+    0 20px 48px -16px rgba(31, 30, 28, 0.28);
+  --pop-item-hover: rgba(31, 30, 28, 0.055);
+  --modal-shadow:
+    0 0 0 1px rgba(31, 30, 28, 0.04),
+    0 10px 22px -10px rgba(31, 30, 28, 0.14),
+    0 40px 96px -28px rgba(31, 30, 28, 0.4);
+  --row-hover: rgba(31, 30, 28, 0.032);
+  --tool-shadow: 0 1px 2px rgba(31, 30, 28, 0.06);
+
   /* Sidebar (shadcn requirement) */
   --sidebar: #ece9e1;
   --sidebar-foreground: #1f1e1c;
@@ -101,6 +117,7 @@ html {
   --grid-alert-bg: #fff5f5;
   --grid-alert-border: #f8d0cc;
   --grid-alert-fg: #d4604a;
+  --grid-problem-col: rgba(212, 96, 74, 0.07);
   --grid-pill-bg: #f5f4ef;
 
   /* AI CTA */
@@ -264,6 +281,219 @@ body {
   from { opacity: 0; backdrop-filter: blur(0); -webkit-backdrop-filter: blur(0); }
   to   { opacity: 1; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
 }
+
+/* ─── Overlay design language: popovers, menus, modals ─────────────
+   One look for every floating surface: frosted panel, hairline border,
+   layered shadow, springy entrance. Colors come from the --pop and
+   --modal tokens, so both themes are covered automatically. */
+@keyframes smengo-pop-in {
+  from { opacity: 0; transform: scale(0.96) translateY(-5px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes smengo-modal-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.smengo-pop {
+  background: var(--pop-bg);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  backdrop-filter: blur(20px) saturate(1.4);
+  border: 1px solid var(--pop-border);
+  border-radius: 14px;
+  box-shadow: var(--pop-shadow);
+  transform-origin: var(--pop-origin, top right);
+  animation: smengo-pop-in 170ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+.smengo-pop-label {
+  padding: 6px 9px 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted-foreground);
+}
+.smengo-pop-item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 9px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  padding: 7px 9px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--foreground);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 110ms ease;
+}
+.smengo-pop-item:hover { background: var(--pop-item-hover); }
+.smengo-pop-item:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--accent) 55%, transparent);
+  outline-offset: -2px;
+}
+.smengo-pop-sep {
+  height: 1px;
+  margin: 5px 7px;
+  background: var(--pop-border);
+}
+.smengo-overlay-scrim {
+  background: var(--overlay-scrim);
+  animation: smengo-backdrop-in 150ms ease-out both;
+}
+.smengo-modal-panel {
+  background: var(--surface);
+  border: 1px solid var(--pop-border);
+  border-radius: 18px;
+  box-shadow: var(--modal-shadow);
+  animation: smengo-modal-in 210ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+/* iOS-style switch used in grid settings */
+.smengo-switch {
+  position: relative;
+  width: 34px;
+  height: 20px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 999px;
+  padding: 0;
+  cursor: pointer;
+  background: var(--muted);
+  box-shadow: inset 0 0 0 1px var(--pop-border);
+  transition: background-color 180ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+.smengo-switch[aria-pressed="true"] { background: var(--accent); box-shadow: none; }
+.smengo-switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 180ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+.smengo-switch[aria-pressed="true"]::after { transform: translateX(14px); }
+.smengo-switch:active::after { transform: scaleX(1.15); transform-origin: left center; }
+.smengo-switch[aria-pressed="true"]:active::after { transform: translateX(14px) scaleX(1.15); transform-origin: right center; }
+
+/* ─── Grid shell controls: toolbar buttons, segmented control, rows ──
+   The visible chrome of the schedule demo. One control language:
+   28–30px surfaces, hairline borders, soft shadow, springy hover. */
+.smengo-tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 11px;
+  border: 1px solid var(--pop-border);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--foreground);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 550;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: var(--tool-shadow);
+  transition:
+    background-color 130ms ease,
+    color 130ms ease,
+    border-color 130ms ease,
+    box-shadow 130ms ease,
+    transform 130ms ease;
+}
+.smengo-tool:hover { background: var(--grid-pill-bg); }
+.smengo-tool:active { transform: translateY(1px); box-shadow: none; }
+.smengo-tool[data-active="true"] {
+  background: var(--accent);
+  border-color: transparent;
+  color: #fff;
+}
+.smengo-tool--primary {
+  background: var(--accent);
+  border-color: transparent;
+  color: #fff;
+  font-weight: 650;
+  box-shadow: 0 4px 12px -4px color-mix(in oklab, var(--accent) 65%, transparent);
+}
+.smengo-tool--primary:hover { background: var(--accent-hover); }
+.smengo-tool--ghost {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  color: var(--muted-foreground);
+}
+.smengo-tool--ghost:hover { background: var(--pop-item-hover); color: var(--foreground); }
+.smengo-tool--icon {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 11px;
+  color: var(--muted-foreground);
+}
+.smengo-tool--icon:hover { color: var(--foreground); }
+
+/* Apple-style segmented control with a sliding thumb */
+.smengo-seg {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 3px;
+  border: 1px solid var(--pop-border);
+  border-radius: 12px;
+  background: var(--grid-pill-bg);
+}
+.smengo-seg button {
+  position: relative;
+  z-index: 1;
+  border: 0;
+  background: transparent;
+  padding: 6px 14px;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 170ms ease;
+}
+.smengo-seg button[data-active="true"] { color: var(--foreground); }
+.smengo-seg-thumb {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  z-index: 0;
+  border-radius: 9px;
+  background: var(--surface);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.14), 0 0 0 1px var(--pop-border);
+  transition:
+    left 240ms cubic-bezier(0.32, 0.72, 0, 1),
+    width 240ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Full-row hover highlight in schedule tables (background-image so it
+   stacks on top of the inline weekend/cell backgrounds) */
+tr[data-employee-row] td { transition: background-color 120ms ease; }
+tr[data-employee-row]:hover td {
+  background-image: linear-gradient(var(--row-hover), var(--row-hover));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .smengo-seg-thumb,
+  .smengo-tool {
+    transition: none;
+  }
+}
 .smengo-role-picker-overlay {
   animation: smengo-backdrop-in 110ms ease-out both;
 }
@@ -310,6 +540,211 @@ body {
   transform: none;
   filter: none;
 }
+/* macOS-style overlay scrollbar (drag pill) */
+.smengo-hscroll {
+  position: relative;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  padding: 0 2px;
+  border-radius: 999px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease;
+  touch-action: none;
+  user-select: none;
+}
+.smengo-hscroll[data-active="true"] {
+  opacity: 1;
+  pointer-events: auto;
+}
+.smengo-hscroll::before {
+  content: "";
+  position: absolute;
+  inset: 5px 0;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--foreground) 6%, transparent);
+  box-shadow: inset 0 0 0 0.5px color-mix(in oklab, var(--foreground) 7%, transparent);
+  transition: inset 140ms ease, background 140ms ease;
+}
+.smengo-hscroll:hover::before,
+.smengo-hscroll[data-dragging]::before {
+  inset: 3px 0;
+  background: color-mix(in oklab, var(--foreground) 9%, transparent);
+}
+.smengo-hscroll-thumb {
+  position: relative;
+  z-index: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--foreground) 30%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in oklab, #fff 18%, transparent);
+  cursor: grab;
+  transition: height 140ms ease, background 140ms ease;
+}
+.smengo-hscroll:hover .smengo-hscroll-thumb {
+  height: 10px;
+  background: color-mix(in oklab, var(--foreground) 40%, transparent);
+}
+.smengo-hscroll[data-dragging] .smengo-hscroll-thumb {
+  height: 10px;
+  cursor: grabbing;
+  background: color-mix(in oklab, var(--foreground) 48%, transparent);
+}
+.smengo-hscroll--sm {
+  height: 11px;
+}
+.smengo-hscroll--sm::before {
+  inset: 4px 0;
+}
+.smengo-hscroll--sm:hover::before,
+.smengo-hscroll--sm[data-dragging]::before {
+  inset: 3px 0;
+}
+.smengo-hscroll--sm .smengo-hscroll-thumb {
+  height: 3.5px;
+}
+.smengo-hscroll--sm:hover .smengo-hscroll-thumb,
+.smengo-hscroll--sm[data-dragging] .smengo-hscroll-thumb {
+  height: 5.5px;
+}
+.smengo-custom-input {
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+.smengo-custom-input:focus {
+  border-color: color-mix(in oklab, var(--accent) 55%, var(--border)) !important;
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 16%, transparent);
+}
+/* Hidden-scrollbar scroller for the employee name/badge column */
+.smengo-name-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+  min-width: 0;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+.smengo-name-scroll::-webkit-scrollbar {
+  display: none;
+}
+.smengo-schedule-cell {
+  position: relative;
+  isolation: isolate;
+}
+.smengo-schedule-cell > * {
+  position: relative;
+  z-index: 1;
+}
+/* Row crosshair: a soft accent wash over every cell of the hovered row. */
+.smengo-schedule-cell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: color-mix(in oklab, var(--accent) 4.5%, transparent);
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+tr:hover > .smengo-schedule-cell::before {
+  opacity: 1;
+}
+.smengo-schedule-chip {
+  position: relative;
+  overflow: hidden;
+  transition:
+    filter 180ms ease,
+    box-shadow 180ms ease,
+    transform 200ms cubic-bezier(.34, 1.45, .5, 1),
+    background-color 180ms ease;
+}
+/* Sheen layer swiped across the chip on hover. */
+.smengo-schedule-chip::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 30%, rgba(255, 255, 255, 0.34) 50%, transparent 70%);
+  transform: translateX(-140%);
+  opacity: 0;
+}
+.smengo-leave-chip {
+  container-type: inline-size;
+}
+.smengo-leave-label {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", system-ui, sans-serif;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  line-height: 1;
+  text-transform: uppercase;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+}
+.smengo-leave-label-short {
+  display: none;
+}
+@container (min-width: 120px) {
+  .smengo-leave-label {
+    font-size: 11px;
+  }
+}
+@container (max-width: 92px) {
+  .smengo-leave-label {
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+  .smengo-leave-label-full {
+    display: none;
+  }
+  .smengo-leave-label-short {
+    display: inline;
+  }
+}
+.smengo-schedule-cell:hover .smengo-schedule-chip,
+.smengo-schedule-cell:focus-within .smengo-schedule-chip {
+  filter: brightness(1.1) saturate(1.1) !important;
+  transform: translateY(-2px) scale(1.05) !important;
+  box-shadow:
+    0 10px 22px -10px rgba(0, 0, 0, 0.5),
+    0 0 0 1px color-mix(in oklab, currentColor 26%, transparent),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.16) !important;
+  z-index: 3;
+}
+/* Wide merged runs (vacation/sick blocks) lift without the zoom. */
+.smengo-schedule-cell[colspan]:not([colspan="1"]):hover .smengo-schedule-chip,
+.smengo-schedule-cell[colspan]:not([colspan="1"]):focus-within .smengo-schedule-chip {
+  transform: translateY(-2px) scale(1.012) !important;
+}
+.smengo-schedule-cell:hover .smengo-schedule-chip::after,
+.smengo-schedule-cell:focus-within .smengo-schedule-chip::after {
+  animation: smengo-chip-sheen 700ms ease 40ms forwards;
+}
+@keyframes smengo-chip-sheen {
+  0%   { transform: translateX(-140%); opacity: 0; }
+  18%  { opacity: 1; }
+  100% { transform: translateX(140%); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .smengo-schedule-chip,
+  .smengo-schedule-cell::before {
+    transition: none;
+  }
+  .smengo-schedule-cell:hover .smengo-schedule-chip,
+  .smengo-schedule-cell:focus-within .smengo-schedule-chip {
+    transform: none !important;
+  }
+  .smengo-schedule-cell:hover .smengo-schedule-chip::after,
+  .smengo-schedule-cell:focus-within .smengo-schedule-chip::after {
+    animation: none;
+  }
+}
 .smengo-schedule-edit-cell {
   position: relative;
 }
@@ -321,7 +756,7 @@ body {
   pointer-events: none;
   border: 1px solid color-mix(in oklab, var(--accent) 24%, transparent);
   background: transparent;
-  z-index: 1;
+  z-index: 2;
 }
 .smengo-schedule-edit-cell:hover::after,
 .smengo-schedule-edit-cell:focus-visible::after {
@@ -345,14 +780,37 @@ body {
   100% { box-shadow: inset 0 0 0 0 color-mix(in oklab, var(--success) 0%, transparent); }
 }
 @keyframes smengo-ai-shift-fill {
-  0%   { box-shadow: inset 0 0 0 999px color-mix(in oklab, var(--success) 12%, transparent); }
+  0%   { box-shadow: inset 0 0 0 0 color-mix(in oklab, var(--success) 0%, transparent); }
   46%  { box-shadow: inset 0 0 0 999px color-mix(in oklab, var(--success) 18%, transparent); }
   100% { box-shadow: inset 0 0 0 0 color-mix(in oklab, var(--success) 0%, transparent); }
 }
 @keyframes smengo-ai-shift-vacate {
-  0%   { box-shadow: inset 0 0 0 999px color-mix(in oklab, var(--accent) 9%, transparent); }
+  0%   { box-shadow: inset 0 0 0 0 color-mix(in oklab, var(--accent) 0%, transparent); }
   46%  { box-shadow: inset 0 0 0 999px color-mix(in oklab, var(--accent) 13%, transparent); }
   100% { box-shadow: inset 0 0 0 0 color-mix(in oklab, var(--accent) 0%, transparent); }
+}
+/* Chip-level settle: new shifts drop into place, vacated cells morph out
+   softly. --ai-delay mirrors the td's left-to-right wave delay. */
+.smengo-schedule-cell[data-ai="fill"] .smengo-schedule-chip {
+  animation: smengo-ai-chip-in 720ms cubic-bezier(.3, 1.4, .45, 1) var(--ai-delay, 0ms) backwards;
+}
+.smengo-schedule-cell[data-ai="vacate"] .smengo-schedule-chip {
+  animation: smengo-ai-chip-swap 620ms ease var(--ai-delay, 0ms) backwards;
+}
+@keyframes smengo-ai-chip-in {
+  0%   { opacity: 0; transform: translateY(-9px) scale(0.68); filter: saturate(1.35) brightness(1.22); }
+  62%  { opacity: 1; transform: translateY(1px) scale(1.05); }
+  100% { opacity: 1; transform: translateY(0) scale(1); filter: none; }
+}
+@keyframes smengo-ai-chip-swap {
+  0%   { opacity: 0.15; transform: scale(0.86); }
+  55%  { opacity: 1; transform: scale(1.025); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .smengo-schedule-cell[data-ai] .smengo-schedule-chip {
+    animation: none !important;
+  }
 }
 @keyframes smengo-ai-border-beam {
   to { transform: rotate(1turn); }
@@ -361,8 +819,11 @@ body {
   0%, 42% { opacity: 0.92; }
   43%, 100% { opacity: 0; }
 }
+/* The full-stage saturate/brightness filter was dropped: animating `filter`
+   over the whole table repaints every frame and made the run feel janky.
+   The scan layer plus per-cell waves carry the effect instead. */
 .smengo-ai-grid-stage[data-ai-state="running"] {
-  animation: smengo-ai-grid-build 1.1s cubic-bezier(.22,1,.36,1);
+  animation: none;
 }
 .smengo-ai-scan-layer {
   position: absolute;
@@ -505,8 +966,15 @@ body {
   .smengo-ai-grid-stage[data-ai-state="running"],
   .smengo-ai-scan-layer span,
   .smengo-ai-grid-stage td,
-  .smengo-ai-type-caret {
+  .smengo-ai-type-caret,
+  .smengo-pop,
+  .smengo-overlay-scrim,
+  .smengo-modal-panel {
     animation: none;
+  }
+  .smengo-switch,
+  .smengo-switch::after {
+    transition: none;
   }
 }
 
@@ -568,6 +1036,22 @@ body {
   --sidebar-accent-foreground: #e8e7e3;
   --sidebar-border: #242a36;
 
+  /* Overlays: popovers, dropdowns, modals (dark) */
+  --overlay-scrim: rgba(3, 4, 7, 0.62);
+  --pop-bg: rgba(23, 27, 36, 0.94);
+  --pop-border: rgba(255, 255, 255, 0.09);
+  --pop-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.35),
+    0 2px 8px -2px rgba(0, 0, 0, 0.5),
+    0 22px 52px -14px rgba(0, 0, 0, 0.65);
+  --pop-item-hover: rgba(255, 255, 255, 0.06);
+  --modal-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 14px 30px -14px rgba(0, 0, 0, 0.6),
+    0 48px 110px -28px rgba(0, 0, 0, 0.75);
+  --row-hover: rgba(255, 255, 255, 0.04);
+  --tool-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+
   /* Grid preview palette (dark) — Linear-style */
   --grid-chrome: #161a22;
   --grid-cell: #141821;
@@ -581,6 +1065,7 @@ body {
   --grid-alert-bg: rgba(212, 96, 74, 0.08);
   --grid-alert-border: rgba(212, 96, 74, 0.30);
   --grid-alert-fg: #ec8470;
+  --grid-problem-col: rgba(236, 132, 112, 0.085);
   --grid-pill-bg: #1a1f29;
 
   /* AI CTA */

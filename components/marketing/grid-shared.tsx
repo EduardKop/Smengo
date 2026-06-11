@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { X, Check } from 'lucide-react'
+import { X, Check, ChevronRight, Plus } from 'lucide-react'
 import type { RoleKey, GridPreviewLabels } from './grid-preview'
 
 export type CustomSection = { key: string; name: string; color: string }
@@ -74,25 +74,20 @@ function ModalShell({ theme, title, closeLabel, onClose, children, width = 380 }
   return (
     <div
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+      className="smengo-overlay-scrim"
       style={{
         position: 'fixed', inset: 0, zIndex: 100,
-        background: isClassic ? 'rgba(20,24,36,0.45)' : 'rgba(0,0,0,0.55)',
-        backdropFilter: 'blur(4px)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: 12,
       }}
     >
       <div
         ref={ref}
+        className="smengo-modal-panel"
         style={{
           width: '100%', maxWidth: width,
-          background: 'var(--surface)',
           color: 'var(--foreground)',
-          borderRadius: isClassic ? 6 : 12,
-          border: '1px solid var(--border)',
-          boxShadow: isClassic
-            ? '0 10px 40px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.15)'
-            : '0 20px 60px rgba(0,0,0,0.5), 0 4px 12px rgba(0,0,0,0.3)',
+          borderRadius: isClassic ? 10 : 18,
           fontFamily: isClassic ? 'ui-serif, Georgia, "Times New Roman", serif' : 'inherit',
           overflow: 'hidden',
           maxHeight: '85vh', display: 'flex', flexDirection: 'column',
@@ -115,11 +110,13 @@ function ModalShell({ theme, title, closeLabel, onClose, children, width = 380 }
             type="button"
             onClick={onClose}
             aria-label={closeLabel ?? title}
+            className="transition-colors hover:bg-muted hover:text-foreground"
             style={{
-              background: 'transparent', border: 0, padding: 4,
-              borderRadius: 4, cursor: 'pointer',
+              background: 'transparent', border: 0,
+              width: 28, height: 28,
+              borderRadius: 8, cursor: 'pointer',
               color: 'var(--muted-foreground)',
-              display: 'inline-flex', alignItems: 'center',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             }}
           >
             <X style={{ width: 16, height: 16 }} />
@@ -234,18 +231,6 @@ export function RolePickerModal({
     .join('') || 'AP'
 
   const roleCount = (count: number) => labels.assignmentRoleCount.replace('{n}', String(count))
-  const branchCode = (key: RoleOrSectionKey, label: string) => {
-    if (key === 'salesDepartment') return labels.deptSales.startsWith('В') ? 'ВП' : labels.deptSales.startsWith('От') ? 'ОП' : 'SD'
-    if (key === 'developmentDepartment') return labels.deptSales.startsWith('В') ? 'ВР' : labels.deptSales.startsWith('От') ? 'ОР' : 'DD'
-    if (key === 'hr') return 'HR'
-    return label
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0]?.toUpperCase())
-      .join('')
-      .slice(0, 2) || 'BR'
-  }
 
   const softColor = (color: string, amount = 10) => `color-mix(in oklab, ${color} ${amount}%, ${tone.panel})`
   const activeRoleForDepartment = (key: RoleOrSectionKey) => {
@@ -328,11 +313,11 @@ export function RolePickerModal({
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          borderRadius: 12,
+          borderRadius: 16,
           border: `1px solid ${tone.border}`,
           background: tone.panel,
           color: tone.text,
-          boxShadow: '0 22px 56px rgba(15,23,42,0.22)',
+          boxShadow: 'var(--modal-shadow)',
           fontFamily: 'Inter, "SF Pro Display", var(--font-sans), system-ui, sans-serif',
         }}
         className="smengo-role-picker-panel"
@@ -340,18 +325,20 @@ export function RolePickerModal({
       >
         <div
           style={{
+            position: 'relative',
             display: 'flex',
             alignItems: 'center',
-            gap: 10,
-            padding: '12px 14px',
+            gap: 11,
+            padding: '13px 14px',
             borderBottom: `1px solid ${tone.border}`,
+            background: `linear-gradient(180deg, color-mix(in oklab, ${draftDepartment?.color ?? 'var(--accent)'} 5%, transparent), transparent)`,
           }}
         >
           <span
             aria-label={empName}
             style={{
-              width: 36,
-              height: 36,
+              width: 38,
+              height: 38,
               borderRadius: '50%',
               display: 'inline-flex',
               alignItems: 'center',
@@ -363,14 +350,15 @@ export function RolePickerModal({
               color: '#fff',
               fontSize: 12,
               fontWeight: 750,
-              boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.22), 0 1px 2px rgba(0,0,0,0.12)',
+              boxShadow: `0 0 0 2px ${tone.panel}, 0 0 0 3.5px color-mix(in oklab, ${draftRoleItem?.color ?? draftDepartment?.color ?? 'var(--accent)'} 65%, transparent)`,
               overflow: 'hidden',
+              transition: 'box-shadow 200ms ease',
             }}
           >
             {avatarSrc ? null : initials}
           </span>
           <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ color: tone.text, fontSize: 16, fontWeight: 760, lineHeight: 1.08, letterSpacing: 0 }}>
+            <div style={{ color: tone.text, fontSize: 15, fontWeight: 650, lineHeight: 1.15, letterSpacing: '-0.01em' }}>
               {empName}
             </div>
             <div style={{ marginTop: 3, color: tone.muted, fontSize: 12, fontWeight: 500 }}>
@@ -383,11 +371,11 @@ export function RolePickerModal({
             aria-label={labels.empCalendarClose}
             className="smengo-role-picker-action"
             style={{
-              width: 32,
-              height: 32,
-              borderRadius: 8,
-              border: `1px solid ${tone.border}`,
-              background: tone.card,
+              width: 30,
+              height: 30,
+              borderRadius: 9,
+              border: 0,
+              background: 'transparent',
               color: tone.muted,
               display: 'inline-flex',
               alignItems: 'center',
@@ -400,12 +388,12 @@ export function RolePickerModal({
           </button>
         </div>
 
-        <div style={{ overflow: 'auto', padding: '10px 12px 8px' }}>
-          <div style={{ color: tone.muted, fontSize: 10, fontWeight: 850, letterSpacing: '0.16em', textTransform: 'uppercase' }}>
+        <div style={{ overflow: 'auto', padding: '12px 14px 10px' }}>
+          <div style={{ color: tone.muted, fontSize: 10.5, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase' }}>
             {labels.assignmentStructureLabel}
           </div>
 
-          <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ marginTop: 9, display: 'flex', flexDirection: 'column', gap: 7 }}>
             {departmentItems.map((department) => {
               const key = String(department.key)
               const roles = rolesForDepartment(department.key)
@@ -423,45 +411,84 @@ export function RolePickerModal({
                     className="smengo-role-picker-branch"
                     style={{
                       width: '100%',
-                      minHeight: 44,
+                      minHeight: 46,
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 9,
-                      borderRadius: 10,
-                      border: `1.5px solid ${activeBranch ? branchAccent : tone.border}`,
-                      background: activeBranch ? softColor(branchAccent, 9) : tone.card,
+                      gap: 10,
+                      borderRadius: 12,
+                      border: `1px solid ${activeBranch ? `color-mix(in oklab, ${branchAccent} 34%, var(--pop-border))` : 'var(--pop-border)'}`,
+                      background: activeBranch ? softColor(branchAccent, 7) : tone.card,
                       color: tone.text,
-                      padding: '7px 10px',
+                      padding: '7px 11px',
                       cursor: 'pointer',
                       textAlign: 'left',
                       fontFamily: 'inherit',
+                      boxShadow: activeBranch ? `inset 3px 0 0 ${branchAccent}` : 'none',
                     }}
                   >
                     <span
+                      aria-hidden="true"
                       style={{
-                        width: 28,
-                        height: 28,
-                        borderRadius: 7,
+                        width: 11,
+                        height: 11,
+                        borderRadius: 4,
+                        flexShrink: 0,
+                        background: department.color,
+                        boxShadow: `0 0 0 3px color-mix(in oklab, ${department.color} 16%, transparent)`,
+                      }}
+                    />
+                    <span style={{ flex: 1, minWidth: 0, color: tone.text, fontSize: 13.5, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {department.label}
+                    </span>
+                    {activeBranch && selectedRole && !expanded && (
+                      <span
+                        style={{
+                          maxWidth: 120,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          borderRadius: 999,
+                          padding: '2.5px 9px',
+                          background: softColor(selectedRole.color, 14),
+                          color: selectedRole.color,
+                          fontSize: 11,
+                          fontWeight: 650,
+                        }}
+                      >
+                        {selectedRole.label}
+                      </span>
+                    )}
+                    <span
+                      aria-label={roleCount(roles.length)}
+                      title={roleCount(roles.length)}
+                      style={{
+                        minWidth: 21,
+                        height: 19,
                         display: 'inline-flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        flexShrink: 0,
-                        border: `1.5px solid color-mix(in oklab, ${branchAccent} 50%, ${tone.border})`,
-                        background: `color-mix(in oklab, ${branchAccent} 13%, ${tone.panel})`,
-                        color: branchAccent,
-                        fontSize: 11,
-                        fontWeight: 850,
+                        padding: '0 6px',
+                        borderRadius: 999,
+                        background: 'var(--grid-pill-bg)',
+                        color: tone.muted,
+                        fontSize: 10.5,
+                        fontWeight: 700,
+                        fontVariantNumeric: 'tabular-nums',
                       }}
                     >
-                      {branchCode(department.key, department.label)}
+                      {roles.length}
                     </span>
-                    <span style={{ flex: 1, minWidth: 0, color: tone.text, fontSize: 14, fontWeight: 760, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {department.label}
-                    </span>
-                    <span style={{ color: tone.faint, fontSize: 11, fontWeight: 800, whiteSpace: 'nowrap' }}>
-                      {roleCount(roles.length)}
-                    </span>
-                    <span aria-hidden="true" style={{ color: tone.faint, fontSize: 12, transform: expanded ? 'rotate(90deg)' : 'none', transition: 'transform 140ms ease' }}>›</span>
+                    <ChevronRight
+                      aria-hidden="true"
+                      style={{
+                        width: 14,
+                        height: 14,
+                        color: tone.faint,
+                        flexShrink: 0,
+                        transform: expanded ? 'rotate(90deg)' : 'none',
+                        transition: 'transform 160ms ease',
+                      }}
+                    />
                   </button>
 
                   <div
@@ -469,158 +496,189 @@ export function RolePickerModal({
                     data-expanded={expanded}
                     aria-hidden={!expanded}
                     style={{
-                      marginLeft: 24,
-                      paddingLeft: 14,
-                      borderLeft: `2px solid ${tone.tree}`,
-                      paddingTop: expanded ? 3 : 0,
-                      paddingBottom: expanded ? 6 : 0,
+                      marginLeft: 16,
+                      paddingLeft: 13,
+                      borderLeft: `2px solid ${expanded ? `color-mix(in oklab, ${branchAccent} 32%, var(--pop-border))` : 'var(--pop-border)'}`,
+                      marginTop: expanded ? 5 : 0,
+                      paddingTop: expanded ? 1 : 0,
+                      paddingBottom: expanded ? 4 : 0,
                       maxHeight: expanded ? 380 : 0,
                       opacity: expanded ? 1 : 0,
                       transform: expanded ? 'translateY(0)' : 'translateY(-4px)',
                       overflow: 'hidden',
                       pointerEvents: expanded ? 'auto' : 'none',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 2,
                     }}
                   >
                       {roles.length === 0 && (
-                        <div style={{ color: tone.muted, fontSize: 12, padding: '6px 0' }}>
+                        <div style={{ color: tone.muted, fontSize: 12, padding: '6px 0 6px 10px' }}>
                           {labels.assignmentNoRoles}
                         </div>
                       )}
                       {roles.map((role) => {
                         const active = activeBranch && role.key === draftRole
                         return (
-                          <div key={role.key} style={{ display: 'flex', alignItems: 'center' }}>
-                            <span aria-hidden="true" style={{ width: 15, borderTop: `2px solid ${tone.tree}`, marginRight: 5 }} />
-                            <button
-                              type="button"
-                              onClick={() => handleRolePick(department.key, role.key)}
-                              className="smengo-role-picker-row"
-                              style={{
-                                minHeight: 32,
-                                flex: 1,
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 8,
-                                border: 0,
-                                borderRadius: 8,
-                                background: active ? softColor(role.color, 11) : 'transparent',
-                                color: tone.text,
-                                padding: '0 10px',
-                                cursor: 'pointer',
-                                textAlign: 'left',
-                                fontFamily: 'inherit',
-                              }}
-                            >
-                              <span
-                                style={{
-                                  width: 9,
-                                  height: 9,
-                                  borderRadius: '50%',
-                                  flexShrink: 0,
-                                  background: active ? role.color : 'transparent',
-                                  border: active ? 'none' : `2px solid ${tone.faint}`,
-                                  boxShadow: active ? `0 0 0 1px color-mix(in oklab, ${role.color} 28%, transparent)` : 'none',
-                                }}
-                              />
-                              <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: active ? 760 : 650, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                {role.label}
-                              </span>
-                              {active && <Check style={{ width: 13, height: 13, color: role.color, flexShrink: 0 }} />}
-                            </button>
-                          </div>
-                        )
-                      })}
-                      <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <span aria-hidden="true" style={{ width: 15, borderTop: `2px solid ${tone.tree}`, marginRight: 5 }} />
-                        {addingDepartmentKey === key ? (
-                          <div
-                            style={{
-                              minHeight: 36,
-                              flex: 1,
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 7,
-                              borderRadius: 8,
-                              border: `1.5px dashed ${tone.dashed}`,
-                              background: tone.field,
-                              padding: '4px 7px 4px 10px',
-                            }}
-                          >
-                            <input
-                              value={newRoleName}
-                              autoFocus
-                              onChange={(e) => setNewRoleName(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') handleCreateRole(department)
-                                if (e.key === 'Escape') {
-                                  setAddingDepartmentKey(null)
-                                  setNewRoleName('')
-                                }
-                              }}
-                              placeholder={labels.assignmentRolePlaceholder}
-                              style={{
-                                minWidth: 0,
-                                flex: 1,
-                                height: 28,
-                                border: 0,
-                                outline: 'none',
-                                background: 'transparent',
-                                color: tone.text,
-                                fontSize: 13,
-                                fontWeight: 650,
-                                fontFamily: 'inherit',
-                              }}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => handleCreateRole(department)}
-                              disabled={!newRoleName.trim()}
-                              className="smengo-role-picker-action"
-                              style={{
-                                height: 28,
-                                border: 0,
-                                borderRadius: 7,
-                                padding: '0 10px',
-                                background: newRoleName.trim() ? branchAccent : tone.card,
-                                color: newRoleName.trim() ? '#fff' : tone.faint,
-                                fontSize: 11,
-                                fontWeight: 800,
-                                cursor: newRoleName.trim() ? 'pointer' : 'not-allowed',
-                              }}
-                            >
-                              {labels.createBtn}
-                            </button>
-                          </div>
-                        ) : (
                           <button
+                            key={role.key}
                             type="button"
-                            onClick={() => {
-                              setExpandedDepartmentKey(key)
-                              setAddingDepartmentKey(key)
-                              setNewRoleName('')
-                            }}
-                            className="smengo-role-picker-add"
+                            onClick={() => handleRolePick(department.key, role.key)}
+                            className="smengo-role-picker-row"
                             style={{
-                              minHeight: 36,
-                              flex: 1,
+                              minHeight: 34,
+                              width: '100%',
                               display: 'flex',
                               alignItems: 'center',
-                              borderRadius: 8,
-                              border: `1.5px dashed ${tone.dashed}`,
-                              background: 'transparent',
-                              color: tone.faint,
-                              padding: '0 12px',
+                              gap: 9,
+                              border: 0,
+                              borderRadius: 9,
+                              background: active ? softColor(role.color, 11) : 'transparent',
+                              color: tone.text,
+                              padding: '0 10px',
                               cursor: 'pointer',
-                              fontSize: 13,
-                              fontWeight: 800,
                               textAlign: 'left',
                               fontFamily: 'inherit',
                             }}
                           >
-                            {labels.assignmentAddRole}
+                            <span
+                              aria-hidden="true"
+                              style={{
+                                width: 14,
+                                height: 14,
+                                borderRadius: '50%',
+                                flexShrink: 0,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                border: active
+                                  ? `1.5px solid ${role.color}`
+                                  : `1.5px solid color-mix(in oklab, var(--pop-border) 60%, ${tone.muted})`,
+                                transition: 'border-color 140ms ease',
+                              }}
+                            >
+                              <span
+                                style={{
+                                  width: 6,
+                                  height: 6,
+                                  borderRadius: '50%',
+                                  background: active ? role.color : 'transparent',
+                                  transform: active ? 'scale(1)' : 'scale(0.4)',
+                                  transition: 'transform 160ms cubic-bezier(.34,1.5,.5,1), background 140ms ease',
+                                }}
+                              />
+                            </span>
+                            <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: active ? 600 : 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {role.label}
+                            </span>
+                            {active && <Check style={{ width: 13.5, height: 13.5, color: role.color, flexShrink: 0 }} strokeWidth={2.6} />}
                           </button>
-                        )}
-                      </div>
+                        )
+                      })}
+                      {addingDepartmentKey === key ? (
+                        <div
+                          style={{
+                            minHeight: 36,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 7,
+                            borderRadius: 9,
+                            border: `1.5px dashed color-mix(in oklab, ${branchAccent} 45%, ${tone.dashed})`,
+                            background: tone.field,
+                            padding: '4px 7px 4px 10px',
+                            marginTop: 2,
+                          }}
+                        >
+                          <input
+                            value={newRoleName}
+                            autoFocus
+                            onChange={(e) => setNewRoleName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleCreateRole(department)
+                              if (e.key === 'Escape') {
+                                setAddingDepartmentKey(null)
+                                setNewRoleName('')
+                              }
+                            }}
+                            placeholder={labels.assignmentRolePlaceholder}
+                            style={{
+                              minWidth: 0,
+                              flex: 1,
+                              height: 28,
+                              border: 0,
+                              outline: 'none',
+                              background: 'transparent',
+                              color: tone.text,
+                              fontSize: 13,
+                              fontWeight: 650,
+                              fontFamily: 'inherit',
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleCreateRole(department)}
+                            disabled={!newRoleName.trim()}
+                            className="smengo-role-picker-action"
+                            style={{
+                              height: 28,
+                              border: 0,
+                              borderRadius: 7,
+                              padding: '0 10px',
+                              background: newRoleName.trim() ? branchAccent : tone.card,
+                              color: newRoleName.trim() ? '#fff' : tone.faint,
+                              fontSize: 11,
+                              fontWeight: 800,
+                              cursor: newRoleName.trim() ? 'pointer' : 'not-allowed',
+                            }}
+                          >
+                            {labels.createBtn}
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setExpandedDepartmentKey(key)
+                            setAddingDepartmentKey(key)
+                            setNewRoleName('')
+                          }}
+                          className="smengo-role-picker-add"
+                          style={{
+                            minHeight: 32,
+                            width: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 9,
+                            borderRadius: 9,
+                            border: 0,
+                            background: 'transparent',
+                            color: tone.faint,
+                            padding: '0 10px',
+                            cursor: 'pointer',
+                            fontSize: 12.5,
+                            fontWeight: 600,
+                            textAlign: 'left',
+                            fontFamily: 'inherit',
+                          }}
+                        >
+                          <span
+                            aria-hidden="true"
+                            style={{
+                              width: 14,
+                              height: 14,
+                              borderRadius: '50%',
+                              flexShrink: 0,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              border: `1.5px dashed ${tone.dashed}`,
+                            }}
+                          >
+                            <Plus style={{ width: 9, height: 9 }} strokeWidth={2.5} />
+                          </span>
+                          {labels.assignmentAddRole}
+                        </button>
+                      )}
                   </div>
                 </div>
               )
@@ -717,21 +775,37 @@ export function RolePickerModal({
                 }}
                 className="smengo-role-picker-add"
                 style={{
-                  minHeight: 36,
+                  minHeight: 40,
                   display: 'flex',
                   alignItems: 'center',
-                  borderRadius: 9,
+                  gap: 10,
+                  borderRadius: 12,
                   border: `1.5px dashed ${tone.dashed}`,
                   background: 'transparent',
                   color: tone.faint,
                   padding: '0 12px',
                   cursor: 'pointer',
                   fontSize: 13,
-                  fontWeight: 800,
+                  fontWeight: 600,
                   textAlign: 'left',
                   fontFamily: 'inherit',
                 }}
               >
+                <span
+                  aria-hidden="true"
+                  style={{
+                    width: 16,
+                    height: 16,
+                    borderRadius: 5,
+                    flexShrink: 0,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: `1.5px dashed ${tone.dashed}`,
+                  }}
+                >
+                  <Plus style={{ width: 10, height: 10 }} strokeWidth={2.5} />
+                </span>
                 {labels.assignmentAddDepartment}
               </button>
             )}
@@ -744,29 +818,57 @@ export function RolePickerModal({
             alignItems: 'center',
             justifyContent: 'space-between',
             gap: 10,
-            padding: '9px 14px',
+            padding: '10px 14px',
             borderTop: `1px solid ${tone.border}`,
             background: tone.footer,
             backdropFilter: 'blur(10px)',
           }}
         >
-          <div style={{ minWidth: 0, color: tone.faint, fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {labels.assignmentBranchLabel} {branchText}
-          </div>
+          <span
+            title={`${labels.assignmentBranchLabel} ${branchText}`}
+            style={{
+              minWidth: 0,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 7,
+              padding: '4.5px 10px',
+              borderRadius: 999,
+              background: 'var(--grid-pill-bg)',
+              border: '1px solid var(--pop-border)',
+              color: tone.muted,
+              fontSize: 11.5,
+              fontWeight: 550,
+              overflow: 'hidden',
+            }}
+          >
+            <span
+              aria-hidden="true"
+              style={{
+                width: 7,
+                height: 7,
+                borderRadius: '50%',
+                flexShrink: 0,
+                background: draftRoleItem?.color ?? draftDepartment?.color ?? 'var(--accent)',
+              }}
+            />
+            <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {branchText}
+            </span>
+          </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0 }}>
             <button
               type="button"
               onClick={requestClose}
               className="smengo-role-picker-action"
               style={{
-                minWidth: 88,
+                minWidth: 84,
                 height: 34,
-                borderRadius: 8,
-                border: `1px solid ${tone.borderStrong}`,
+                borderRadius: 10,
+                border: '1px solid var(--pop-border)',
                 background: 'transparent',
                 color: tone.muted,
                 fontSize: 13,
-                fontWeight: 800,
+                fontWeight: 600,
                 cursor: 'pointer',
               }}
             >
@@ -780,14 +882,17 @@ export function RolePickerModal({
               style={{
                 minWidth: 92,
                 height: 34,
-                borderRadius: 8,
-                border: 0,
-                background: canSave ? '#f45b2f' : tone.card,
-                color: canSave ? '#fff' : tone.faint,
+                borderRadius: 10,
+                border: '1px solid color-mix(in oklab, #fff 18%, var(--accent))',
+                background: 'linear-gradient(180deg, color-mix(in oklab, var(--accent) 88%, #fff 12%), var(--accent))',
+                color: '#fff',
+                opacity: canSave ? 1 : 0.45,
                 fontSize: 13,
-                fontWeight: 850,
+                fontWeight: 650,
                 cursor: canSave ? 'pointer' : 'not-allowed',
-                boxShadow: canSave ? '0 10px 24px rgba(244,91,47,0.22)' : 'none',
+                boxShadow: canSave
+                  ? '0 6px 16px -6px color-mix(in oklab, var(--accent) 70%, transparent), inset 0 1px 0 rgba(255,255,255,0.25)'
+                  : 'none',
               }}
             >
               {labels.saveBtn}
@@ -881,9 +986,9 @@ export function AddSectionModal({ theme, labels, onCreate, onClose }: AddSection
             style={{
               width: '100%', boxSizing: 'border-box',
               padding: '9px 12px',
-              borderRadius: isClassic ? 4 : 8,
-              border: '1px solid var(--border)',
-              background: 'var(--muted)',
+              borderRadius: isClassic ? 4 : 10,
+              border: '1px solid var(--pop-border)',
+              background: 'var(--grid-pill-bg)',
               color: 'inherit',
               fontSize: 14,
               fontFamily: 'inherit',
@@ -922,7 +1027,7 @@ export function AddSectionModal({ theme, labels, onCreate, onClose }: AddSection
               display: 'flex', alignItems: 'center', gap: 10,
               padding: '9px 12px',
               borderRadius: isClassic ? 4 : 8,
-              border: `1.5px solid ${selectedId === 'custom' ? 'var(--accent)' : 'var(--border)'}`,
+              border: `1px solid ${selectedId === 'custom' ? 'var(--accent)' : 'var(--pop-border)'}`,
               background: selectedId === 'custom' ? 'var(--accent-soft)' : 'var(--muted)',
               cursor: 'pointer',
               transition: 'border-color 0.12s, background 0.12s',

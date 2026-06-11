@@ -20,7 +20,7 @@ export function BuiltForMenu({ open, onOpen, onClose }: Props) {
       onClick={() => (open ? onClose() : onOpen())}
       aria-expanded={open}
       aria-haspopup="menu"
-      className={`flex items-center gap-1 text-sm transition-colors ${
+      className={`flex items-center gap-1 whitespace-nowrap text-sm transition-colors ${
         open ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
       }`}
     >

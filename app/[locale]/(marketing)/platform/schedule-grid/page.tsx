@@ -226,7 +226,9 @@ export default async function ScheduleGridPage({ params }: PageProps) {
     footerLegendVacation: tg('footerLegendVacation'),
     footerLegendSick: tg('footerLegendSick'),
     chromeOnShift: tg('chromeOnShift'), chromeOffToday: tg('chromeOffToday'), chromeToday: tg('chromeToday'),
-    themeLabel: tg('themeLabel'), themeStandard: tg('themeStandard'), themeClassic: tg('themeClassic'),
+    themeLabel: tg('themeLabel'), iconColorsLabel: tg('iconColorsLabel'), iconColorLabel: tg('iconColorLabel'), textColorLabel: tg('textColorLabel'), customByThemeLabel: tg('customByThemeLabel'), siteThemeLight: tg('siteThemeLight'), siteThemeDark: tg('siteThemeDark'), themeStandard: tg('themeStandard'), themeClassic: tg('themeClassic'),
+    badgesLabel: tg('badgesLabel'), badgeAddLabel: tg('badgeAddLabel'), badgePlaceholder: tg('badgePlaceholder'), badgeRegister: tg('badgeRegister'), badgeHall: tg('badgeHall'), badgeDelivery: tg('badgeDelivery'), badgeVip: tg('badgeVip'), badgeTraining: tg('badgeTraining'),
+    customPhraseLabel: tg('customPhraseLabel'), customSectors2: tg('customSectors2'), customSectors3: tg('customSectors3'), customAnyPhrase: tg('customAnyPhrase'), customPhraseN: tg.raw('customPhraseN') as string, customEmojiLabel: tg('customEmojiLabel'), customLogoLabel: tg('customLogoLabel'), favoriteBtn: tg('favoriteBtn'),
     classicTeams: tg('classicTeams'), classicAbsence: tg('classicAbsence'), classicAll: tg('classicAll'), classicSearch: tg('classicSearch'),
     addSectionBtn: tg('addSectionBtn'), addSectionTitle: tg('addSectionTitle'),
     sectionNameLabel: tg('sectionNameLabel'), sectionNamePlaceholder: tg('sectionNamePlaceholder'),
@@ -1224,16 +1226,16 @@ function RestCard({
   return (
     <Link
       href={href}
-      className={`group flex min-h-[248px] flex-col rounded-none border p-6 transition-colors ${colors.card}`}
+      className={`group flex min-h-[248px] flex-col rounded-3xl border p-6 transition-colors ${colors.card}`}
     >
       <span
-        className={`mb-6 inline-flex h-10 w-10 items-center justify-center rounded-none border font-mono text-[12px] font-semibold tracking-[0.1em] ${colors.step}`}
+        className={`mb-6 inline-flex h-10 w-10 items-center justify-center rounded-full border font-mono text-[12px] font-semibold tracking-[0.1em] ${colors.step}`}
       >
         {step}
       </span>
       <h3 className="text-[18px] font-semibold">{title}</h3>
       <p className={`mt-2 text-[14.5px] leading-[1.58] ${colors.desc}`}>{desc}</p>
-      <div className={`mt-5 rounded-none border px-3 py-2.5 text-[12.5px] font-medium leading-snug ${colors.note}`}>
+      <div className={`mt-5 rounded-xl border px-3 py-2.5 text-[12.5px] font-medium leading-snug ${colors.note}`}>
         {note}
       </div>
       <span

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, type ComponentType } from 'react'
+import { createPortal } from 'react-dom'
 import {
   Search, ChevronLeft, ChevronRight, ChevronDown, MoreHorizontal,
   TreePalm, Thermometer, AlertCircle, Home, Sun, Moon,
@@ -9,8 +10,9 @@ import {
 import {
   type GridPreviewLabels, type EmpDef, type Status, type DeptKey, type Mode,
   type GridTab, type EmployeeDirectoryView,
-  Avatar, BASE_EMPLOYEES, monthDays, PROBLEM_DAY_IDX, rotateSchedule, scheduleOffsetForMonth, setEmployeeRowDragImage, workMeta,
+  Avatar, BASE_EMPLOYEES, monthDays, problemDayIdxForMonth, rotateSchedule, rotationStatus, scheduleOffsetForMonth, setEmployeeRowDragImage, todayDayIndexForMonth, workMeta,
   DemoTabs, EmployeeDirectory, EmployeeViewToggle, TodayStatusChip, specialtyLabelFor, employeeDisplayName,
+  isDefaultMergedLeaveStatus, ScheduleLeaveLabelText,
 } from './grid-preview'
 import type { CustomSection, RoleOrSectionKey } from './grid-shared'
 
@@ -67,7 +69,7 @@ const STATUS_VIS: Record<Exclude<Status, 'W' | '-'>, StatusVisual> = {
   U: { bg: '#e8a04c', bgSoft: '#f9e5cb', fg: '#fff', fgSoft: '#8a5a1c', Icon: AlertCircle },
 }
 
-const STATUS_OPTIONS: Status[] = ['W', 'V', 'S', 'D', 'U', '-']
+const STATUS_OPTIONS: Status[] = ['W', 'V', 'S', 'D', '-']
 
 function fmtTime(sec: number): string {
   const h = Math.floor(sec / 3600)
@@ -127,6 +129,8 @@ export function ClassicGrid({
   const monthLabel = labels.months[monthIdx]
   const monthOffset = scheduleOffsetForMonth(monthIdx)
   const days = monthDays(monthIdx)
+  const todayDayIdx = todayDayIndexForMonth(monthIdx)
+  const problemDayIdx = problemDayIdxForMonth(monthIdx)
 
   // Filter employees by department
   const baseDeptOrder: Exclude<DeptKey, 'all'>[] =
@@ -153,6 +157,7 @@ export function ClassicGrid({
     const key = `${name}-${fullDayIdx}-${monthIdx}`
     if (overrides[key]) return overrides[key]
     if (optimizedOverrides[key]) return optimizedOverrides[key]
+    if (base.length === 4) return rotationStatus(base, monthIdx, fullDayIdx)
     const rotated = rotateSchedule(base, monthOffset)
     return (rotated[fullDayIdx % 14] ?? 'W') as Status
   }
@@ -176,10 +181,12 @@ export function ClassicGrid({
 
   // Stats for "Today" header chip
   let onShift = 0, offToday = 0
-  for (const emp of orderedEmps) {
-    const s = statusOf(emp.name, PROBLEM_DAY_IDX, emp.s)
-    if (s === 'W') onShift++
-    else if (s === 'V' || s === 'S' || s === 'D') offToday++
+  if (todayDayIdx !== null) {
+    for (const emp of orderedEmps) {
+      const s = statusOf(emp.name, todayDayIdx, emp.s)
+      if (s === 'W') onShift++
+      else if (s === 'V' || s === 'S' || s === 'D') offToday++
+    }
   }
 
   function prevMonth() { setMonthIdx(Math.max(0, monthIdx - 1)) }
@@ -211,17 +218,17 @@ export function ClassicGrid({
 
   // Returns true when current cell continues a same-status run from previous day (for merged setting)
   function isMergedSame(empName: string, ci: number, base: string): boolean {
-    if (!merged || ci === 0) return false
+    if (ci === 0) return false
     const prev = statusOf(empName, ci - 1, base)
     const curr = statusOf(empName, ci, base)
-    return prev === curr && curr !== 'W' && curr !== '-'
+    return prev === curr && curr !== 'W' && curr !== '-' && (merged || isDefaultMergedLeaveStatus(curr))
   }
 
   function isMergedSameRight(empName: string, ci: number, base: string): boolean {
-    if (!merged || ci >= days.length - 1) return false
+    if (ci >= days.length - 1) return false
     const next = statusOf(empName, ci + 1, base)
     const curr = statusOf(empName, ci, base)
-    return next === curr && curr !== 'W' && curr !== '-'
+    return next === curr && curr !== 'W' && curr !== '-' && (merged || isDefaultMergedLeaveStatus(curr))
   }
 
   function displayNameForKey(name: string): string {
@@ -322,20 +329,14 @@ export function ClassicGrid({
             </button>
             {notifOpen && (
               <div
-                className="absolute right-0 z-30 mt-2 rounded-xl border border-border shadow-lg"
-                style={{ top: '100%', background: 'var(--surface)', width: 260, padding: 8, fontSize: 12 }}
+                className="smengo-pop absolute right-0 z-30 mt-2"
+                style={{ top: '100%', width: 268, padding: 6, fontSize: 12 }}
               >
+                <div className="smengo-pop-label">{labels.shortageLabel}</div>
                 <div style={{
-                  padding: '6px 8px 8px',
-                  fontSize: 10, fontWeight: 600, textTransform: 'uppercase',
-                  letterSpacing: '0.05em', color: 'var(--muted-foreground)',
-                }}>
-                  {labels.shortageLabel}
-                </div>
-                <div style={{
-                  display: 'flex', gap: 8, padding: '8px',
-                  borderRadius: 6, background: 'var(--accent-soft)',
-                  color: 'var(--foreground)', lineHeight: 1.35,
+                  display: 'flex', gap: 8, padding: '9px 10px',
+                  borderRadius: 9, background: 'var(--accent-soft)',
+                  color: 'var(--foreground)', lineHeight: 1.4,
                 }}>
                   <AlertCircle style={{ width: 14, height: 14, color: 'var(--accent)', flexShrink: 0, marginTop: 1 }} />
                   <span>{coverageSummary}</span>
@@ -527,46 +528,59 @@ export function ClassicGrid({
                 </span>
               </div>
               {days.map((d, ci) => {
-                const isProblem = ci === PROBLEM_DAY_IDX && showProblemColumn
                 const isWeekend = d.k === 'sat' || d.k === 'sun'
+                const isToday = ci === todayDayIdx
+                const isWeekBoundary = ci > 0 && (d.k === 'mon' || d.k === 'sat')
                 return (
                   <div
                     key={ci}
                     style={{
                       width: colW, flexShrink: 0,
+                      minHeight: 54,
                       padding: '8px 0',
                       textAlign: 'center',
-                      background: isProblem
-                        ? 'var(--classic-gap-bg)'
-                        : isWeekend
-                          ? weekendBg()
-                          : 'transparent',
-                      borderLeft: isProblem
-                        ? '1px dashed var(--classic-gap-edge)'
-                        : showGrid
-                          ? '1px solid var(--classic-grid-line)'
-                          : 'none',
-                      borderRight: isProblem ? '1px dashed var(--classic-gap-edge)' : 'none',
+                      background: isWeekend ? weekendBg() : 'transparent',
+                      borderLeft: isWeekBoundary || showGrid ? '1px solid var(--classic-grid-line)' : 'none',
+                      borderRight: d.k === 'sun' ? '1px solid var(--classic-grid-line)' : 'none',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 2,
                     }}
                   >
-                    <div
+                    <span
                       style={{
-                        fontSize: 14, fontWeight: 500,
-                        color: isWeekend ? 'var(--muted-foreground)' : 'var(--foreground)',
-                        lineHeight: 1.1,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        minWidth: isToday ? 27 : 'auto',
+                        height: isToday ? 28 : 'auto',
+                        padding: isToday ? '0 5px' : 0,
+                        borderRadius: isToday ? 8 : 0,
+                        background: isToday ? 'var(--accent)' : 'transparent',
+                        color: isToday ? '#fff' : (isWeekend ? 'var(--muted-foreground)' : 'var(--foreground)'),
+                        fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", Inter, system-ui, sans-serif',
+                        fontSize: 13,
+                        fontWeight: 600,
+                        lineHeight: 1,
+                        fontVariantNumeric: 'tabular-nums',
                       }}
                     >
                       {d.n}
-                    </div>
-                    <div
+                    </span>
+                    <span
                       style={{
-                        fontSize: 10, fontWeight: 500,
+                        fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, system-ui, sans-serif',
+                        fontSize: 8.5,
+                        fontWeight: 500,
                         color: 'var(--muted-foreground)',
-                        marginTop: 2, textTransform: 'capitalize',
+                        lineHeight: 1,
+                        textTransform: 'uppercase',
                       }}
                     >
-                      {dayShort(d.k)}
-                    </div>
+                      {dayShort(d.k).toUpperCase()}
+                    </span>
                   </div>
                 )
               })}
@@ -749,7 +763,7 @@ export function ClassicGrid({
                 </div>
                 {days.map((d, ci) => {
                   const s = statusOf(emp.name, ci, emp.s)
-                  const isProblem = ci === PROBLEM_DAY_IDX && showProblemColumn
+                  const isProblem = ci === problemDayIdx && showProblemColumn
                   const isWeekend = d.k === 'sat' || d.k === 'sun'
                   const cellKey = `${emp.name}-${ci}`
                   const hovered = hoverCell === cellKey
@@ -762,16 +776,18 @@ export function ClassicGrid({
                   return (
 	                    <div
 	                      key={ci}
-	                      className={editMode ? 'smengo-schedule-edit-cell' : undefined}
+	                      className={editMode ? 'smengo-schedule-cell smengo-schedule-edit-cell' : 'smengo-schedule-cell'}
 	                      onMouseEnter={() => setHoverCell(cellKey)}
                       onMouseLeave={() => setHoverCell((h) => (h === cellKey ? null : h))}
                       onClick={(e) => {
                         if (!editMode) return
                         const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                        const scrollX = typeof window === 'undefined' ? 0 : window.scrollX
+                        const scrollY = typeof window === 'undefined' ? 0 : window.scrollY
                         setEditCell({
                           name: emp.name, day: ci,
-                          px: r.left + r.width / 2,
-                          py: r.bottom + 6,
+                          px: r.left + r.width / 2 + scrollX,
+                          py: r.bottom + 6 + scrollY,
                         })
                       }}
                       style={{
@@ -799,13 +815,6 @@ export function ClassicGrid({
 	                        transition: 'background 0.12s',
 	                        animation: isOptimizedCell ? 'smengo-ai-cell-pop 760ms cubic-bezier(.22,1,.36,1)' : 'none',
 	                      }}
-                      title={mode === 'extended' && s === 'W' ? ''
-                        : s === 'V' ? labels.shifts.vacation
-                        : s === 'S' ? labels.shifts.sick
-                        : s === 'D' ? labels.shifts.dayoff
-                        : s === 'U' ? labels.shifts.unfilled
-                        : s === 'W' ? labels.shifts[emp.shift]
-                        : ''}
                     >
                       {mode === 'extended' ? (() => {
                         const cardWidth = mergedLeft ? `calc(100% + ${2 * cellPad}px)` : '100%'
@@ -818,11 +827,12 @@ export function ClassicGrid({
                           borderBottomRightRadius: mergedRight ? 0 : cardRadius,
                         }
 
-                        if (s === 'W') {
-                          const ShiftIcon = emp.shift === 'night' ? Moon : Sun
-                          const [shiftStart, shiftEnd] = fullWindowParts(wm.window)
-                          return (
-                            <span
+	                        if (s === 'W') {
+	                          const ShiftIcon = emp.shift === 'night' ? Moon : Sun
+	                          const [shiftStart, shiftEnd] = fullWindowParts(wm.window)
+	                          return (
+	                            <span
+	                              className="smengo-schedule-chip"
                               style={{
                                 position: 'relative',
                                 width: cardWidth,
@@ -877,7 +887,8 @@ export function ClassicGrid({
 
                         if (s === 'D') {
                           return (
-                            <span
+	                            <span
+	                              className="smengo-schedule-chip"
                               style={{
                                 width: cardWidth,
                                 alignSelf: 'stretch',
@@ -903,14 +914,14 @@ export function ClassicGrid({
                         if (vis) {
                           const statusCode = s as Exclude<Status, 'W' | '-'>
                           const isUncovered = s === 'U'
-                          if (s === 'V' || s === 'S') {
-                            const StatusIcon = s === 'S' ? Thermometer : vis.Icon
-                            const label = s === 'S' ? labels.shifts.sick : labels.shifts.vacation
-                            return (
-                              <span
-                                style={{
-                                  position: 'relative',
-                                  width: cardWidth,
+	                          if (s === 'V' || s === 'S') {
+	                            const StatusIcon = s === 'S' ? Thermometer : vis.Icon
+	                            return (
+	                              <span
+	                                className="smengo-schedule-chip smengo-leave-chip"
+	                                style={{
+	                                  position: 'relative',
+	                                  width: cardWidth,
                                   alignSelf: 'stretch',
                                   marginLeft: cardMarginLeft,
                                   background: STATUS_VIS[statusCode].bg,
@@ -935,24 +946,27 @@ export function ClassicGrid({
                                       style={{
                                         color: '#fff',
                                         fontSize: 15,
-                                        fontWeight: 750,
-                                        lineHeight: 1.05,
-                                        textAlign: 'center',
-                                        whiteSpace: 'normal',
-                                        overflowWrap: 'anywhere',
-                                        transform: 'translateY(10px)',
-                                      }}
-                                    >
-                                      {label}
-                                    </span>
-                                  </>
-                                )}
+	                                        fontWeight: 750,
+	                                        lineHeight: 1.05,
+	                                        textAlign: 'center',
+	                                        minWidth: 0,
+	                                        maxWidth: '100%',
+	                                        overflow: 'hidden',
+	                                        whiteSpace: 'nowrap',
+	                                        transform: 'translateY(10px)',
+	                                      }}
+	                                    >
+	                                      <ScheduleLeaveLabelText code={s} labels={labels} />
+	                                    </span>
+	                                  </>
+	                                )}
                               </span>
                             )
                           }
 
                           return (
                             <span
+	                              className="smengo-schedule-chip"
                               style={{
                                 width: cardWidth,
                                 alignSelf: 'stretch',
@@ -984,9 +998,10 @@ export function ClassicGrid({
 
                         return null
                       })() : (
-                        <>
-                          {vis && (
-                            <span
+	                        <>
+	                          {vis && (
+	                            <span
+	                              className={`smengo-schedule-chip${isDefaultMergedLeaveStatus(s) ? ' smengo-leave-chip' : ''}`}
                               style={{
                                 width: mergedLeft ? `calc(100% + ${2 * cellPad}px)` : '100%',
                                 alignSelf: 'stretch',
@@ -1010,15 +1025,9 @@ export function ClassicGrid({
                               {!mergedLeft && <vis.Icon size={iconSize} strokeWidth={2.2} />}
                               {showTimes && !mergedLeft && (
                                 <span style={{ fontSize: timeSize, fontWeight: 600, lineHeight: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', maxWidth: '100%' }}>
-                                  {mode !== 'compact'
-                                    ? (s === 'V' ? labels.shifts.vacation
-                                      : s === 'S' ? labels.shifts.sick
-                                      : s === 'D' ? labels.shifts.dayoff
-                                      : labels.shifts.unfilled)
-                                    : (s === 'V' ? labels.statusVac
-                                      : s === 'S' ? labels.statusSick
-                                      : s === 'D' ? labels.statusOff
-                                      : labels.statusUncovered)}
+	                                  {isDefaultMergedLeaveStatus(s) ? <ScheduleLeaveLabelText code={s} labels={labels} /> : (mode !== 'compact'
+	                                    ? (s === 'D' ? labels.shifts.dayoff : labels.shifts.unfilled)
+	                                    : (s === 'D' ? labels.statusOff : labels.statusUncovered))}
                                 </span>
                               )}
                             </span>
@@ -1052,23 +1061,23 @@ export function ClassicGrid({
       </div>
 
       {/* Cell-edit popover */}
-      {activeTab === 'schedule' && editCell && (
+      {activeTab === 'schedule' && editCell && typeof document !== 'undefined' && createPortal(
         <div
           ref={editCellRef}
-          className="fixed z-[9999] rounded-lg border border-border shadow-xl"
-          style={{
-            background: 'var(--surface)',
-            padding: 6,
-            top: editCell.py,
-            left: editCell.px,
-            transform: 'translateX(-50%)',
-            animation: 'smengo-popover-pop 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
-          }}
+          className="absolute z-[9999]"
+          style={{ top: editCell.py, left: editCell.px, transform: 'translateX(-50%)' }}
         >
-          <div className="mb-1 text-center text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            {displayNameForKey(editCell.name)}
+          <div className="smengo-pop p-2" style={{ ['--pop-origin' as string]: 'top center' }}>
+          <div className="mb-1.5 flex items-center justify-center gap-2 px-1 text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <span className="max-w-[160px] truncate">{displayNameForKey(editCell.name)}</span>
+            <span
+              className="rounded-md px-1.5 py-0.5 text-[10px] font-bold tabular-nums"
+              style={{ background: 'var(--grid-pill-bg)', color: 'var(--foreground)' }}
+            >
+              {editCell.day + 1}
+            </span>
           </div>
-          <div className="flex gap-1">
+          <div className="flex gap-1.5">
             {STATUS_OPTIONS.map((s) => {
               const isEmpty = s === '-'
               const isWork = s === 'W'
@@ -1091,7 +1100,7 @@ export function ClassicGrid({
                   }}
                   className="cursor-pointer transition-transform hover:scale-105"
                   style={{
-                    width: 40, height: 30, border: 0, borderRadius: 5,
+                    width: 42, height: 32, border: 0, borderRadius: 8,
                     background: isEmpty
                       ? 'var(--muted)'
                       : isWork
@@ -1100,7 +1109,7 @@ export function ClassicGrid({
                     color: isEmpty
                       ? 'var(--muted-foreground)'
                       : '#fff',
-                    fontSize: 10, fontWeight: 600,
+                    fontSize: 10, fontWeight: 650,
                   }}
                 >
                   {lbl}
@@ -1108,7 +1117,9 @@ export function ClassicGrid({
               )
             })}
           </div>
-        </div>
+          </div>
+        </div>,
+        document.body,
       )}
     </div>
   )

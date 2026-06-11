@@ -1,19 +1,18 @@
 'use client'
 
-import { useEffect, useRef, useState, type ComponentType } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type ComponentType } from 'react'
 import { createPortal } from 'react-dom'
 import {
   Settings2, Pencil, X, Check, ChevronDown, RotateCcw,
   Sun, Sunset, Moon, TreePalm, Thermometer, AlertCircle, AlertTriangle,
-  Palette, Sparkles, LayoutGrid, List, ShieldCheck, Briefcase, Globe2, Clock3,
+  Palette, Sparkles, LayoutGrid, List, Briefcase, Globe2, Clock3,
   CalendarDays, Send, Mail, Phone, LockKeyhole, Copy,
 } from 'lucide-react'
 import { CalendarDots, UsersThree } from '@phosphor-icons/react'
 import {
   RolePickerModal, AddSectionModal,
-  ROLE_COLORS, DEPARTMENT_ROLE_KEYS, type CustomSection, type RoleOrSectionKey,
+  ROLE_COLORS, DEPARTMENT_ROLE_KEYS, SOLID_COLORS, type CustomSection, type RoleOrSectionKey,
 } from './grid-shared'
-import { ClassicGrid } from './classic-grid'
 import avatarMan14 from '../../Avatars_demo/man (14).jpeg'
 import avatarMan4Alt from '../../Avatars_demo/man (4).jpeg'
 import avatarMan1 from '../../Avatars_demo/man 1.jpeg'
@@ -59,8 +58,9 @@ export type EmployeeNameKey =
   | 'leraTarasova'
 export type ShiftKey = 'morning' | 'evening' | 'night' | 'dayoff' | 'vacation' | 'sick' | 'unfilled'
 
-// Day index that highlights a coverage gap (Wed, day 14)
-export const PROBLEM_DAY_IDX = 13
+const DEMO_MONTH_COUNT = 5
+// The two employees whose shifts stay unassigned until the AI run closes them.
+export const UNCOVERED_EMPLOYEES: readonly string[] = ['Daria Kos', 'Alex Novikov']
 
 export type GridPreviewLabels = {
   modeDetail: string
@@ -150,6 +150,28 @@ export type GridPreviewLabels = {
   chromeOffToday: string
   chromeToday: string
   themeLabel: string
+  iconColorsLabel: string
+  iconColorLabel: string
+  textColorLabel: string
+  customByThemeLabel: string
+  siteThemeLight: string
+  siteThemeDark: string
+  badgesLabel: string
+  badgeAddLabel: string
+  badgePlaceholder: string
+  badgeRegister: string
+  badgeHall: string
+  badgeDelivery: string
+  badgeVip: string
+  badgeTraining: string
+  customPhraseLabel: string
+  customSectors2: string
+  customSectors3: string
+  customAnyPhrase: string
+  customPhraseN: string
+  customEmojiLabel: string
+  customLogoLabel: string
+  favoriteBtn: string
   themeStandard: string
   themeClassic: string
   classicTeams: string
@@ -232,10 +254,39 @@ export function monthDays(monthIdx: number): MonthDay[] {
   })
 }
 
+export function currentDemoMonthIdx(reference = new Date()): number | null {
+  if (reference.getFullYear() !== DEMO_YEAR) return null
+  const monthIdx = reference.getMonth() - DEMO_FIRST_MONTH
+  return monthIdx >= 0 && monthIdx < DEMO_MONTH_COUNT ? monthIdx : null
+}
+
+export function todayDayIndexForMonth(monthIdx: number, reference = new Date()): number | null {
+  if (currentDemoMonthIdx(reference) !== monthIdx) return null
+  return reference.getDate() - 1
+}
+
 export function scheduleOffsetForMonth(monthIdx: number): number {
   const month = DEMO_FIRST_MONTH + monthIdx
   const firstDowMon0 = (new Date(DEMO_YEAR, month, 1).getDay() + 6) % 7
   return ((firstDowMon0 - 3) % 14 + 14) % 14
+}
+
+// The demo's coverage gap must always land on a working weekday (the morning
+// crew is 5/2, weekends off), whatever month is on screen — so it follows the
+// calendar: the second Wednesday of the month.
+export function problemDayIdxForMonth(monthIdx: number): number {
+  const firstDowMon0 = (new Date(DEMO_YEAR, DEMO_FIRST_MONTH + monthIdx, 1).getDay() + 6) % 7
+  return ((2 - firstDowMon0 + 7) % 7) + 7
+}
+
+// 4-char patterns are continuous rotations (e.g. 'WWDD' = 2 on / 2 off).
+// Real rotas don't restart on the 1st, so the cycle is anchored to the season
+// start (March 1) and runs straight through month boundaries.
+export function rotationStatus(base: string, monthIdx: number, dayIdx: number): Status {
+  const monthStart = new Date(DEMO_YEAR, DEMO_FIRST_MONTH + monthIdx, 1)
+  const seasonStart = new Date(DEMO_YEAR, DEMO_FIRST_MONTH, 1)
+  const dayNumber = Math.round((monthStart.getTime() - seasonStart.getTime()) / 86_400_000) + dayIdx
+  return base[dayNumber % base.length] as Status
 }
 
 export type EmpDef = {
@@ -250,18 +301,23 @@ export type EmpDef = {
   shift: ShiftType
 }
 
-// Schedule strings are 14 chars. Index 13 (=day 14 Wed) is highlighted as a coverage gap.
+// Two pattern kinds: 14-char weekly schedules (5/2, aligned to real weekdays
+// via scheduleOffsetForMonth) and 4-char continuous rotations ('WWDD' = 2/2
+// night rota, phase-shifted per person so the night line is always covered).
+// The coverage gap of the demo lives on the month's second Wednesday (see
+// problemDayIdxForMonth), so it exists in every month and never falls on a
+// weekend.
 // Default team: sales (6), development (2), HR, sales lead, and project manager.
 export const BASE_EMPLOYEES: EmpDef[] = [
   { dept: 'sales',     name: 'Anna Petrov',     nameKey: 'annaPetrov',     tg: '@anna_p',   pIdx: 1, roleKey: 'salesDepartment',       specialty: 'sales',     s: 'WWDDWWWWWDDWWW', shift: 'morning' },
   { dept: 'sales',     name: 'Kate Volkova',    nameKey: 'kateVolkova',    tg: '@kate_v',   pIdx: 1, roleKey: 'salesDepartment',       specialty: 'sales',     s: 'WWDDWWWWWDDWWW', shift: 'morning' },
   { dept: 'sales',     name: 'Olga Romanenko',  nameKey: 'olgaRomanenko',  tg: '@olga_r',   pIdx: 1, roleKey: 'salesDepartment',       specialty: 'sales',     s: 'WWDDWWWWWDDWWW', shift: 'morning' },
-  { dept: 'sales',     name: 'Mark Sidorov',    nameKey: 'markSidorov',    tg: '@mark_s',   pIdx: 2, roleKey: 'salesDepartment',       specialty: 'retention', s: 'WWDDWWWWWDDSSW', shift: 'night' },
-  { dept: 'sales',     name: 'Ivan Melnikov',   nameKey: 'ivanMelnikov',   tg: '@ivan_m',   pIdx: 3, roleKey: 'salesDepartment',       specialty: 'retention', s: 'WWDDWWDDWWDDWW', shift: 'night' },
-  { dept: 'sales',     name: 'Pavel Yurov',     nameKey: 'pavelYurov',     tg: '@pavel_y',  pIdx: 6, roleKey: 'salesDepartment',       specialty: 'retention', s: 'WWDDWWWWWDDWWW', shift: 'night' },
+  { dept: 'sales',     name: 'Mark Sidorov',    nameKey: 'markSidorov',    tg: '@mark_s',   pIdx: 2, roleKey: 'salesDepartment',       specialty: 'retention', s: 'DDWW', shift: 'night' },
+  { dept: 'sales',     name: 'Ivan Melnikov',   nameKey: 'ivanMelnikov',   tg: '@ivan_m',   pIdx: 3, roleKey: 'salesDepartment',       specialty: 'retention', s: 'WWDD', shift: 'night' },
+  { dept: 'sales',     name: 'Pavel Yurov',     nameKey: 'pavelYurov',     tg: '@pavel_y',  pIdx: 6, roleKey: 'salesDepartment',       specialty: 'retention', s: 'DWWD', shift: 'night' },
   { dept: 'sales',     name: 'Roma Karpov',     nameKey: 'romaKarpov',     tg: '@roma_k',   pIdx: 5, roleKey: 'salesDepartment',       specialty: 'salesLead', s: 'WWDDWWWWWDDWWW', shift: 'morning' },
-  { dept: 'ops',       name: 'Daria Kos',       nameKey: 'dariaKos',       tg: '@daria_k',  pIdx: 1, roleKey: 'developmentDepartment', specialty: 'frontEnd',  s: 'WWDDWWWWWDDWWU', shift: 'morning' },
-  { dept: 'ops',       name: 'Alex Novikov',    nameKey: 'alexNovikov',    tg: '@alex_n',   pIdx: 2, roleKey: 'developmentDepartment', specialty: 'backEnd',   s: 'WWDDWWWWWDDWWU', shift: 'morning' },
+  { dept: 'ops',       name: 'Daria Kos',       nameKey: 'dariaKos',       tg: '@daria_k',  pIdx: 1, roleKey: 'developmentDepartment', specialty: 'frontEnd',  s: 'WWDDWWWWWDDWWW', shift: 'morning' },
+  { dept: 'ops',       name: 'Alex Novikov',    nameKey: 'alexNovikov',    tg: '@alex_n',   pIdx: 2, roleKey: 'developmentDepartment', specialty: 'backEnd',   s: 'WWDDWWWWWDDWWW', shift: 'morning' },
   { dept: 'ops',       name: 'Lera Tarasova',   nameKey: 'leraTarasova',   tg: '@lera_t',   pIdx: 4, roleKey: 'developmentDepartment', specialty: 'projectManager', s: 'WWDDWWWWWDDWWW', shift: 'morning' },
   { dept: 'support',   name: 'Yulia Lebed',     nameKey: 'yuliaLebed',     tg: '@yulia_l',  pIdx: 5, roleKey: 'hr',                    specialty: 'hr',        s: 'WWDDWWWWWDDWWW', shift: 'morning' },
 ]
@@ -421,35 +477,886 @@ function daysInCompany(joined: string, reference: Date): number {
   return Math.max(0, Math.round((today.getTime() - joinedAt.getTime()) / 86_400_000))
 }
 
-type ScheduleCellOverride = { name: string; day: number; status: Status }
-type AiOptimizedCell = ScheduleCellOverride
-type AiShiftMove = {
-  name: string
-  fromDay: number
-  toDay: number
-  fromStatus: Status
-  toStatus: Status
+
+type CustomCellSector = { text: string; emoji: string; logo: string; color: string; textColor: string }
+type CustomCellBody = {
+  mode: 'single' | 'split'
+  sectorCount: 1 | 2 | 3
+  sectors: CustomCellSector[]
+}
+type CustomCellConfig = CustomCellBody & {
+  themeMode?: 'single' | 'split'
+  themes?: Partial<Record<SiteTone, CustomCellBody>>
+}
+type SiteTone = 'light' | 'dark'
+type VisualCardColorKey = 'work' | 'vacation' | 'sick' | 'dayoff' | 'uncovered'
+type VisualCardColorValue = { icon: string; text: string }
+type VisualCardColorConfig = Record<VisualCardColorKey, VisualCardColorValue>
+type VisualCardColorThemes = Record<SiteTone, VisualCardColorConfig>
+
+const STATUS_OPTIONS: Exclude<Status, never>[] = ['W', 'V', 'S', 'D', '-']
+const CUSTOM_CELL_FAVORITES_KEY = 'smengo:demo:customCellFavorites'
+const CUSTOM_EMOJI_OPTIONS = ['', '⭐', '🔥', '☕', '🍕', '💬', '✅', '⚠️']
+const CUSTOM_LOGO_OPTIONS = ['', 'SM', 'HR', 'POS', 'CRM', 'VIP', 'OPS']
+const CUSTOM_COLOR_OPTIONS = [
+  { label: 'Чёрный', value: '#000000' },
+  { label: 'Графит', value: '#3f4247' },
+  { label: 'Серый 700', value: '#676a6e' },
+  { label: 'Серый 500', value: '#96999c' },
+  { label: 'Серый 400', value: '#b8babd' },
+  { label: 'Серый 300', value: '#cfcfd1' },
+  { label: 'Серый 200', value: '#dedfe1' },
+  { label: 'Серый 100', value: '#eff0f0' },
+  { label: 'Белый', value: '#f8f8f6' },
+  { label: 'Зелёный смены', value: '#19795f' },
+  { label: 'Фиолетовый смены', value: '#5a3aa4' },
+  { label: 'Красный', value: '#b50000' },
+  { label: 'Алый', value: '#ff1414' },
+  { label: 'Оранжевый', value: '#ff9b12' },
+  { label: 'Жёлтый', value: '#fff10a' },
+  { label: 'Лайм', value: '#00ed00' },
+  { label: 'Бирюза', value: '#1ad9d2' },
+  { label: 'Синий', value: '#4c86dd' },
+  { label: 'Синий яркий', value: '#0800f5' },
+  { label: 'Фиолетовый', value: '#8f00f4' },
+  { label: 'Фуксия', value: '#ea0ee7' },
+  { label: 'Розовый светлый', value: '#efb9ad' },
+  { label: 'Пудра', value: '#f5c9c2' },
+  { label: 'Персик светлый', value: '#f8dbb2' },
+  { label: 'Крем', value: '#fff0c7' },
+  { label: 'Мята светлая', value: '#d8efd2' },
+  { label: 'Лёд', value: '#d4e7e9' },
+  { label: 'Голубой светлый', value: '#c8dcf7' },
+  { label: 'Небо', value: '#c2dcec' },
+  { label: 'Лаванда светлая', value: '#d7cde3' },
+  { label: 'Роза светлая', value: '#e8cad9' },
+  { label: 'Коралловый', value: '#e37b66' },
+  { label: 'Розовый', value: '#ee8d8d' },
+  { label: 'Персик', value: '#fac58d' },
+  { label: 'Песочный', value: '#ffdf94' },
+  { label: 'Шалфей', value: '#acd09c' },
+  { label: 'Серо-бирюзовый', value: '#9cc5c8' },
+  { label: 'Голубой', value: '#9dbdea' },
+  { label: 'Голубой 2', value: '#91bedf' },
+  { label: 'Сирень', value: '#aa9bcf' },
+  { label: 'Пыльная роза', value: '#d1a0b9' },
+  { label: 'Терракота', value: '#dc4524' },
+  { label: 'Лосось', value: '#e66364' },
+  { label: 'Абрикос', value: '#f5ad60' },
+  { label: 'Золотистый', value: '#ffd160' },
+  { label: 'Зелёный мягкий', value: '#87bd75' },
+  { label: 'Морская волна', value: '#75a9b3' },
+  { label: 'Синий мягкий', value: '#6fa1e5' },
+  { label: 'Лазурный', value: '#65a5dc' },
+  { label: 'Пурпурный', value: '#8876bb' },
+  { label: 'Мальва', value: '#c47ca7' },
+  { label: 'Кирпичный', value: '#bd210c' },
+  { label: 'Красный тёмный', value: '#dc0000' },
+  { label: 'Мандарин', value: '#ec8b27' },
+  { label: 'Горчица', value: '#f4bd2b' },
+  { label: 'Трава', value: '#5ca147' },
+  { label: 'Петроль', value: '#3c8793' },
+  { label: 'Синий насыщенный', value: '#397bd6' },
+  { label: 'Синяя сталь', value: '#327dbd' },
+  { label: 'Индиго', value: '#6849a2' },
+  { label: 'Ягодный', value: '#ad4779' },
+  { label: 'Коричневый красный', value: '#97250e' },
+  { label: 'Бордовый', value: '#b00000' },
+  { label: 'Охра', value: '#bd6500' },
+  { label: 'Жёлто-коричневый', value: '#d29b00' },
+  { label: 'Золото смены', value: '#6d5724' },
+  { label: 'Зелёный тёмный', value: '#2f7b20' },
+  { label: 'Бирюза тёмная', value: '#155b68' },
+  { label: 'Синий смены', value: '#2f5f9f' },
+  { label: 'Синий глубокий', value: '#1d5dcc' },
+  { label: 'Синий морской', value: '#0b5a9a' },
+  { label: 'Бордо смены', value: '#743944' },
+  { label: 'Фиолетовый тёмный', value: '#3d2275' },
+  { label: 'Винный', value: '#7d1d4b' },
+  { label: 'Марсала', value: '#6d1606' },
+  { label: 'Гранат', value: '#740000' },
+  { label: 'Кофе', value: '#864500' },
+  { label: 'Золото тёмное', value: '#9b7500' },
+  { label: 'Лес', value: '#1e5514' },
+  { label: 'Нефть', value: '#0d3d45' },
+  { label: 'Ночное синее', value: '#244b91' },
+  { label: 'Полночь', value: '#06395e' },
+  { label: 'Графит смены', value: '#27303c' },
+  { label: 'Черника', value: '#28145a' },
+  { label: 'Слива', value: '#4b0d33' },
+]
+const DEFAULT_CUSTOM_COLOR = '#19795f'
+const DEFAULT_CUSTOM_TEXT_COLOR = '#ffffff'
+const DEFAULT_CUSTOM_SECTOR_COLORS = ['#19795f', '#5a3aa4', '#743944']
+const DEFAULT_CUSTOM_SECTOR_TEXT_COLORS = ['#ffffff', '#ffffff', '#ffffff']
+const VISUAL_ICON_COLORS_KEY = 'smengo:demo:visualIconColors'
+const DEFAULT_VISUAL_ICON_COLORS: VisualCardColorThemes = {
+  light: {
+    work: { icon: '#ffffff', text: '#ffffff' },
+    vacation: { icon: '#ffffff', text: '#ffffff' },
+    sick: { icon: '#ffffff', text: '#ffffff' },
+    dayoff: { icon: '#7a8290', text: '#7a8290' },
+    uncovered: { icon: '#d97757', text: '#d97757' },
+  },
+  dark: {
+    work: { icon: '#ffffff', text: '#e4e4e7' },
+    vacation: { icon: '#fcd34d', text: '#ffffff' },
+    sick: { icon: '#fca5a5', text: '#ffffff' },
+    dayoff: { icon: '#94a3b8', text: '#94a3b8' },
+    uncovered: { icon: '#fb7c64', text: '#fb7c64' },
+  },
 }
 
-const STATUS_OPTIONS: Exclude<Status, never>[] = ['W', 'V', 'S', 'D', 'U', '-']
-const AI_SHIFT_MOVES: AiShiftMove[] = [
-  { name: 'Ivan Melnikov', fromDay: 8, toDay: 6, fromStatus: 'W', toStatus: 'W' },
-  { name: 'Ivan Melnikov', fromDay: 9, toDay: 7, fromStatus: 'D', toStatus: 'W' },
-  { name: 'Ivan Melnikov', fromDay: 22, toDay: 21, fromStatus: 'W', toStatus: 'W' },
-  { name: 'Ivan Melnikov', fromDay: 23, toDay: 22, fromStatus: 'D', toStatus: 'W' },
-]
-const AI_OPTIMIZED_CELLS: AiOptimizedCell[] = [
-  ...AI_SHIFT_MOVES.flatMap(({ name, fromDay, toDay, fromStatus, toStatus }) => [
-    { name, day: fromDay, status: fromStatus },
-    { name, day: toDay, status: toStatus },
-  ]),
-  { name: 'Ivan Melnikov', day: 11, status: 'W' },
-  { name: 'Ivan Melnikov', day: 20, status: 'W' },
-  { name: 'Ivan Melnikov', day: 25, status: 'W' },
-  { name: 'Daria Kos', day: PROBLEM_DAY_IDX, status: 'W' },
-  { name: 'Alex Novikov', day: PROBLEM_DAY_IDX, status: 'W' },
-  { name: 'Alex Novikov', day: 4, status: 'W' },
-]
+function detectSiteTone(): SiteTone {
+  if (typeof document === 'undefined') return 'light'
+  return document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+}
+
+function normalizeVisualCardThemeConfig(tone: SiteTone, value?: Partial<Record<VisualCardColorKey, string | Partial<VisualCardColorValue>>>): VisualCardColorConfig {
+  const defaults = DEFAULT_VISUAL_ICON_COLORS[tone]
+  return (Object.keys(defaults) as VisualCardColorKey[]).reduce<VisualCardColorConfig>((acc, key) => {
+    const incoming = value?.[key]
+    acc[key] = typeof incoming === 'string'
+      ? { ...defaults[key], icon: incoming }
+      : { ...defaults[key], ...(incoming ?? {}) }
+    return acc
+  }, {} as VisualCardColorConfig)
+}
+
+function normalizeVisualIconColors(value: unknown): VisualCardColorThemes {
+  const parsed = value as Partial<Record<SiteTone, Partial<Record<VisualCardColorKey, string | Partial<VisualCardColorValue>>>>> | null
+  return {
+    light: normalizeVisualCardThemeConfig('light', parsed?.light),
+    dark: normalizeVisualCardThemeConfig('dark', parsed?.dark),
+  }
+}
+
+function defaultCustomSector(index: number, text = index === 0 ? 'Кастом' : `Блок ${index + 1}`): CustomCellSector {
+  return {
+    text,
+    emoji: '',
+    logo: '',
+    color: DEFAULT_CUSTOM_SECTOR_COLORS[index] ?? DEFAULT_CUSTOM_COLOR,
+    textColor: DEFAULT_CUSTOM_SECTOR_TEXT_COLORS[index] ?? DEFAULT_CUSTOM_TEXT_COLOR,
+  }
+}
+
+function makeDefaultCustomCell(): CustomCellConfig {
+  return {
+    mode: 'single',
+    sectorCount: 1,
+    sectors: [defaultCustomSector(0)],
+    themeMode: 'single',
+  }
+}
+
+function normalizeCustomCellBody(config?: Partial<CustomCellBody>): CustomCellBody {
+  const count = config?.mode === 'single' ? 1 : (config?.sectorCount === 3 ? 3 : config?.sectorCount === 2 ? 2 : 1)
+  const sectors = Array.from({ length: count }, (_, i) => {
+    const fallbackColor = DEFAULT_CUSTOM_SECTOR_COLORS[i] ?? DEFAULT_CUSTOM_COLOR
+    const fallbackTextColor = DEFAULT_CUSTOM_SECTOR_TEXT_COLORS[i] ?? DEFAULT_CUSTOM_TEXT_COLOR
+    const sector = config?.sectors?.[i] ?? defaultCustomSector(i, '')
+    return {
+      text: sector.text.trim() || (count === 1 ? 'Кастом' : `Блок ${i + 1}`),
+      emoji: sector.emoji,
+      logo: sector.logo,
+      color: sector.color || fallbackColor,
+      textColor: sector.textColor || fallbackTextColor,
+    }
+  })
+  return { mode: count === 1 ? 'single' : 'split', sectorCount: count as 1 | 2 | 3, sectors }
+}
+
+function normalizeCustomCellConfig(config: CustomCellConfig): CustomCellConfig {
+  const base = normalizeCustomCellBody(config)
+  if (config.themeMode === 'split') {
+    return {
+      ...base,
+      themeMode: 'split',
+      themes: {
+        light: normalizeCustomCellBody(config.themes?.light ?? base),
+        dark: normalizeCustomCellBody(config.themes?.dark ?? base),
+      },
+    }
+  }
+  return { ...base, themeMode: 'single' }
+}
+
+function customCellBodyForTone(config: CustomCellConfig, tone: SiteTone): CustomCellBody {
+  const normalized = normalizeCustomCellConfig(config)
+  if (normalized.themeMode === 'split') return normalized.themes?.[tone] ?? normalized
+  return normalized
+}
+
+function resizeCustomCellBody(config: Partial<CustomCellBody>, count: 1 | 2 | 3): CustomCellBody {
+  const normalized = normalizeCustomCellBody(config)
+  const sectors = Array.from({ length: count }, (_, i) => normalized.sectors[i] ?? {
+    text: `Блок ${i + 1}`,
+    emoji: '',
+    logo: '',
+    color: DEFAULT_CUSTOM_SECTOR_COLORS[i] ?? DEFAULT_CUSTOM_COLOR,
+    textColor: DEFAULT_CUSTOM_SECTOR_TEXT_COLORS[i] ?? DEFAULT_CUSTOM_TEXT_COLOR,
+  })
+  return { mode: count === 1 ? 'single' : 'split', sectorCount: count, sectors }
+}
+
+function customCellSummary(config: CustomCellConfig): string {
+  const body = customCellBodyForTone(config, 'light')
+  return body.sectors.map((sector) => `${sector.emoji}${sector.logo ? `${sector.emoji ? ' ' : ''}${sector.logo}` : ''}${sector.text ? `${sector.emoji || sector.logo ? ' ' : ''}${sector.text}` : ''}`.trim()).join(' / ')
+}
+
+function readableColorForHex(hex: string): '#111827' | '#ffffff' {
+  const normalized = hex.replace('#', '')
+  if (normalized.length !== 6) return '#ffffff'
+  const red = Number.parseInt(normalized.slice(0, 2), 16)
+  const green = Number.parseInt(normalized.slice(2, 4), 16)
+  const blue = Number.parseInt(normalized.slice(4, 6), 16)
+  const luminance = (red * 299 + green * 587 + blue * 114) / 1000
+  return luminance > 170 ? '#111827' : '#ffffff'
+}
+
+function CustomScheduleChip({
+  config,
+  tone = 'light',
+  compact = false,
+  minHeight = 34,
+}: {
+  config: CustomCellConfig
+  tone?: SiteTone
+  compact?: boolean
+  minHeight?: number
+}) {
+  const normalized = customCellBodyForTone(config, tone)
+  const isSplit = normalized.mode === 'split'
+  return (
+    <div
+      className="smengo-schedule-chip"
+      style={{
+        width: 'calc(100% - 4px)',
+        maxWidth: '100%',
+        minHeight,
+        margin: '0 auto',
+        boxSizing: 'border-box',
+        display: 'grid',
+        gridTemplateRows: isSplit ? `repeat(${normalized.sectorCount}, minmax(0, 1fr))` : '1fr',
+        overflow: 'hidden',
+        borderRadius: compact ? 4 : 8,
+        background: normalized.sectors[0]?.color ?? DEFAULT_CUSTOM_COLOR,
+        color: normalized.sectors[0]?.textColor ?? DEFAULT_CUSTOM_TEXT_COLOR,
+        boxShadow: '0 1px 2px rgba(0,0,0,0.12)',
+      }}
+    >
+      {normalized.sectors.map((sector, index) => (
+        <div
+          key={`${sector.text}-${index}`}
+          style={{
+            minWidth: 0,
+            minHeight: 0,
+            display: 'flex',
+            flexDirection: isSplit ? 'row' : 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: compact ? 2 : 4,
+            padding: compact ? '1px 2px' : (isSplit ? '2px 4px' : '5px 4px'),
+            borderTop: index > 0 ? '1px solid rgba(255,255,255,0.2)' : 'none',
+            background: sector.color,
+            color: sector.textColor,
+            textAlign: 'center',
+          }}
+        >
+          {(sector.emoji || sector.logo) && (
+            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 3, fontSize: compact ? 8 : 10, lineHeight: 1 }}>
+              {sector.emoji && <span>{sector.emoji}</span>}
+              {sector.logo && (
+                <span style={{ borderRadius: 999, background: 'rgba(255,255,255,0.16)', color: sector.textColor, padding: '1px 4px', fontSize: compact ? 6.5 : 8, fontWeight: 700, letterSpacing: 0.02 }}>
+                  {sector.logo}
+                </span>
+              )}
+            </span>
+          )}
+          <span
+            style={{
+              maxWidth: '100%',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              color: sector.textColor,
+              fontSize: compact ? 8.2 : 11,
+              fontWeight: 650,
+              lineHeight: 1.05,
+            }}
+          >
+            {sector.text}
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function CustomChoiceDropdown({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string
+  value: string
+  options: string[]
+  onChange: (value: string) => void
+}) {
+  return (
+    <details style={{ position: 'relative' }}>
+      <summary
+        style={{
+          listStyle: 'none',
+          cursor: 'pointer',
+          userSelect: 'none',
+          minWidth: 42,
+          borderRadius: 6,
+          border: '1px solid var(--border)',
+          background: 'var(--grid-pill-bg)',
+          color: value ? 'var(--foreground)' : 'var(--muted-foreground)',
+          padding: '5px 7px',
+          fontSize: 10,
+          fontWeight: 650,
+          textAlign: 'center',
+        }}
+      >
+        {value || label}
+      </summary>
+      <div
+        style={{
+          position: 'absolute',
+          top: 'calc(100% + 4px)',
+          left: 0,
+          zIndex: 10,
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+          gap: 4,
+          minWidth: 150,
+          padding: 6,
+          borderRadius: 8,
+          border: '1px solid var(--border)',
+          background: 'var(--surface)',
+          boxShadow: '0 14px 28px rgba(0,0,0,0.25)',
+        }}
+      >
+        {options.map((option) => (
+          <button
+            key={option || 'none'}
+            type="button"
+            onClick={() => onChange(option)}
+            style={{
+              height: 28,
+              border: 0,
+              borderRadius: 6,
+              cursor: 'pointer',
+              background: option === value ? 'var(--accent)' : 'var(--grid-pill-bg)',
+              color: option === value ? '#fff' : 'var(--foreground)',
+              fontSize: option ? 11 : 10,
+              fontWeight: 650,
+            }}
+          >
+            {option || '—'}
+          </button>
+        ))}
+      </div>
+    </details>
+  )
+}
+
+function CustomColorDropdown({
+  value,
+  onChange,
+  title,
+  align = 'right',
+}: {
+  value: string
+  onChange: (value: string) => void
+  title?: string
+  align?: 'left' | 'right'
+}) {
+  const selected = CUSTOM_COLOR_OPTIONS.find((option) => option.value === value) ?? { label: 'Цвет', value }
+  const checkColor = readableColorForHex(selected.value)
+  return (
+    <details style={{ position: 'relative' }}>
+      <summary
+        title={title ? `${title}: ${selected.label}` : selected.label}
+        style={{
+          listStyle: 'none',
+          cursor: 'pointer',
+          userSelect: 'none',
+          width: 32,
+          height: 32,
+          borderRadius: 7,
+          border: '1px solid var(--border)',
+          background: 'var(--grid-pill-bg)',
+          padding: 4,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <span
+          aria-hidden="true"
+          style={{
+            width: 21,
+            height: 21,
+            borderRadius: '50%',
+            background: selected.value,
+            boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.18)',
+          }}
+        />
+      </summary>
+      <div
+        style={{
+          position: 'absolute',
+          top: 'calc(100% + 4px)',
+          right: align === 'right' ? 0 : 'auto',
+          left: align === 'left' ? 0 : 'auto',
+          zIndex: 10,
+          display: 'grid',
+          gridTemplateColumns: 'repeat(10, 24px)',
+          gap: 6,
+          width: 324,
+          maxWidth: 'calc(100vw - 32px)',
+          padding: 9,
+          borderRadius: 10,
+          border: '1px solid var(--border)',
+          background: 'var(--surface)',
+          boxShadow: '0 14px 28px rgba(0,0,0,0.25)',
+        }}
+      >
+        {CUSTOM_COLOR_OPTIONS.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            title={option.label}
+            onClick={() => onChange(option.value)}
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: '50%',
+              cursor: 'pointer',
+              border: '1px solid rgba(0,0,0,0.16)',
+              background: option.value,
+              boxShadow: option.value === value ? '0 0 0 2px var(--surface), 0 0 0 4px color-mix(in oklab, var(--accent) 70%, #fff)' : 'none',
+              color: readableColorForHex(option.value),
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 0,
+            }}
+          >
+            {option.value === value && <Check size={16} strokeWidth={3} color={checkColor} />}
+          </button>
+        ))}
+      </div>
+    </details>
+  )
+}
+
+function VisualIconSettings({
+  labels,
+  tone,
+  colors,
+  onColorChange,
+}: {
+  labels: GridPreviewLabels
+  tone: SiteTone
+  colors: VisualCardColorConfig
+  onColorChange: (key: VisualCardColorKey, slot: keyof VisualCardColorValue, value: string) => void
+}) {
+  const items: Array<{ key: VisualCardColorKey; label: string; Icon: ComponentType<{ size?: number; strokeWidth?: number; color?: string }> }> = [
+    { key: 'work', label: labels.statusWork, Icon: Sun },
+    { key: 'vacation', label: labels.statusVac, Icon: TreePalm },
+    { key: 'sick', label: labels.statusSick, Icon: Thermometer },
+    { key: 'dayoff', label: labels.statusOff, Icon: CalendarDays },
+    { key: 'uncovered', label: labels.statusUncovered, Icon: AlertCircle },
+  ]
+  return (
+    <div
+      className="smengo-pop absolute right-0 z-30 mt-2 p-2.5 text-[13px] max-sm:right-auto max-sm:left-1/2 max-sm:-translate-x-1/2"
+      style={{ width: 390, maxWidth: 'calc(100vw - 28px)' }}
+    >
+      <div className="mb-2 flex items-center justify-between gap-3 px-1 pt-1">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          {labels.themeLabel}
+        </span>
+        <span className="rounded-full border border-border px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+          {tone === 'dark' ? labels.siteThemeDark : labels.siteThemeLight}
+        </span>
+      </div>
+      <div className="mb-2 px-1 text-[12px] font-semibold text-foreground">
+        {labels.iconColorsLabel}
+      </div>
+      <div style={{ display: 'grid', gap: 7 }}>
+        {items.map(({ key, label, Icon }) => {
+          const color = colors[key]
+          return (
+            <div
+              key={key}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '26px minmax(0, 1fr) auto auto',
+                alignItems: 'center',
+                gap: 8,
+                padding: '7px 8px',
+                borderRadius: 9,
+                background: 'var(--grid-pill-bg)',
+              }}
+            >
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 26,
+                  height: 26,
+                  borderRadius: 8,
+                  background: 'color-mix(in oklab, var(--muted) 45%, transparent)',
+                }}
+              >
+                <Icon size={15} strokeWidth={2.4} color={color.icon} />
+              </span>
+              <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: color.text, fontWeight: 650 }}>
+                {label}
+              </span>
+              <CustomColorDropdown
+                value={color.icon}
+                title={labels.iconColorLabel}
+                onChange={(next) => onColorChange(key, 'icon', next)}
+              />
+              <CustomColorDropdown
+                value={color.text}
+                title={labels.textColorLabel}
+                onChange={(next) => onColorChange(key, 'text', next)}
+              />
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function CustomCellBodyEditor({
+  body,
+  labels,
+  onChange,
+}: {
+  body: CustomCellBody
+  labels: GridPreviewLabels
+  onChange: (next: CustomCellBody) => void
+}) {
+  const normalized = normalizeCustomCellBody(body)
+  const updateSector = (index: number, patch: Partial<CustomCellSector>) => {
+    onChange({
+      ...normalized,
+      sectors: normalized.sectors.map((sector, i) => i === index ? { ...sector, ...patch } : sector),
+    })
+  }
+
+  return (
+    <div style={{ display: 'grid', gap: 8 }}>
+      <div
+        style={{
+          display: 'flex',
+          gap: 3,
+          padding: 3,
+          borderRadius: 11,
+          background: 'var(--grid-pill-bg)',
+          border: '1px solid var(--border)',
+        }}
+      >
+        {[
+          { label: labels.customPhraseLabel, count: 1 as const },
+          { label: labels.customSectors2, count: 2 as const },
+          { label: labels.customSectors3, count: 3 as const },
+        ].map((item) => {
+          const active = normalized.sectorCount === item.count
+          return (
+            <button
+              key={item.count}
+              type="button"
+              onClick={() => onChange(resizeCustomCellBody(normalized, item.count))}
+              style={{
+                flex: 1,
+                border: 0,
+                borderRadius: 8,
+                background: active ? 'var(--surface)' : 'transparent',
+                color: active ? 'var(--foreground)' : 'var(--muted-foreground)',
+                padding: '7px 8px',
+                cursor: 'pointer',
+                fontSize: 11,
+                fontWeight: 700,
+                boxShadow: active ? '0 1px 3px rgba(0,0,0,0.16), inset 0 0 0 1px var(--border)' : 'none',
+                transition: 'background 140ms ease, color 140ms ease, box-shadow 140ms ease',
+              }}
+            >
+              {item.label}
+            </button>
+          )
+        })}
+      </div>
+      <div style={{ display: 'grid', gap: 7 }}>
+        {normalized.sectors.map((sector, index) => (
+          <div
+            key={index}
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'minmax(128px, 1fr) auto auto auto auto',
+              gap: 6,
+              alignItems: 'center',
+            }}
+          >
+            <input
+              value={sector.text}
+              onChange={(e) => updateSector(index, { text: e.currentTarget.value })}
+              placeholder={normalized.sectorCount === 1 ? labels.customAnyPhrase : fillTemplate(labels.customPhraseN, index + 1)}
+              className="smengo-custom-input"
+              style={{
+                minWidth: 0,
+                height: 34,
+                borderRadius: 9,
+                border: '1px solid var(--border)',
+                background: 'var(--grid-cell)',
+                color: 'var(--foreground)',
+                padding: '0 11px',
+                fontSize: 12,
+                fontWeight: 550,
+                outline: 'none',
+              }}
+            />
+            <CustomChoiceDropdown label={labels.customEmojiLabel} value={sector.emoji} options={CUSTOM_EMOJI_OPTIONS} onChange={(value) => updateSector(index, { emoji: value })} />
+            <CustomChoiceDropdown label={labels.customLogoLabel} value={sector.logo} options={CUSTOM_LOGO_OPTIONS} onChange={(value) => updateSector(index, { logo: value })} />
+            <CustomColorDropdown value={sector.color} title={labels.colorLabel} onChange={(value) => updateSector(index, { color: value })} />
+            <CustomColorDropdown value={sector.textColor} title={labels.textColorLabel} onChange={(value) => updateSector(index, { textColor: value })} />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function CustomCellPreview({
+  config,
+  tone,
+  label,
+}: {
+  config: CustomCellConfig
+  tone: SiteTone
+  label: string
+}) {
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gap: 7,
+        alignContent: 'start',
+        justifyItems: 'center',
+        padding: '9px 8px',
+        borderRadius: 10,
+        border: '1px solid var(--border)',
+        background: 'color-mix(in oklab, var(--grid-pill-bg) 76%, transparent)',
+      }}
+    >
+      <span
+        style={{
+          color: 'var(--muted-foreground)',
+          fontSize: 10,
+          fontWeight: 750,
+          lineHeight: 1,
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+        }}
+      >
+        {label}
+      </span>
+      <div style={{ width: 104, height: 58, display: 'grid', alignItems: 'center' }}>
+        <CustomScheduleChip config={config} tone={tone} minHeight={52} />
+      </div>
+    </div>
+  )
+}
+
+function CustomCellEditor({
+  draft,
+  setDraft,
+  labels,
+  siteTone,
+  onSave,
+  onFavorite,
+}: {
+  draft: CustomCellConfig
+  setDraft: (next: CustomCellConfig) => void
+  labels: GridPreviewLabels
+  siteTone: SiteTone
+  onSave: () => void
+  onFavorite: () => void
+}) {
+  const normalized = normalizeCustomCellConfig(draft)
+  const splitByTheme = normalized.themeMode === 'split'
+  const activeBody = customCellBodyForTone(normalized, siteTone)
+  const lightBody = customCellBodyForTone(normalized, 'light')
+  const darkBody = customCellBodyForTone(normalized, 'dark')
+  const lightConfig: CustomCellConfig = { ...lightBody, themeMode: 'single' }
+  const darkConfig: CustomCellConfig = { ...darkBody, themeMode: 'single' }
+
+  const setSingleBody = (body: CustomCellBody) => {
+    setDraft({ ...normalizeCustomCellBody(body), themeMode: 'single' })
+  }
+  const setThemeBody = (tone: SiteTone, body: CustomCellBody) => {
+    const nextThemes: Record<SiteTone, CustomCellBody> = {
+      light: lightBody,
+      dark: darkBody,
+      [tone]: normalizeCustomCellBody(body),
+    }
+    setDraft({ ...nextThemes.light, themeMode: 'split', themes: nextThemes })
+  }
+  const toggleThemeMode = () => {
+    if (splitByTheme) {
+      setDraft({ ...activeBody, themeMode: 'single' })
+      return
+    }
+    setDraft({ ...activeBody, themeMode: 'split', themes: { light: activeBody, dark: activeBody } })
+  }
+
+  return (
+    <div
+      style={{
+        marginTop: 10,
+        width: splitByTheme ? 760 : 620,
+        maxWidth: 'calc(100vw - 32px)',
+        borderTop: '1px solid var(--border)',
+        paddingTop: 10,
+        overflowX: 'auto',
+      }}
+    >
+      <button
+        type="button"
+        onClick={toggleThemeMode}
+        role="switch"
+        aria-checked={splitByTheme}
+        style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 10,
+          border: `1px solid ${splitByTheme ? 'color-mix(in oklab, var(--accent) 45%, var(--border))' : 'var(--border)'}`,
+          borderRadius: 11,
+          background: splitByTheme ? 'color-mix(in oklab, var(--accent) 9%, var(--grid-pill-bg))' : 'var(--grid-pill-bg)',
+          color: 'var(--foreground)',
+          padding: '8px 11px',
+          cursor: 'pointer',
+          fontSize: 11.5,
+          fontWeight: 700,
+          marginBottom: 10,
+          transition: 'background 140ms ease, border-color 140ms ease',
+        }}
+      >
+        <span>{labels.customByThemeLabel}</span>
+        <span
+          aria-hidden="true"
+          style={{
+            width: 30,
+            height: 17,
+            borderRadius: 999,
+            flexShrink: 0,
+            background: splitByTheme ? 'var(--accent)' : 'color-mix(in oklab, var(--muted-foreground) 35%, transparent)',
+            position: 'relative',
+            transition: 'background 160ms ease',
+          }}
+        >
+          <span
+            style={{
+              position: 'absolute',
+              top: 2,
+              left: splitByTheme ? 15 : 2,
+              width: 13,
+              height: 13,
+              borderRadius: '50%',
+              background: '#fff',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.25)',
+              transition: 'left 160ms cubic-bezier(.34,1.3,.5,1)',
+            }}
+          />
+        </span>
+      </button>
+
+      {splitByTheme ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 136px', gap: 12, alignItems: 'start' }}>
+          <div style={{ display: 'grid', gap: 12 }}>
+            <div style={{ display: 'grid', gap: 7 }}>
+              <span style={{ color: 'var(--muted-foreground)', fontSize: 10, fontWeight: 750, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {labels.siteThemeLight}
+              </span>
+              <CustomCellBodyEditor body={lightBody} labels={labels} onChange={(next) => setThemeBody('light', next)} />
+            </div>
+            <div style={{ display: 'grid', gap: 7 }}>
+              <span style={{ color: 'var(--muted-foreground)', fontSize: 10, fontWeight: 750, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {labels.siteThemeDark}
+              </span>
+              <CustomCellBodyEditor body={darkBody} labels={labels} onChange={(next) => setThemeBody('dark', next)} />
+            </div>
+          </div>
+          <div style={{ display: 'grid', gap: 10, position: 'sticky', top: 0 }}>
+            <CustomCellPreview config={lightConfig} tone="light" label={labels.siteThemeLight} />
+            <CustomCellPreview config={darkConfig} tone="dark" label={labels.siteThemeDark} />
+          </div>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 136px', gap: 12, alignItems: 'start' }}>
+          <CustomCellBodyEditor body={activeBody} labels={labels} onChange={setSingleBody} />
+          <CustomCellPreview config={normalized} tone={siteTone} label={siteTone === 'dark' ? labels.siteThemeDark : labels.siteThemeLight} />
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 10 }}>
+        <button
+          type="button"
+          onClick={onSave}
+          className="transition-transform hover:-translate-y-px"
+          style={{
+            border: '1px solid color-mix(in oklab, #fff 18%, var(--accent))',
+            borderRadius: 10,
+            background: 'linear-gradient(180deg, color-mix(in oklab, var(--accent) 88%, #fff 12%), var(--accent))',
+            color: '#fff',
+            padding: '10px 12px',
+            cursor: 'pointer',
+            fontSize: 12,
+            fontWeight: 750,
+            boxShadow: '0 6px 14px -6px color-mix(in oklab, var(--accent) 65%, transparent), inset 0 1px 0 rgba(255,255,255,0.25)',
+          }}
+        >
+          {labels.saveBtn}
+        </button>
+        <button
+          type="button"
+          onClick={onFavorite}
+          className="transition-colors hover:bg-muted"
+          style={{ border: '1px solid var(--border)', borderRadius: 10, background: 'transparent', color: 'var(--foreground)', padding: '10px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 650 }}
+        >
+          {labels.favoriteBtn}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// Day indices follow the May rendering: with May's weekday offset of 1, the
+// pattern char at position p lands on screen at dayIdx p − 1, so the moves
+// below target Ivan's visible midweek D gaps.
+// AI plan is computed at run time against the month on screen (see
+// buildAiPlan inside GridPreview), so the optimization story always matches
+// what the visitor is looking at.
+type AiPlanCell = { name: string; day: number; status: Status; kind: 'fill' | 'vacate' }
+type AiPlan = { cells: AiPlanCell[] }
+// Month-agnostic story beats: Kate's vacation and Olga's sick leave. The two
+// uncovered slots live on the month-aware problem weekday instead (see
+// problemDayIdxForMonth + UNCOVERED_EMPLOYEES) and are closed by the AI run.
 const DEFAULT_SCHEDULE_OVERRIDES: Record<string, Status> = {
   'Kate Volkova-21': 'V',
   'Kate Volkova-22': 'V',
@@ -457,8 +1364,6 @@ const DEFAULT_SCHEDULE_OVERRIDES: Record<string, Status> = {
   'Kate Volkova-24': 'V',
   'Kate Volkova-25': 'V',
   'Kate Volkova-26': 'V',
-  'Mark Sidorov-25': 'W',
-  'Mark Sidorov-26': 'W',
   'Olga Romanenko-19': 'S',
   'Olga Romanenko-20': 'S',
   'Olga Romanenko-21': 'S',
@@ -470,7 +1375,7 @@ export type WorkMeta = {
   name: string
   hours: number
   window: string
-  Icon: ComponentType<{ size?: number; strokeWidth?: number; style?: React.CSSProperties }>
+  Icon: ComponentType<{ size?: number; strokeWidth?: number; style?: React.CSSProperties; color?: string }>
 }
 
 export function workMeta(shift: ShiftType, labels: GridPreviewLabels): WorkMeta {
@@ -488,38 +1393,286 @@ export function compactShiftWindow(shift: ShiftType): string {
   return shift === 'night' ? '22–8' : shift === 'evening' ? '14–22' : '9–17'
 }
 
-function statusIcon(code: Status): ComponentType<{ size?: number; style?: React.CSSProperties }> | null {
+export function shiftWindowParts(window: string): [string, string] {
+  const parts = window
+    .split('–')
+    .map((part) => `${part.trim().padStart(2, '0')}:00`)
+  return [parts[0] ?? '', parts[1] ?? '']
+}
+
+function ShiftTimeStack({
+  start,
+  end,
+  fontSize = 8.5,
+  dividerWidth = '70%',
+}: {
+  start: string
+  end: string
+  fontSize?: number
+  dividerWidth?: number | string
+}) {
+  return (
+    <span
+      style={{
+        minWidth: 0,
+        maxWidth: '100%',
+        display: 'inline-flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 2,
+        color: 'inherit',
+        fontSize,
+        fontWeight: 750,
+        lineHeight: 1,
+        letterSpacing: 0,
+        whiteSpace: 'nowrap',
+        fontVariantNumeric: 'tabular-nums',
+      }}
+    >
+      <span>{start}</span>
+      <span
+        aria-hidden="true"
+        style={{
+          width: dividerWidth,
+          minWidth: 18,
+          height: 1,
+          background: 'currentColor',
+          opacity: 0.42,
+        }}
+      />
+      <span>{end}</span>
+    </span>
+  )
+}
+
+function statusIcon(code: Status): ComponentType<{ size?: number; style?: React.CSSProperties; color?: string }> | null {
   if (code === 'V') return TreePalm
   if (code === 'S') return Thermometer
   if (code === 'U') return AlertCircle
   return null
 }
 
-// Dashed orange edge marking the problem column. Applied per-cell so it scrolls naturally.
-function problemColumnStyle(ci: number, highlighted = true): React.CSSProperties {
-  if (!highlighted || ci !== PROBLEM_DAY_IDX) return {}
+export function isDefaultMergedLeaveStatus(code: Status | undefined): code is 'V' | 'S' {
+  return code === 'V' || code === 'S'
+}
+
+export function scheduleLeaveLabel(code: Status | undefined, labels: GridPreviewLabels): string | null {
+  if (code === 'V') return labels.shifts.vacation
+  if (code === 'S') return labels.footerLegendSick
+  return null
+}
+
+export function scheduleLeaveShortLabel(code: Status | undefined, labels: GridPreviewLabels): string | null {
+  const label = code === 'V' ? labels.statusVac : code === 'S' ? labels.statusSick : null
+  if (!label) return null
+  return label.endsWith('.') ? label : `${label}.`
+}
+
+export function ScheduleLeaveLabelText({
+  code,
+  labels,
+}: {
+  code: Status | undefined
+  labels: GridPreviewLabels
+}) {
+  const full = scheduleLeaveLabel(code, labels)
+  const short = scheduleLeaveShortLabel(code, labels)
+  if (!full || !short) return null
+
+  return (
+    <span className="smengo-leave-label" aria-label={full}>
+      <span className="smengo-leave-label-full">{full}</span>
+      <span className="smengo-leave-label-short">{short}</span>
+    </span>
+  )
+}
+
+function shouldMergeScheduleRun(code: Status | undefined, mergeAll: boolean): boolean {
+  return mergeAll || isDefaultMergedLeaveStatus(code)
+}
+
+function scheduleRunClickTarget(e: React.MouseEvent<HTMLElement>, indices: number[]) {
+  const rect = e.currentTarget.getBoundingClientRect()
+  const count = Math.max(indices.length, 1)
+  const ratio = rect.width > 0 ? (e.clientX - rect.left) / rect.width : 0
+  const offset = Math.max(0, Math.min(count - 1, Math.floor(ratio * count)))
+
   return {
-    borderLeft: '1.5px dashed var(--accent)',
-    borderRight: '1.5px dashed var(--accent)',
-    background: 'rgba(217,119,87,0.08)',
+    dayIdx: indices[offset] ?? indices[0] ?? 0,
+    anchorX: rect.left + ((offset + 0.5) * rect.width) / count,
+    anchorBottom: rect.bottom,
   }
 }
 
-// Tooltip text for a cell — derives from status code + shift type.
-function cellTooltip(code: Status, shift: ShiftType, labels: GridPreviewLabels): string {
-  if (code === 'V') return labels.shifts.vacation
-  if (code === 'S') return labels.shifts.sick
-  if (code === 'D') return labels.shifts.dayoff
-  if (code === 'U') return labels.shifts.unfilled
-  if (code === 'W') return labels.shifts[shift]
-  return ''
+// Stagger by day so cells light up as a left-to-right wave instead of one
+// simultaneous repaint of the whole table.
+function aiWaveDelayMs(dayIdx: number): number {
+  return Math.min(dayIdx * 18, 380)
+}
+function aiCellAnimation(isOptimized: boolean, isShiftSource: boolean, isShiftTarget: boolean, dayIdx = 0): string {
+  const delay = aiWaveDelayMs(dayIdx)
+  if (isShiftTarget) return `smengo-ai-shift-fill 640ms ease-out ${delay}ms backwards`
+  if (isShiftSource) return `smengo-ai-shift-vacate 640ms ease-out ${delay}ms backwards`
+  if (isOptimized) return `smengo-ai-cell-pop 680ms cubic-bezier(.22,1,.36,1) ${delay}ms backwards`
+  return 'none'
+}
+// data-ai value for the cell's chip-level settle animation (CSS keys on it).
+function aiCellKind(isShiftSource: boolean, isShiftTarget: boolean): 'fill' | 'vacate' | undefined {
+  if (isShiftTarget) return 'fill'
+  if (isShiftSource) return 'vacate'
+  return undefined
 }
 
-function aiCellAnimation(isOptimized: boolean, isShiftSource: boolean, isShiftTarget: boolean): string {
-  if (isShiftTarget) return 'smengo-ai-shift-fill 640ms ease-out'
-  if (isShiftSource) return 'smengo-ai-shift-vacate 640ms ease-out'
-  if (isOptimized) return 'smengo-ai-cell-pop 680ms cubic-bezier(.22,1,.36,1)'
-  return 'none'
+/* ── Cell badges (extended mode) ─────────────────────────────────── */
+export type CellBadgeDef = { id: string; text: string; color: string }
+const BUILTIN_BADGE_PRESETS: { id: string; labelKey: 'badgeRegister' | 'badgeHall' | 'badgeDelivery' | 'badgeVip' | 'badgeTraining'; color: string }[] = [
+  { id: 'register', labelKey: 'badgeRegister', color: '#10b981' },
+  { id: 'hall',     labelKey: 'badgeHall',     color: '#0ea5e9' },
+  { id: 'delivery', labelKey: 'badgeDelivery', color: '#f59e0b' },
+  { id: 'vip',      labelKey: 'badgeVip',      color: '#8b5cf6' },
+  { id: 'training', labelKey: 'badgeTraining', color: '#ec4899' },
+]
+const CELL_BADGE_PRESETS_KEY = 'smengo:demo:cellBadgePresets'
+const MAX_BADGES_PER_CELL = 2
+// Month-agnostic seeds so the extended view demos badges out of the box.
+const DEFAULT_CELL_BADGES: Record<string, string[]> = {
+  'Anna Petrov-1': ['register'],
+  'Anna Petrov-8': ['register'],
+  'Kate Volkova-2': ['training'],
+  'Olga Romanenko-3': ['hall'],
+  'Roma Karpov-4': ['vip'],
+  'Daria Kos-16': ['delivery'],
+  'Yulia Lebed-15': ['training'],
+}
+
+function CellBadgePill({ badge, compact = false }: { badge: CellBadgeDef; compact?: boolean }) {
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        minWidth: 0,
+        maxWidth: '100%',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+        padding: compact ? '1.5px 5px' : '2px 7px',
+        borderRadius: 999,
+        background: badge.color,
+        color: readableColorForHex(badge.color),
+        fontSize: compact ? 7.8 : 8.6,
+        fontWeight: 750,
+        lineHeight: 1.2,
+        letterSpacing: '0.02em',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.18), inset 0 0 0 1px rgba(255,255,255,0.14)',
+      }}
+    >
+      {badge.text}
+    </span>
+  )
+}
+
+/* ── Apple-style horizontal scrollbar ────────────────────────────── */
+// Custom draggable overlay scrollbar (macOS look). Reads the live scroller
+// from a ref each frame, so it survives re-renders and target swaps.
+function AppleHScrollbar({
+  scrollerRef,
+  size = 'md',
+  style,
+}: {
+  scrollerRef: { current: HTMLElement | null }
+  size?: 'sm' | 'md'
+  style?: React.CSSProperties
+}) {
+  const trackRef = useRef<HTMLDivElement | null>(null)
+  const thumbRef = useRef<HTMLDivElement | null>(null)
+  const dragRef = useRef<{ pointerId: number; startX: number; startScroll: number } | null>(null)
+
+  useEffect(() => {
+    const track = trackRef.current
+    const thumb = thumbRef.current
+    if (!track || !thumb) return
+    let raf = 0
+    const tick = () => {
+      const el = scrollerRef.current
+      if (el && el.isConnected) {
+        const sw = el.scrollWidth
+        const cw = el.clientWidth
+        const need = sw > cw + 2
+        if (track.dataset.active !== String(need)) track.dataset.active = String(need)
+        if (need) {
+          const tw = track.clientWidth
+          const w = Math.max(40, Math.round((cw / sw) * tw))
+          const max = sw - cw
+          const x = max > 0 ? (el.scrollLeft / max) * (tw - w) : 0
+          if (thumb.style.width !== `${w}px`) thumb.style.width = `${w}px`
+          thumb.style.transform = `translate3d(${x}px, 0, 0)`
+        }
+      } else if (track.dataset.active !== 'false') {
+        track.dataset.active = 'false'
+      }
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [scrollerRef])
+
+  function scrollFromDrag(clientX: number) {
+    const drag = dragRef.current
+    const el = scrollerRef.current
+    const track = trackRef.current
+    const thumb = thumbRef.current
+    if (!drag || !el || !track || !thumb) return
+    const span = track.clientWidth - thumb.clientWidth
+    if (span <= 0) return
+    const max = el.scrollWidth - el.clientWidth
+    el.scrollLeft = drag.startScroll + (clientX - drag.startX) * (max / span)
+  }
+
+  return (
+    <div
+      ref={trackRef}
+      className={`smengo-hscroll smengo-hscroll--${size}`}
+      data-active="false"
+      style={style}
+      onPointerDown={(e) => {
+        const el = scrollerRef.current
+        const track = trackRef.current
+        const thumb = thumbRef.current
+        if (!el || !track || !thumb) return
+        e.preventDefault()
+        track.setPointerCapture(e.pointerId)
+        track.setAttribute('data-dragging', 'true')
+        if (e.target !== thumb) {
+          // Jump so the thumb centers on the pointer, then drag from there.
+          const rect = track.getBoundingClientRect()
+          const span = track.clientWidth - thumb.clientWidth
+          const max = el.scrollWidth - el.clientWidth
+          if (span > 0) {
+            const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left - thumb.clientWidth / 2) / span))
+            el.scrollLeft = ratio * max
+          }
+        }
+        dragRef.current = { pointerId: e.pointerId, startX: e.clientX, startScroll: el.scrollLeft }
+      }}
+      onPointerMove={(e) => {
+        if (dragRef.current && e.pointerId === dragRef.current.pointerId) scrollFromDrag(e.clientX)
+      }}
+      onPointerUp={(e) => {
+        if (dragRef.current?.pointerId === e.pointerId) {
+          dragRef.current = null
+          trackRef.current?.removeAttribute('data-dragging')
+        }
+      }}
+      onPointerCancel={() => {
+        dragRef.current = null
+        trackRef.current?.removeAttribute('data-dragging')
+      }}
+    >
+      <div ref={thumbRef} className="smengo-hscroll-thumb" />
+    </div>
+  )
 }
 
 function normalizedScheduleStatus(
@@ -527,8 +1680,7 @@ function normalizedScheduleStatus(
   emp: EmpDef,
   dayIdx: number,
 ): Status {
-  const s = statusOf(emp.name, dayIdx, emp.s)
-  return s === 'U' && dayIdx !== PROBLEM_DAY_IDX ? 'W' : s
+  return statusOf(emp.name, dayIdx, emp.s)
 }
 
 function onShiftCountsForRows(
@@ -675,6 +1827,7 @@ function OnShiftScopePicker({
     ? createPortal(
       <div
         ref={menuRef}
+        className="smengo-pop"
         style={{
           position: 'fixed',
           left: menuPos.left,
@@ -682,11 +1835,8 @@ function OnShiftScopePicker({
           zIndex: 5000,
           width: ON_SHIFT_MENU_WIDTH,
           padding: 5,
-          border: '1px solid var(--border)',
-          borderRadius: 9,
-          background: 'var(--surface)',
-          boxShadow: '0 18px 40px rgba(0,0,0,0.24)',
           textTransform: 'none',
+          ['--pop-origin' as string]: 'bottom right',
         }}
       >
         {options.map((item) => {
@@ -816,15 +1966,17 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [showTimer, setShowTimer] = useState(true)
   const [showToday, setShowToday] = useState(true)
-  const [theme, setTheme] = useState<'standard' | 'classic'>('standard')
-  const [themeOpen, setThemeOpen] = useState(false)
-  const themeRef = useRef<HTMLDivElement | null>(null)
+  const [visualOpen, setVisualOpen] = useState(false)
+  const visualRef = useRef<HTMLDivElement | null>(null)
+  const [siteTone, setSiteTone] = useState<SiteTone>('light')
+  const [visualIconColors, setVisualIconColors] = useState<VisualCardColorThemes>(() => DEFAULT_VISUAL_ICON_COLORS)
+  const [visualIconColorsLoaded, setVisualIconColorsLoaded] = useState(false)
   const [showTelegram, setShowTelegram] = useState(false)
   const [showEmployeeRole, setShowEmployeeRole] = useState(true)
   const [showEmployeeDepartment, setShowEmployeeDepartment] = useState(true)
   const [showEmployeeDot, setShowEmployeeDot] = useState(true)
   const [selectedEmp, setSelectedEmp] = useState<string | null>(null)
-  const [monthIdx, setMonthIdx] = useState(2) // May
+  const [monthIdx, setMonthIdx] = useState(() => currentDemoMonthIdx() ?? 2)
   const [deptFilter, setDeptFilter] = useState<DeptKey>('all')
   const [deptOpen, setDeptOpen] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
@@ -832,10 +1984,22 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
   const [editMode, setEditMode] = useState(false)
   const [editCell, setEditCell] = useState<{ name: string; day: number; px: number; py: number } | null>(null)
   const [overrides, setOverrides] = useState<Record<string, Status>>({})
+  const [customCells, setCustomCells] = useState<Record<string, CustomCellConfig>>({})
+  const [customFavorites, setCustomFavorites] = useState<CustomCellConfig[]>([])
+  const [customFavoritesLoaded, setCustomFavoritesLoaded] = useState(false)
+  const [customEditorOpen, setCustomEditorOpen] = useState(false)
+  const [customDraft, setCustomDraft] = useState<CustomCellConfig>(() => makeDefaultCustomCell())
   const [aiOverrides, setAiOverrides] = useState<Record<string, Status>>({})
   const [aiState, setAiState] = useState<'idle' | 'running' | 'done'>('idle')
   const [aiRun, setAiRun] = useState(0)
   const [aiMonthIdx, setAiMonthIdx] = useState<number | null>(null)
+  const [aiPlan, setAiPlan] = useState<AiPlan | null>(null)
+  const [cellBadges, setCellBadges] = useState<Record<string, string[]>>({})
+  const [customBadgePresets, setCustomBadgePresets] = useState<CellBadgeDef[]>([])
+  const [customBadgePresetsLoaded, setCustomBadgePresetsLoaded] = useState(false)
+  const [badgeFormOpen, setBadgeFormOpen] = useState(false)
+  const [newBadgeText, setNewBadgeText] = useState('')
+  const [newBadgeColor, setNewBadgeColor] = useState('#10b981')
   const [demoEmps, setDemoEmps] = useState<EmpDef[]>([])
 
   // Custom sections + role overrides + custom order per employee (persisted)
@@ -910,7 +2074,73 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
       }))
     } catch { /* ignore */ }
   }, [customSections, empRoleOverrides, empSpecialtyOverrides, departmentRoleOverrides, departmentColorOverrides, specialtyColorOverrides, empOrder, storedGridStateLoaded])
-
+  useEffect(() => {
+    const id = requestAnimationFrame(() => {
+      try {
+        const raw = localStorage.getItem(CUSTOM_CELL_FAVORITES_KEY)
+        if (raw) {
+          const parsed = JSON.parse(raw) as CustomCellConfig[]
+          if (Array.isArray(parsed)) setCustomFavorites(parsed.map(normalizeCustomCellConfig).slice(0, 12))
+        }
+      } catch { /* ignore */ }
+      setCustomFavoritesLoaded(true)
+    })
+    return () => cancelAnimationFrame(id)
+  }, [])
+  useEffect(() => {
+    if (!customFavoritesLoaded) return
+    try {
+      localStorage.setItem(CUSTOM_CELL_FAVORITES_KEY, JSON.stringify(customFavorites.map(normalizeCustomCellConfig)))
+    } catch { /* ignore */ }
+  }, [customFavorites, customFavoritesLoaded])
+  useEffect(() => {
+    const id = requestAnimationFrame(() => {
+      try {
+        const raw = localStorage.getItem(CELL_BADGE_PRESETS_KEY)
+        if (raw) {
+          const parsed = JSON.parse(raw) as CellBadgeDef[]
+          if (Array.isArray(parsed)) {
+            setCustomBadgePresets(parsed.filter((p) => p && typeof p.id === 'string' && typeof p.text === 'string' && typeof p.color === 'string').slice(0, 12))
+          }
+        }
+      } catch { /* ignore */ }
+      setCustomBadgePresetsLoaded(true)
+    })
+    return () => cancelAnimationFrame(id)
+  }, [])
+  useEffect(() => {
+    if (!customBadgePresetsLoaded) return
+    try {
+      localStorage.setItem(CELL_BADGE_PRESETS_KEY, JSON.stringify(customBadgePresets))
+    } catch { /* ignore */ }
+  }, [customBadgePresets, customBadgePresetsLoaded])
+  useEffect(() => {
+    const id = requestAnimationFrame(() => {
+      setSiteTone(detectSiteTone())
+      try {
+        const raw = localStorage.getItem(VISUAL_ICON_COLORS_KEY)
+        setVisualIconColors(raw ? normalizeVisualIconColors(JSON.parse(raw)) : DEFAULT_VISUAL_ICON_COLORS)
+      } catch {
+        setVisualIconColors(DEFAULT_VISUAL_ICON_COLORS)
+      }
+      setVisualIconColorsLoaded(true)
+    })
+    return () => cancelAnimationFrame(id)
+  }, [])
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    const root = document.documentElement
+    const updateTone = () => setSiteTone(detectSiteTone())
+    const observer = new MutationObserver(updateTone)
+    observer.observe(root, { attributes: true, attributeFilter: ['class'] })
+    return () => observer.disconnect()
+  }, [])
+  useEffect(() => {
+    if (!visualIconColorsLoaded) return
+    try {
+      localStorage.setItem(VISUAL_ICON_COLORS_KEY, JSON.stringify(visualIconColors))
+    } catch { /* ignore */ }
+  }, [visualIconColors, visualIconColorsLoaded])
   function getEmpRoleKey(emp: EmpDef): RoleOrSectionKey {
     return empRoleOverrides[emp.name] ?? emp.roleKey
   }
@@ -996,6 +2226,7 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
   }
   function handleReset() {
     try { localStorage.removeItem('smengo:demo:gridState') } catch { /* ignore */ }
+    try { localStorage.removeItem(VISUAL_ICON_COLORS_KEY) } catch { /* ignore */ }
     setCustomSections([])
     setEmpRoleOverrides({})
     setEmpSpecialtyOverrides({})
@@ -1003,6 +2234,9 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
     setDepartmentColorOverrides({})
     setSpecialtyColorOverrides({})
     setEmpOrder([])
+    setCustomCells({})
+    setCustomEditorOpen(false)
+    setCustomDraft(makeDefaultCustomCell())
     setMode('compact')
     setActiveTab('schedule')
     setEmployeeView('cards')
@@ -1019,15 +2253,18 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
     setShowEmployeeDepartment(true)
     setShowEmployeeDot(true)
     setSelectedEmp(null)
-    setMonthIdx(2)
+    // Reset returns to the same month the demo opened with (load === reset)
+    setMonthIdx(currentDemoMonthIdx() ?? 2)
     setDeptFilter('all')
     setEditMode(false)
-    setTheme('standard')
+    setVisualOpen(false)
+    setVisualIconColors(DEFAULT_VISUAL_ICON_COLORS)
     setOverrides({})
     setAiOverrides({})
     setAiState('idle')
     setAiRun(0)
     setAiMonthIdx(null)
+    setAiPlan(null)
   }
   function onMoveEmp(srcName: string, targetName: string | null, targetGroupKey: RoleOrSectionKey | null) {
     if (!srcName) return
@@ -1065,6 +2302,36 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
   const toastTimer = useRef<number | null>(null)
   const aiApplyTimer = useRef<number | null>(null)
   const aiDoneTimer = useRef<number | null>(null)
+  const [popShift, setPopShift] = useState({ x: 0, y: 0 })
+
+  function openEditCell(name: string, day: number, px: number, py: number) {
+    const existing = customCells[`${name}-${day}-${monthIdx}`]
+    const scrollX = typeof window === 'undefined' ? 0 : window.scrollX
+    const scrollY = typeof window === 'undefined' ? 0 : window.scrollY
+    setCustomDraft(normalizeCustomCellConfig(existing ?? makeDefaultCustomCell()))
+    setCustomEditorOpen(false)
+    setBadgeFormOpen(false)
+    setPopShift({ x: 0, y: 0 })
+    setEditCell({ name, day, px: px + scrollX, py: py + scrollY })
+  }
+
+  // Keep the edit popover inside the viewport: cells near the grid edges
+  // would otherwise push it off-screen. Converges in one pass (guarded).
+  useLayoutEffect(() => {
+    const el = editCellRef.current
+    if (!el || !editCell) return
+    const pad = 10
+    const r = el.getBoundingClientRect()
+    let dx = 0
+    let dy = 0
+    if (r.right > window.innerWidth - pad) dx = window.innerWidth - pad - r.right
+    if (r.left + dx < pad) dx = pad - r.left
+    if (r.bottom > window.innerHeight - pad) dy = window.innerHeight - pad - r.bottom
+    if (r.top + dy < pad) dy = pad - r.top
+    if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+      setPopShift((prev) => ({ x: prev.x + dx, y: prev.y + dy }))
+    }
+  }, [editCell, customEditorOpen, badgeFormOpen, popShift])
 
   useEffect(() => {
     if (!timerRunning) return
@@ -1117,15 +2384,15 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
   }, [settingsOpen])
 
   useEffect(() => {
-    if (!themeOpen) return
+    if (!visualOpen) return
     function onDown(e: MouseEvent) {
-      if (themeRef.current && !themeRef.current.contains(e.target as Node)) {
-        setThemeOpen(false)
+      if (visualRef.current && !visualRef.current.contains(e.target as Node)) {
+        setVisualOpen(false)
       }
     }
     document.addEventListener('mousedown', onDown)
     return () => document.removeEventListener('mousedown', onDown)
-  }, [themeOpen])
+  }, [visualOpen])
 
   useEffect(() => {
     if (!deptOpen) return
@@ -1143,6 +2410,7 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
     function onDown(e: MouseEvent) {
       if (editCellRef.current && !editCellRef.current.contains(e.target as Node)) {
         setEditCell(null)
+        setCustomEditorOpen(false)
       }
     }
     document.addEventListener('mousedown', onDown)
@@ -1174,50 +2442,190 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
     if (contrast) return '#fff'
     return `var(--chip-${code.toLowerCase()}-fg)`
   }
+  const activeVisualIconColors = visualIconColors[siteTone]
+  function setVisualCardColor(key: VisualCardColorKey, slot: keyof VisualCardColorValue, color: string) {
+    setVisualIconColors((prev) => ({
+      ...prev,
+      [siteTone]: {
+        ...prev[siteTone],
+        [key]: {
+          ...prev[siteTone][key],
+          [slot]: color,
+        },
+      },
+    }))
+  }
 
   const weekendBg = strongWeekend ? 'var(--accent-soft)' : 'var(--grid-weekend)'
   const monthLabel = labels.months[monthIdx]
   const monthOffset = scheduleOffsetForMonth(monthIdx)
   const days = monthDays(monthIdx)
+  const todayDayIdx = todayDayIndexForMonth(monthIdx)
   const lastMonthIdx = labels.months.length - 1
 
   const allEmps = [...BASE_EMPLOYEES, ...demoEmps]
   const aiOptimized = aiState === 'done' && aiMonthIdx === monthIdx
   const coverageSummary = aiOptimized ? labels.aiOptimizedSummary : labels.coverageSummary
-  const optimizedCellKeys = AI_OPTIMIZED_CELLS.reduce<Record<string, true>>((acc, cell) => {
-    acc[`${cell.name}-${cell.day}`] = true
-    return acc
-  }, {})
-  const shiftedFromCellKeys = AI_SHIFT_MOVES.reduce<Record<string, true>>((acc, cell) => {
-    acc[`${cell.name}-${cell.fromDay}`] = true
-    return acc
-  }, {})
-  const shiftedToCellKeys = AI_SHIFT_MOVES.reduce<Record<string, true>>((acc, cell) => {
-    acc[`${cell.name}-${cell.toDay}`] = true
-    return acc
-  }, {})
+  const problemDayIdx = problemDayIdxForMonth(monthIdx)
+  const optimizedCellKeys: Record<string, true> = {}
+  const shiftedFromCellKeys: Record<string, true> = {}
+  const shiftedToCellKeys: Record<string, true> = {}
+  for (const cell of aiPlan?.cells ?? []) {
+    const key = `${cell.name}-${cell.day}`
+    optimizedCellKeys[key] = true
+    if (cell.kind === 'vacate') shiftedFromCellKeys[key] = true
+    else shiftedToCellKeys[key] = true
+  }
 
   function statusOf(name: string, dayIdx: number, base: string): Status {
     const key = `${name}-${dayIdx}-${monthIdx}`
     if (overrides[key]) return overrides[key]
     if (aiOverrides[key]) return aiOverrides[key]
+    if (dayIdx === problemDayIdx && UNCOVERED_EMPLOYEES.includes(name)) return 'U'
     const defaultOverride = DEFAULT_SCHEDULE_OVERRIDES[`${name}-${dayIdx}`]
     if (defaultOverride) return defaultOverride
+    if (base.length === 4) return rotationStatus(base, monthIdx, dayIdx)
     const rotated = rotateSchedule(base, monthOffset)
     return (rotated[dayIdx % 14] ?? 'W') as Status
   }
 
+  // The red column highlight lives while either uncovered slot is still open.
+  const problemColumnActive = UNCOVERED_EMPLOYEES.some((name) => {
+    const emp = allEmps.find((e) => e.name === name)
+    return emp ? statusOf(name, problemDayIdx, emp.s) === 'U' : false
+  })
+
+  function badgePresetById(id: string): CellBadgeDef | null {
+    const builtin = BUILTIN_BADGE_PRESETS.find((p) => p.id === id)
+    if (builtin) return { id, text: labels[builtin.labelKey], color: builtin.color }
+    return customBadgePresets.find((p) => p.id === id) ?? null
+  }
+  function cellBadgeIdsOf(name: string, dayIdx: number): string[] {
+    return cellBadges[`${name}-${dayIdx}-${monthIdx}`] ?? DEFAULT_CELL_BADGES[`${name}-${dayIdx}`] ?? []
+  }
+  function cellBadgesOf(name: string, dayIdx: number): CellBadgeDef[] {
+    return cellBadgeIdsOf(name, dayIdx)
+      .map(badgePresetById)
+      .filter((b): b is CellBadgeDef => b !== null)
+      .slice(0, MAX_BADGES_PER_CELL)
+  }
+  function toggleCellBadge(name: string, dayIdx: number, id: string) {
+    const key = `${name}-${dayIdx}-${monthIdx}`
+    setCellBadges((prev) => {
+      const current = prev[key] ?? DEFAULT_CELL_BADGES[`${name}-${dayIdx}`] ?? []
+      const next = current.includes(id)
+        ? current.filter((x) => x !== id)
+        : [...current, id].slice(-MAX_BADGES_PER_CELL)
+      return { ...prev, [key]: next }
+    })
+  }
+  function createBadgePreset() {
+    const text = newBadgeText.trim()
+    if (!text || !editCell) return
+    const rand = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID().slice(0, 8)
+      : Math.random().toString(36).slice(2, 10)
+    const preset: CellBadgeDef = { id: `cb:${rand}`, text, color: newBadgeColor }
+    setCustomBadgePresets((prev) => [...prev, preset].slice(-12))
+    toggleCellBadge(editCell.name, editCell.day, preset.id)
+    setNewBadgeText('')
+    setBadgeFormOpen(false)
+  }
+
   function setStatusOf(name: string, dayIdx: number, s: Status) {
-    setOverrides((prev) => ({ ...prev, [`${name}-${dayIdx}-${monthIdx}`]: s }))
+    const key = `${name}-${dayIdx}-${monthIdx}`
+    setCustomCells((prev) => {
+      if (!prev[key]) return prev
+      const next = { ...prev }
+      delete next[key]
+      return next
+    })
+    setOverrides((prev) => ({ ...prev, [key]: s }))
+  }
+
+  function customCellOf(name: string, dayIdx: number): CustomCellConfig | null {
+    return customCells[`${name}-${dayIdx}-${monthIdx}`] ?? null
+  }
+
+  function applyCustomCell(config: CustomCellConfig) {
+    if (!editCell) return
+    const key = `${editCell.name}-${editCell.day}-${monthIdx}`
+    const normalized = normalizeCustomCellConfig(config)
+    setCustomCells((prev) => ({ ...prev, [key]: normalized }))
+    setOverrides((prev) => {
+      if (!prev[key]) return prev
+      const next = { ...prev }
+      delete next[key]
+      return next
+    })
+    setEditCell(null)
+    setCustomEditorOpen(false)
+  }
+
+  function saveCustomDraft() {
+    applyCustomCell(customDraft)
+  }
+
+  function addCustomDraftToFavorites() {
+    const normalized = normalizeCustomCellConfig(customDraft)
+    const signature = JSON.stringify(normalized)
+    setCustomFavorites((prev) => {
+      const withoutDuplicate = prev.filter((item) => JSON.stringify(normalizeCustomCellConfig(item)) !== signature)
+      return [normalized, ...withoutDuplicate].slice(0, 12)
+    })
+    applyCustomCell(normalized)
+  }
+
+  // The plan is built against the month on screen: assign the two uncovered
+  // slots on the problem weekday, then even out the night line — give the
+  // thinnest nights (one person on shift) a second pair of hands, and return
+  // those hours on later double-covered nights so nobody's totals drift and
+  // no new gap ever opens.
+  function buildAiPlan(): AiPlan {
+    const baseOf = (name: string) => allEmps.find((e) => e.name === name)?.s ?? 'WWDDWWWWWDDWWW'
+    const cells: AiPlanCell[] = UNCOVERED_EMPLOYEES.map((name) => ({
+      name, day: problemDayIdx, status: 'W' as Status, kind: 'fill' as const,
+    }))
+
+    const nightCrew = allEmps.filter((e) => e.shift === 'night')
+    const nightCoverage = (i: number) =>
+      nightCrew.reduce((n, e) => n + (statusOf(e.name, i, e.s) === 'W' ? 1 : 0), 0)
+
+    // Reinforce the first two thin nights after the opening week.
+    const fills: { name: string; day: number }[] = []
+    for (let i = 4; i < days.length - 1 && fills.length < 2; i++) {
+      if (nightCoverage(i) !== 1) continue
+      const candidate = nightCrew.find((e) =>
+        statusOf(e.name, i, e.s) === 'D' && !fills.some((f) => f.name === e.name))
+      if (!candidate) continue
+      fills.push({ name: candidate.name, day: i })
+      cells.push({ name: candidate.name, day: i, status: 'W', kind: 'fill' })
+    }
+
+    // Pay each extra night back on a later double-covered night, one vacate
+    // per day, so coverage never drops below one.
+    const vacatedDays = new Set<number>()
+    for (const fill of fills) {
+      for (let i = Math.max(18, fill.day + 6); i < days.length; i++) {
+        if (vacatedDays.has(i) || nightCoverage(i) < 2) continue
+        if (statusOf(fill.name, i, baseOf(fill.name)) !== 'W') continue
+        cells.push({ name: fill.name, day: i, status: 'D', kind: 'vacate' })
+        vacatedDays.add(i)
+        break
+      }
+    }
+    return { cells }
   }
 
   function runAiOptimization() {
     if (aiState !== 'idle') return
     if (aiApplyTimer.current) window.clearTimeout(aiApplyTimer.current)
     if (aiDoneTimer.current) window.clearTimeout(aiDoneTimer.current)
+    const plan = buildAiPlan()
     setSelectedEmp(null)
     setEditCell(null)
     setEditMode(false)
+    setAiPlan(plan)
     setAiState('running')
     setAiMonthIdx(monthIdx)
     setAiRun((n) => n + 1)
@@ -1225,7 +2633,7 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
     aiApplyTimer.current = window.setTimeout(() => {
       setAiOverrides((prev) => {
         const next = { ...prev }
-        for (const cell of AI_OPTIMIZED_CELLS) {
+        for (const cell of plan.cells) {
           next[`${cell.name}-${cell.day}-${monthIdx}`] = cell.status
         }
         return next
@@ -1358,10 +2766,12 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
   )
 
   let todayOnShift = 0, todayOff = 0
-  for (const emp of allEmps) {
-    const s = statusOf(emp.name, PROBLEM_DAY_IDX, emp.s)
-    if (s === 'W') todayOnShift++
-    else if (s === 'V' || s === 'S' || s === 'D') todayOff++
+  if (todayDayIdx !== null) {
+    for (const emp of allEmps) {
+      const s = statusOf(emp.name, todayDayIdx, emp.s)
+      if (s === 'W') todayOnShift++
+      else if (s === 'V' || s === 'S' || s === 'D') todayOff++
+    }
   }
   const rolePickerEmp = rolePickerFor ? allEmps.find((e) => e.name === rolePickerFor) ?? null : null
 
@@ -1369,31 +2779,11 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
     <div style={{ position: 'relative' }}>
       {/* Top controls: mode toggle + settings */}
       <div className="mb-4 flex flex-wrap items-center justify-center gap-2">
-        <div
-          data-mode-pill
-          className="inline-flex w-full items-center justify-center gap-1 rounded-full border border-border p-1 sm:w-auto"
-          style={{ background: 'var(--grid-pill-bg)' }}
-        >
-          {(['compact', 'detail', 'extended'] as const).map((m) => {
-            const lbl = m === 'detail' ? labels.modeDetail : m === 'compact' ? labels.modeCompact : labels.modeExtended
-            const active = mode === m
-            return (
-              <button
-                key={m}
-                type="button"
-                data-active={active}
-                onClick={() => setMode(m)}
-                className="flex-1 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors sm:flex-none sm:px-4"
-                style={{
-                  background: active ? 'var(--accent)' : 'transparent',
-                  color: active ? '#fff' : 'var(--muted-foreground)',
-                }}
-              >
-                {lbl}
-              </button>
-            )
-          })}
-        </div>
+        <ModeSegmented
+          mode={mode}
+          onChange={setMode}
+          labels={{ compact: labels.modeCompact, detail: labels.modeDetail, extended: labels.modeExtended }}
+        />
 
         <div className="flex items-center gap-2">
 
@@ -1402,19 +2792,13 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
             type="button"
             onClick={() => setSettingsOpen((v) => !v)}
             aria-label={labels.displayLabel}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:text-foreground"
-            style={{ background: 'var(--grid-pill-bg)' }}
+            className="smengo-tool smengo-tool--icon"
           >
             <Settings2 className="h-4 w-4" />
           </button>
           {settingsOpen && (
-            <div
-              className="absolute right-0 z-30 mt-2 w-72 rounded-xl border border-border p-3 text-[13px] shadow-lg max-sm:right-auto max-sm:left-1/2 max-sm:-translate-x-1/2"
-              style={{ background: 'var(--surface)' }}
-            >
-              <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                {labels.displayLabel}
-              </div>
+            <div className="smengo-pop absolute right-0 z-30 mt-2 w-72 p-1.5 text-[13px] max-sm:right-auto max-sm:left-1/2 max-sm:-translate-x-1/2">
+              <div className="smengo-pop-label">{labels.displayLabel}</div>
               <SettingRow label={labels.highContrastLabel} value={contrast} onChange={setContrast} />
               <SettingRow label={labels.highlightWeekendsLabel} value={strongWeekend} onChange={setStrongWeekend} />
               <SettingRow label={labels.showTimesLabel} value={showTimes} onChange={setShowTimes} />
@@ -1423,74 +2807,32 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
               <SettingRow label={labels.stickyLabel} value={sticky} onChange={setSticky} />
               <SettingRow label={labels.timerLabel} value={showTimer} onChange={setShowTimer} />
               <SettingRow label={labels.todayLabel} value={showToday} onChange={setShowToday} />
-              <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border)' }}>
-                {sticky && (
-                  <SettingRow label={labels.showEmployeeDepartmentLabel} value={showEmployeeDepartment} onChange={setShowEmployeeDepartment} />
-                )}
-                <SettingRow label={labels.showEmployeeRoleLabel} value={showEmployeeRole} onChange={setShowEmployeeRole} />
-                <SettingRow label={labels.showEmployeeDotLabel} value={showEmployeeDot} onChange={setShowEmployeeDot} />
-              </div>
+              <div className="smengo-pop-sep" />
+              {sticky && (
+                <SettingRow label={labels.showEmployeeDepartmentLabel} value={showEmployeeDepartment} onChange={setShowEmployeeDepartment} disabled={mode === 'compact'} />
+              )}
+              <SettingRow label={labels.showEmployeeRoleLabel} value={showEmployeeRole} onChange={setShowEmployeeRole} disabled={mode === 'compact'} />
+              <SettingRow label={labels.showEmployeeDotLabel} value={showEmployeeDot} onChange={setShowEmployeeDot} />
             </div>
           )}
         </div>
 
-        <div ref={themeRef} className="relative">
+        <div ref={visualRef} className="relative">
           <button
             type="button"
-            onClick={() => setThemeOpen((v) => !v)}
+            onClick={() => setVisualOpen((v) => !v)}
             aria-label={labels.themeLabel}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:text-foreground"
-            style={{ background: 'var(--grid-pill-bg)' }}
+            className="smengo-tool smengo-tool--icon"
           >
             <Palette className="h-4 w-4" />
           </button>
-          {themeOpen && (
-            <div
-              className="absolute right-0 z-30 mt-2 w-56 rounded-xl border border-border p-2 text-[13px] shadow-lg max-sm:right-auto max-sm:left-1/2 max-sm:-translate-x-1/2"
-              style={{ background: 'var(--surface)' }}
-            >
-              <div className="mb-1 px-2 pt-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                {labels.themeLabel}
-              </div>
-              {(['standard', 'classic'] as const).map((t) => {
-                const active = theme === t
-                const isClassic = t === 'classic'
-                return (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => { setTheme(t); setThemeOpen(false) }}
-                    className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left transition-colors hover:bg-muted"
-                    style={{
-                      background: active ? 'var(--accent-soft)' : 'transparent',
-                    }}
-                  >
-                    <span
-                      style={isClassic
-                        ? {
-                            fontFamily: 'ui-serif, Georgia, "Times New Roman", serif',
-                            fontSize: 15, fontWeight: 500,
-                            color: '#1a1f2e',
-                            background: '#ffffff',
-                            border: '1px solid #e3e6ea',
-                            padding: '2px 10px', borderRadius: 4,
-                            letterSpacing: '-0.01em',
-                          }
-                        : {
-                            fontFamily: 'inherit',
-                            fontSize: 13, fontWeight: 600,
-                            color: 'var(--accent)',
-                            letterSpacing: '0.01em',
-                          }
-                      }
-                    >
-                      {isClassic ? labels.themeClassic : labels.themeStandard}
-                    </span>
-                    {active && <Check className="h-4 w-4" style={{ color: 'var(--accent)' }} />}
-                  </button>
-                )
-              })}
-            </div>
+          {visualOpen && (
+            <VisualIconSettings
+              labels={labels}
+              tone={siteTone}
+              colors={activeVisualIconColors}
+              onColorChange={setVisualCardColor}
+            />
           )}
         </div>
 
@@ -1498,8 +2840,7 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
             type="button"
             onClick={handleReset}
             title={labels.resetBtn}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:text-foreground"
-            style={{ background: 'var(--grid-pill-bg)' }}
+            className="smengo-tool smengo-tool--icon"
           >
             <RotateCcw className="h-4 w-4" />
           </button>
@@ -1507,46 +2848,6 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
       </div>
 
       <div className="smengo-ai-grid-stage" data-ai-state={aiState} style={{ position: 'relative' }}>
-      {theme === 'classic' ? (
-        <ClassicGrid
-          labels={labels}
-          mode={mode}
-          monthIdx={monthIdx}
-          setMonthIdx={setMonthIdx}
-          deptFilter={deptFilter}
-          showTimer={showTimer}
-          showToday={showToday}
-          contrast={contrast}
-          strongWeekend={strongWeekend}
-          showTimes={showTimes}
-          merged={merged}
-          showGrid={showGrid}
-          sticky={sticky}
-          customSections={customSections}
-          empOrder={empOrder}
-          getEmpRoleKey={getEmpRoleKey}
-          getRoleLabel={getRoleLabel}
-          getRoleColor={getRoleColor}
-          onOpenRolePicker={(name) => setRolePickerFor(name)}
-          onOpenAddSection={() => setAddSectionOpen(true)}
-          onMoveEmp={onMoveEmp}
-          dragEmp={dragEmp}
-          setDragEmp={setDragEmp}
-          dragOverEmp={dragOverEmp}
-          setDragOverEmp={setDragOverEmp}
-          dragOverGroup={dragOverGroup}
-          setDragOverGroup={setDragOverGroup}
-          optimizedOverrides={aiOverrides}
-          optimizedCellKeys={optimizedCellKeys}
-          optimizationRun={aiRun}
-          optimizationState={aiState}
-          coverageSummary={coverageSummary}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          employeeView={employeeView}
-          onEmployeeViewChange={setEmployeeView}
-        />
-      ) : (
       <div
         style={{
           background: 'var(--grid-cell)',
@@ -1648,23 +2949,14 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
               </button>
               {notifOpen && (
                 <div
-                  className="absolute right-0 z-30 mt-2 rounded-xl border border-border shadow-lg"
-                  style={{
-                    top: '100%', background: 'var(--surface)',
-                    width: 260, padding: 8, fontSize: 12,
-                  }}
+                  className="smengo-pop absolute right-0 z-30 mt-2"
+                  style={{ top: '100%', width: 268, padding: 6, fontSize: 12 }}
                 >
+                  <div className="smengo-pop-label">{labels.shortageLabel}</div>
                   <div style={{
-                    padding: '6px 8px 8px',
-                    fontSize: 10, fontWeight: 600, textTransform: 'uppercase',
-                    letterSpacing: '0.05em', color: 'var(--muted-foreground)',
-                  }}>
-                    {labels.shortageLabel}
-                  </div>
-                  <div style={{
-                    display: 'flex', gap: 8, padding: '8px',
-                    borderRadius: 6, background: 'var(--accent-soft)',
-                    color: 'var(--foreground)', lineHeight: 1.35,
+                    display: 'flex', gap: 8, padding: '9px 10px',
+                    borderRadius: 9, background: 'var(--accent-soft)',
+                    color: 'var(--foreground)', lineHeight: 1.4,
                   }}>
                     <AlertCircle style={{ width: 14, height: 14, color: 'var(--accent)', flexShrink: 0, marginTop: 1 }} />
                     <span>{coverageSummary}</span>
@@ -1685,35 +2977,28 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
               </button>
               {userOpen && (
                 <div
-                  className="absolute right-0 z-30 mt-2 rounded-xl border border-border shadow-lg"
-                  style={{
-                    top: '100%', background: 'var(--surface)',
-                    width: 200, padding: 10, fontSize: 12,
-                  }}
+                  className="smengo-pop absolute right-0 z-30 mt-2"
+                  style={{ top: '100%', width: 212, padding: 6, fontSize: 12 }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 8, borderBottom: '1px solid var(--border)' }}>
-                    <Avatar name="Olga Romanenko" size={28} />
-                    <div style={{ lineHeight: 1.25, minWidth: 0 }}>
-                      <div style={{ fontWeight: 600, color: 'var(--foreground)', fontSize: 12 }}>{labels.employeeNames.olgaRomanenko}</div>
-                      <div style={{ fontSize: 10, color: 'var(--muted-foreground)' }}>olga@smengo.app</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '6px 8px 8px' }}>
+                    <Avatar name="Olga Romanenko" size={30} />
+                    <div style={{ lineHeight: 1.3, minWidth: 0 }}>
+                      <div style={{ fontWeight: 650, color: 'var(--foreground)', fontSize: 12.5 }}>{labels.employeeNames.olgaRomanenko}</div>
+                      <div style={{ fontSize: 10.5, color: 'var(--muted-foreground)' }}>olga@smengo.app</div>
                     </div>
                   </div>
-                  <div style={{ paddingTop: 6 }}>
-                    {[labels.editBtn, labels.exportBtn].map((item) => (
-                      <button
-                        key={item}
-                        type="button"
-                        onClick={() => setUserOpen(false)}
-                        className="block w-full text-left cursor-pointer transition-colors hover:bg-muted rounded"
-                        style={{
-                          background: 'transparent', border: 0,
-                          padding: '6px 8px', fontSize: 12, color: 'var(--foreground)',
-                        }}
-                      >
-                        {item}
-                      </button>
-                    ))}
-                  </div>
+                  <div className="smengo-pop-sep" />
+                  {[labels.editBtn, labels.exportBtn].map((item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      onClick={() => setUserOpen(false)}
+                      className="smengo-pop-item"
+                      style={{ fontSize: 12.5 }}
+                    >
+                      {item}
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
@@ -1726,39 +3011,32 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
         <div
           data-grid-topbar
           style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            padding: '8px 12px', borderBottom: '1px solid var(--border)',
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '10px 14px', borderBottom: '1px solid var(--border)',
             background: 'var(--grid-cell)', flexWrap: 'wrap',
           }}
         >
-          {/* Month pill */}
+          {/* Month switcher */}
           {activeTab === 'schedule' && (
-            <div
-              style={{
-                display: 'flex', alignItems: 'center', gap: 5,
-                background: 'var(--grid-pill-bg)', borderRadius: 6,
-                padding: '4px 8px', fontSize: 11, fontWeight: 500,
-                color: 'var(--foreground)',
-              }}
-            >
+            <div className="smengo-tool" style={{ padding: '0 4px', gap: 2, cursor: 'default' }}>
               <button
                 type="button"
                 onClick={() => setMonthIdx((m) => Math.max(0, m - 1))}
                 disabled={monthIdx === 0}
-                className="cursor-pointer hover:opacity-70 disabled:cursor-default disabled:opacity-35 disabled:hover:opacity-35"
+                className="inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-md transition-colors hover:bg-muted disabled:cursor-default disabled:opacity-30 disabled:hover:bg-transparent"
                 aria-label={labels.ariaPrevMonth}
-                style={{ background: 'transparent', border: 0, padding: '0 2px', color: 'inherit' }}
+                style={{ background: 'transparent', border: 0, color: 'var(--muted-foreground)', fontSize: 14, lineHeight: 1 }}
               >
                 ‹
               </button>
-              <span>{monthLabel}</span>
+              <span style={{ minWidth: 86, textAlign: 'center', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{monthLabel}</span>
               <button
                 type="button"
                 onClick={() => setMonthIdx((m) => Math.min(lastMonthIdx, m + 1))}
                 disabled={monthIdx === lastMonthIdx}
-                className="cursor-pointer hover:opacity-70 disabled:cursor-default disabled:opacity-35 disabled:hover:opacity-35"
+                className="inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-md transition-colors hover:bg-muted disabled:cursor-default disabled:opacity-30 disabled:hover:bg-transparent"
                 aria-label={labels.ariaNextMonth}
-                style={{ background: 'transparent', border: 0, padding: '0 2px', color: 'inherit' }}
+                style={{ background: 'transparent', border: 0, color: 'var(--muted-foreground)', fontSize: 14, lineHeight: 1 }}
               >
                 ›
               </button>
@@ -1770,36 +3048,31 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
             <button
               type="button"
               onClick={() => setDeptOpen((v) => !v)}
-              className="cursor-pointer hover:opacity-80"
-              style={{
-                background: 'var(--grid-pill-bg)', borderRadius: 6,
-                padding: '4px 8px', fontSize: 11,
-                color: 'var(--muted-foreground)', border: 0,
-                display: 'inline-flex', alignItems: 'center', gap: 4,
-              }}
+              className="smengo-tool"
             >
               {deptFilter === 'all' ? labels.allDepts : deptLabel(deptFilter)}
               <ChevronDown style={{ width: 11, height: 11 }} />
             </button>
             {deptOpen && (
               <div
-                className="absolute left-0 z-30 mt-1 w-44 overflow-hidden rounded-lg border border-border shadow-lg"
-                style={{ background: 'var(--surface)' }}
+                className="smengo-pop absolute left-0 z-30 mt-1.5 w-48 p-1.5"
+                style={{ ['--pop-origin' as string]: 'top left' }}
               >
-                {deptOptions.map((d) => (
-                  <button
-                    key={d.k}
-                    type="button"
-                    onClick={() => onDeptPick(d.k)}
-                    className="block w-full px-3 py-1.5 text-left text-[12px] transition-colors hover:bg-muted"
-                    style={{
-                      color: 'var(--foreground)',
-                      background: deptFilter === d.k ? 'var(--accent-soft)' : 'transparent',
-                    }}
-                  >
-                    {d.label}
-                  </button>
-                ))}
+                {deptOptions.map((d) => {
+                  const active = deptFilter === d.k
+                  return (
+                    <button
+                      key={d.k}
+                      type="button"
+                      onClick={() => onDeptPick(d.k)}
+                      className="smengo-pop-item justify-between"
+                      style={{ fontSize: 12.5 }}
+                    >
+                      <span className="min-w-0 truncate" style={{ fontWeight: active ? 650 : 500 }}>{d.label}</span>
+                      {active && <Check className="h-3.5 w-3.5 shrink-0" style={{ color: 'var(--accent)' }} />}
+                    </button>
+                  )
+                })}
               </div>
             )}
           </div>
@@ -1818,12 +3091,7 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
               <button
                 type="button"
                 onClick={() => setAddSectionOpen(true)}
-                className="hidden cursor-pointer transition-colors hover:opacity-80 sm:inline-block"
-                style={{
-                  background: 'var(--grid-pill-bg)', borderRadius: 6,
-                  padding: '4px 8px', fontSize: 11,
-                  color: 'var(--muted-foreground)', border: 0,
-                }}
+                className="smengo-tool max-sm:hidden"
               >
                 {labels.addSectionBtn}
               </button>
@@ -1832,13 +3100,8 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
               <button
                 type="button"
                 onClick={() => setEditMode((v) => !v)}
-                className="cursor-pointer transition-colors"
-                style={{
-                  background: editMode ? 'var(--accent)' : 'var(--grid-pill-bg)',
-                  color: editMode ? '#fff' : 'var(--muted-foreground)',
-                  borderRadius: 6, padding: '4px 8px', fontSize: 11,
-                  border: 0, display: 'inline-flex', alignItems: 'center', gap: 4,
-                }}
+                className="smengo-tool"
+                data-active={editMode}
               >
                 <Pencil style={{ width: 11, height: 11 }} />
                 {editMode ? labels.editDone : labels.editBtn}
@@ -1848,12 +3111,7 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
               <button
                 type="button"
                 onClick={() => showToast(labels.toastExported)}
-                className="cursor-pointer transition-colors hover:opacity-80"
-                style={{
-                  background: 'var(--grid-pill-bg)', borderRadius: 6,
-                  padding: '4px 8px', fontSize: 11,
-                  color: 'var(--muted-foreground)', border: 0,
-                }}
+                className="smengo-tool"
               >
                 {labels.exportBtn}
               </button>
@@ -1863,11 +3121,8 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
                 type="button"
                 onClick={onAddEmployee}
                 disabled={demoEmps.length >= 4}
-                className="cursor-pointer transition-colors"
+                className="smengo-tool smengo-tool--primary"
                 style={{
-                  background: 'var(--accent)', borderRadius: 6,
-                  padding: '4px 8px', fontSize: 11, fontWeight: 600,
-                  color: '#fff', border: 0,
                   opacity: demoEmps.length >= 4 ? 0.5 : 1,
                   cursor: demoEmps.length >= 4 ? 'not-allowed' : 'pointer',
                 }}
@@ -1896,10 +3151,13 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
           <CompactGrid
             groups={groups}
             days={days}
+            todayDayIdx={todayDayIdx}
+            customCellOf={customCellOf}
             statusOf={statusOf}
             weekendBg={weekendBg}
             chipBg={chipBg}
-            chipFg={chipFg}
+            visualColors={activeVisualIconColors}
+            siteTone={siteTone}
             contrast={contrast}
             labels={labels}
             showTelegram={showTelegram}
@@ -1920,7 +3178,7 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
                 ? onTelegramClick(allEmps.find((e) => e.name === name)?.tg ?? '')
                 : setProjectModal((`p${pIdx}` as ProjectKey))
             }
-            onCellEdit={(name, day, px, py) => setEditCell({ name, day, px, py })}
+            onCellEdit={openEditCell}
             getEmpRoleKey={getEmpRoleKey}
             getEmpSpecialty={getEmpSpecialty}
             getRoleColor={getRoleColor}
@@ -1938,18 +3196,22 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
             shiftedToCellKeys={shiftedToCellKeys}
             optimizationRun={aiRun}
             optimizationState={aiState}
+            problemDayIdx={problemColumnActive ? problemDayIdx : null}
           />
         ) : (
           <DetailGrid
             mode={mode}
             groups={groups}
             days={days}
+            todayDayIdx={todayDayIdx}
+            customCellOf={customCellOf}
             statusOf={statusOf}
+            visualColors={activeVisualIconColors}
+            siteTone={siteTone}
             labels={labels}
             chipLbl={CHIP_LBL}
             chipLblFull={CHIP_LBL_FULL}
             chipBg={chipBg}
-            chipFg={chipFg}
             contrast={contrast}
             weekendBg={weekendBg}
             showTimes={showTimes}
@@ -1970,7 +3232,7 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
                 : setProjectModal((`p${pIdx}` as ProjectKey))
             }
             editMode={editMode}
-            onCellEdit={(name, day, px, py) => setEditCell({ name, day, px, py })}
+            onCellEdit={openEditCell}
             getEmpRoleKey={getEmpRoleKey}
             getEmpSpecialty={getEmpSpecialty}
             getRoleLabel={getRoleLabel}
@@ -1989,6 +3251,8 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
             shiftedToCellKeys={shiftedToCellKeys}
             optimizationRun={aiRun}
             optimizationState={aiState}
+            problemDayIdx={problemColumnActive ? problemDayIdx : null}
+            cellBadgesOf={cellBadgesOf}
           />
         )}
 
@@ -2032,24 +3296,26 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
           </div>
         )}
 
-        {/* Cell-edit popover — fixed so it renders above overflow:hidden tables */}
-        {activeTab === 'schedule' && editCell && (
+        {/* Cell-edit popover — portaled above overflow-hidden tables, anchored to page coords */}
+        {activeTab === 'schedule' && editCell && typeof document !== 'undefined' && createPortal(
           <div
             ref={editCellRef}
-            className="fixed z-[9999] rounded-lg border border-border shadow-xl"
-            style={{
-              background: 'var(--surface)',
-              padding: 6,
-              top: editCell.py,
-              left: editCell.px,
-              transform: 'translateX(-50%)',
-              animation: 'smengo-popover-pop 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
-            }}
+            className="absolute z-[9999]"
+            style={{ top: editCell.py + popShift.y, left: editCell.px + popShift.x, transform: 'translateX(-50%)' }}
           >
-            <div className="mb-1 text-center text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              {displayNameForKey(editCell.name)}
+            <div className="smengo-pop p-2.5" style={{ ['--pop-origin' as string]: 'top center', borderRadius: 14 }}>
+            <div className="mb-2 flex items-center justify-between gap-2 px-1">
+              <span className="max-w-[180px] truncate text-[11px] font-semibold" style={{ color: 'var(--foreground)' }}>
+                {displayNameForKey(editCell.name)}
+              </span>
+              <span
+                className="rounded-md px-1.5 py-0.5 text-[10px] font-bold tabular-nums"
+                style={{ background: 'var(--grid-pill-bg)', color: 'var(--muted-foreground)' }}
+              >
+                {String(editCell.day + 1).padStart(2, '0')}.{String(DEMO_FIRST_MONTH + monthIdx + 1).padStart(2, '0')}
+              </span>
             </div>
-            <div className="flex gap-1">
+            <div className="flex flex-wrap justify-center gap-1.5">
               {STATUS_OPTIONS.map((s) => (
                 <button
                   key={s}
@@ -2058,39 +3324,219 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
                     setStatusOf(editCell.name, editCell.day, s)
                     setEditCell(null)
                   }}
-                  className="cursor-pointer transition-transform hover:scale-105"
+                  className="cursor-pointer transition-transform hover:-translate-y-0.5 hover:scale-105"
                   style={{
-                    width: 36, height: 30, border: 0, borderRadius: 5,
+                    width: 44, height: 34, border: 0, borderRadius: 10,
                     background: s === '-' ? 'var(--muted)' : chipBg(s as Exclude<Status, '-'>),
                     color: s === '-' ? 'var(--muted-foreground)' : chipFg(s as Exclude<Status, '-'>),
-                    fontSize: 10, fontWeight: 600,
+                    fontSize: 10.5, fontWeight: 700,
+                    boxShadow: s === '-' ? 'none' : '0 1px 2px rgba(0,0,0,0.12)',
                   }}
                 >
                   {s === '-' ? '—' : CHIP_LBL[s as Exclude<Status, '-'>]}
                 </button>
               ))}
+              {customFavorites.map((favorite, index) => (
+                <button
+                  key={`${customCellSummary(favorite)}-${index}`}
+                  type="button"
+                  onClick={() => applyCustomCell(favorite)}
+                  className="cursor-pointer transition-transform hover:-translate-y-0.5 hover:scale-105"
+                  style={{
+                    minWidth: 58,
+                    maxWidth: 92,
+                    height: 34,
+                    border: 0,
+                    borderRadius: 10,
+                    background: 'linear-gradient(135deg, color-mix(in oklab, var(--accent) 28%, #1f2530), color-mix(in oklab, var(--grid-cell) 75%, var(--accent)))',
+                    color: '#fff',
+                    padding: '0 7px',
+                    fontSize: 9.5,
+                    fontWeight: 700,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {customCellSummary(favorite)}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => setCustomEditorOpen((value) => !value)}
+                className="cursor-pointer transition-transform hover:-translate-y-0.5 hover:scale-105"
+                style={{
+                  minWidth: 70,
+                  height: 34,
+                  border: '1px solid color-mix(in oklab, var(--accent) 45%, transparent)',
+                  borderRadius: 10,
+                  background: customEditorOpen ? 'var(--accent)' : 'var(--grid-pill-bg)',
+                  color: customEditorOpen ? '#fff' : 'var(--foreground)',
+                  padding: '0 10px',
+                  fontSize: 10,
+                  fontWeight: 750,
+                }}
+              >
+                {labels.customBadge}
+              </button>
             </div>
-          </div>
+            {mode === 'extended' && !customEditorOpen && (() => {
+              const appliedIds = cellBadgeIdsOf(editCell.name, editCell.day)
+              const presets: CellBadgeDef[] = [
+                ...BUILTIN_BADGE_PRESETS.map((p) => ({ id: p.id, text: labels[p.labelKey], color: p.color })),
+                ...customBadgePresets,
+              ]
+              return (
+                <div className="mt-2.5" style={{ borderTop: '1px solid var(--pop-border)', paddingTop: 8 }}>
+                  <div className="mb-1.5 px-1 text-[9.5px] font-bold uppercase tracking-wider text-muted-foreground">
+                    {labels.badgesLabel}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5" style={{ maxWidth: 300 }}>
+                    {presets.map((p) => {
+                      const active = appliedIds.includes(p.id)
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => toggleCellBadge(editCell.name, editCell.day, p.id)}
+                          className="cursor-pointer transition-transform hover:-translate-y-0.5"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 5,
+                            height: 26,
+                            padding: '0 10px',
+                            borderRadius: 999,
+                            border: active ? `1px solid ${p.color}` : '1px solid var(--pop-border)',
+                            background: active ? p.color : 'transparent',
+                            color: active ? readableColorForHex(p.color) : 'var(--foreground)',
+                            fontSize: 10.5,
+                            fontWeight: 700,
+                            boxShadow: active ? `0 3px 8px -3px color-mix(in oklab, ${p.color} 60%, transparent)` : 'none',
+                          }}
+                        >
+                          {!active && (
+                            <span style={{ width: 7, height: 7, borderRadius: '50%', background: p.color, flexShrink: 0 }} />
+                          )}
+                          {p.text}
+                          {active && <Check size={11} strokeWidth={3} />}
+                        </button>
+                      )
+                    })}
+                    <button
+                      type="button"
+                      onClick={() => setBadgeFormOpen((v) => !v)}
+                      className="cursor-pointer transition-colors hover:bg-muted"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        height: 26,
+                        padding: '0 10px',
+                        borderRadius: 999,
+                        border: '1px dashed color-mix(in oklab, var(--muted-foreground) 45%, transparent)',
+                        background: 'transparent',
+                        color: 'var(--muted-foreground)',
+                        fontSize: 10.5,
+                        fontWeight: 650,
+                      }}
+                    >
+                      + {labels.badgeAddLabel}
+                    </button>
+                  </div>
+                  {badgeFormOpen && (
+                    <div className="mt-2 flex items-center gap-1.5">
+                      <input
+                        value={newBadgeText}
+                        autoFocus
+                        onChange={(e) => setNewBadgeText(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') createBadgePreset() }}
+                        placeholder={labels.badgePlaceholder}
+                        className="smengo-custom-input"
+                        style={{
+                          minWidth: 0,
+                          flex: 1,
+                          height: 28,
+                          borderRadius: 9,
+                          border: '1px solid var(--pop-border)',
+                          background: 'var(--grid-cell)',
+                          color: 'var(--foreground)',
+                          padding: '0 9px',
+                          fontSize: 11,
+                          fontWeight: 600,
+                          outline: 'none',
+                        }}
+                      />
+                      <div className="flex shrink-0 items-center gap-1">
+                        {SOLID_COLORS.slice(0, 6).map((c) => (
+                          <button
+                            key={c.id}
+                            type="button"
+                            aria-label={c.id}
+                            onClick={() => setNewBadgeColor(c.value)}
+                            className="cursor-pointer"
+                            style={{
+                              width: 14,
+                              height: 14,
+                              borderRadius: '50%',
+                              border: 0,
+                              padding: 0,
+                              background: c.value,
+                              boxShadow: newBadgeColor === c.value
+                                ? '0 0 0 2px var(--surface), 0 0 0 3.5px ' + c.value
+                                : 'inset 0 0 0 1px rgba(0,0,0,0.15)',
+                            }}
+                          />
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={createBadgePreset}
+                        disabled={!newBadgeText.trim()}
+                        className="cursor-pointer transition-opacity disabled:cursor-not-allowed disabled:opacity-45"
+                        style={{
+                          height: 28,
+                          flexShrink: 0,
+                          border: 0,
+                          borderRadius: 9,
+                          padding: '0 10px',
+                          background: 'var(--accent)',
+                          color: '#fff',
+                          fontSize: 10.5,
+                          fontWeight: 750,
+                        }}
+                      >
+                        {labels.createBtn}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
+            {customEditorOpen && (
+              <CustomCellEditor
+                draft={customDraft}
+                setDraft={setCustomDraft}
+                labels={labels}
+                siteTone={siteTone}
+                onSave={saveCustomDraft}
+                onFavorite={addCustomDraftToFavorites}
+              />
+            )}
+            </div>
+          </div>,
+          document.body,
         )}
 
         {/* Project modal */}
         {activeTab === 'schedule' && projectModal && (
           <div
-            className="absolute inset-0 z-40 flex items-center justify-center"
-            style={{
-              background: 'rgba(255,255,255,0.04)',
-              backdropFilter: 'blur(8px)',
-              WebkitBackdropFilter: 'blur(8px)',
-              animation: 'smengo-backdrop-in 0.22s ease-out',
-            }}
+            className="smengo-overlay-scrim absolute inset-0 z-40 flex items-center justify-center"
             onClick={() => setProjectModal(null)}
           >
             <div
-              className="rounded-xl border border-border p-5 shadow-xl"
-              style={{
-                background: 'var(--surface)', width: 320, maxWidth: '90%',
-                animation: 'smengo-modal-pop 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
-              }}
+              className="smengo-modal-panel p-5"
+              style={{ width: 332, maxWidth: '90%' }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="mb-2 flex items-center justify-between">
@@ -2156,7 +3602,6 @@ export function GridPreview({ labels }: { labels: GridPreviewLabels }) {
           </div>
         )}
       </div>
-      )}
       {aiState === 'running' && (
         <div aria-hidden="true" className="smengo-ai-scan-layer">
           <span />
@@ -2644,25 +4089,23 @@ function EmployeeProfileCard({
   const compact = mode === 'compact'
   const extended = mode === 'extended'
   const classic = variant === 'classic'
-  const avatarSize = compact ? 38 : extended ? 52 : 46
-  const cardPad = compact ? 16 : extended ? 24 : 20
-  const statGap = compact ? 14 : extended ? 24 : 18
-  const nameSize = compact ? 16 : extended ? 20 : 18
+  const avatarSize = compact ? 36 : extended ? 46 : 42
+  const cardPad = compact ? 14 : extended ? 20 : 16
+  const statGap = compact ? 12 : extended ? 20 : 16
+  const nameSize = compact ? 14 : extended ? 16 : 15
   const roleIconColor = solidAccent(row.specialtyColor)
-  const statusAccent = '#10b981'
-  const kindAccent = row.profile.kind === 'trainee' ? '#8b5cf6' : '#10b981'
+  const isTrainee = row.profile.kind === 'trainee'
 
   return (
     <article
       style={{
         minWidth: 0,
-        border: classic ? '1px solid var(--classic-grid-line, var(--border))' : '1px solid color-mix(in oklab, var(--border) 84%, var(--foreground) 8%)',
-        borderRadius: classic ? 8 : 10,
-        background: 'color-mix(in oklab, var(--surface) 96%, var(--grid-cell) 4%)',
-        boxShadow: classic
-          ? '0 1px 0 rgba(0,0,0,0.04)'
-          : '0 1px 2px rgba(15,23,42,0.06), 0 10px 26px rgba(15,23,42,0.08)',
+        border: classic ? '1px solid var(--classic-grid-line, var(--border))' : '1px solid var(--pop-border)',
+        borderRadius: classic ? 8 : 14,
+        background: 'var(--surface)',
+        boxShadow: classic ? '0 1px 0 rgba(0,0,0,0.04)' : 'var(--tool-shadow)',
         overflow: 'hidden',
+        transition: 'box-shadow 160ms ease, transform 160ms ease',
       }}
     >
       <div
@@ -2670,29 +4113,46 @@ function EmployeeProfileCard({
           padding: cardPad,
           display: 'grid',
           gridTemplateColumns: 'minmax(0, 1fr) auto',
-          gap: compact ? 12 : 18,
+          gap: compact ? 10 : 14,
           alignItems: 'start',
-          borderBottom: '1px solid var(--grid-row-divider)',
-          background: 'color-mix(in oklab, var(--surface) 98%, var(--grid-pill-bg) 2%)',
         }}
       >
-        <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: compact ? 12 : 16 }}>
+        <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: compact ? 10 : 12 }}>
           <EmployeeAvatarWithPresence name={row.emp.name} size={avatarSize} />
           <div style={{ minWidth: 0 }}>
-            <div
-              style={{
-                color: 'var(--foreground)',
-                fontSize: nameSize,
-                lineHeight: 1.1,
-                fontWeight: 800,
-                letterSpacing: 0,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                fontFamily: classic ? 'ui-serif, Georgia, "Times New Roman", serif' : undefined,
-              }}
-            >
-              {row.displayName}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
+              <span
+                style={{
+                  color: 'var(--foreground)',
+                  fontSize: nameSize,
+                  lineHeight: 1.2,
+                  fontWeight: 650,
+                  letterSpacing: '-0.01em',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  fontFamily: classic ? 'ui-serif, Georgia, "Times New Roman", serif' : undefined,
+                }}
+              >
+                {row.displayName}
+              </span>
+              {isTrainee && (
+                <span
+                  style={{
+                    flexShrink: 0,
+                    padding: '2px 7px',
+                    borderRadius: 999,
+                    background: 'color-mix(in oklab, #8b5cf6 12%, transparent)',
+                    color: '#8b5cf6',
+                    fontSize: 10,
+                    fontWeight: 650,
+                    lineHeight: 1.3,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {row.kindLabel}
+                </span>
+              )}
             </div>
             <button
               type="button"
@@ -2705,7 +4165,7 @@ function EmployeeProfileCard({
               className="cursor-pointer transition-colors hover:text-accent"
               title={row.emp.tg}
               style={{
-                marginTop: compact ? 5 : 7,
+                marginTop: 4,
                 maxWidth: '100%',
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -2715,48 +4175,32 @@ function EmployeeProfileCard({
                 background: 'transparent',
                 color: 'var(--muted-foreground)',
                 fontFamily: 'inherit',
-                fontSize: compact ? 12 : 13,
-                fontWeight: 650,
-                lineHeight: 1.1,
+                fontSize: compact ? 11.5 : 12,
+                fontWeight: 500,
+                lineHeight: 1.2,
               }}
             >
               <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {row.emp.tg}
+                {row.emp.tg} · {row.ageText}
               </span>
-              <Copy size={compact ? 12 : 13} strokeWidth={2.1} style={{ flexShrink: 0 }} />
+              <Copy size={11} strokeWidth={2} style={{ flexShrink: 0, opacity: 0.6 }} />
             </button>
-            <div
-              style={{
-                marginTop: compact ? 7 : 9,
-                color: 'var(--muted-foreground)',
-                fontSize: compact ? 12 : 13,
-                fontWeight: 650,
-                lineHeight: 1.1,
-              }}
-            >
-              {row.ageText}
-            </div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: compact ? 6 : 8 }}>
-          <EmployeeStatusBadge label={labels.employeeActive.toLocaleUpperCase('uk-UA')} accent={statusAccent} Icon={ShieldCheck} mode={mode} />
-          <EmployeeStatusBadge
-            label={row.kindLabel.toLocaleUpperCase('uk-UA')}
-            accent={kindAccent}
-            Icon={row.profile.kind === 'trainee' ? Sparkles : ShieldCheck}
-            mode={mode}
-          />
-        </div>
+        <EmployeeStatusBadge label={labels.employeeActive} accent="var(--success)" mode={mode} />
       </div>
 
       <div
         style={{
-          padding: cardPad,
+          paddingTop: 2,
+          paddingRight: cardPad,
+          paddingBottom: cardPad,
+          paddingLeft: cardPad,
           display: 'grid',
           gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
           columnGap: statGap,
-          rowGap: compact ? 14 : 18,
+          rowGap: compact ? 12 : 14,
         }}
       >
         <EmployeeProfileStat label={row.roleLabel} value={row.specialtyLabel} Icon={Briefcase} iconColor={roleIconColor} mode={mode} />
@@ -2767,12 +4211,11 @@ function EmployeeProfileCard({
 
       <div
         style={{
-          padding: compact ? '11px 14px' : extended ? '16px 22px' : '14px 18px',
+          padding: compact ? '8px 12px' : extended ? '10px 16px' : '9px 14px',
           display: 'flex',
           alignItems: 'center',
-          gap: compact ? 10 : 14,
-          borderTop: '1px solid var(--grid-row-divider)',
-          background: 'color-mix(in oklab, var(--grid-pill-bg) 48%, transparent)',
+          gap: compact ? 4 : 6,
+          borderTop: '1px solid var(--pop-border)',
         }}
       >
         <EmployeeCardAction label={labels.employeeTelegram} value={row.emp.tg} Icon={Send} mode={mode} onCopied={onCopied} />
@@ -2809,11 +4252,10 @@ function EmployeeAvatarWithPresence({ name, size }: { name: string; size: number
 }
 
 function EmployeeStatusBadge({
-  label, accent, Icon, mode = 'compact',
+  label, accent, mode = 'compact',
 }: {
   label: string
   accent: string
-  Icon: ComponentType<{ size?: number; strokeWidth?: number; style?: React.CSSProperties }>
   mode?: Mode
 }) {
   const compact = mode === 'compact'
@@ -2822,22 +4264,21 @@ function EmployeeStatusBadge({
       style={{
         display: 'inline-flex',
         alignItems: 'center',
-        justifyContent: 'center',
-        gap: compact ? 6 : 7,
-        minHeight: compact ? 26 : 30,
-        padding: compact ? '4px 10px' : '5px 13px',
-        borderRadius: compact ? 6 : 7,
-        border: `1px solid color-mix(in oklab, ${accent} 36%, transparent)`,
-        background: `color-mix(in oklab, ${accent} 12%, var(--surface))`,
+        gap: 6,
+        padding: compact ? '3px 9px' : '4px 10px',
+        borderRadius: 999,
+        background: `color-mix(in oklab, ${accent} 11%, transparent)`,
         color: accent,
-        fontSize: compact ? 11 : 12,
-        fontWeight: 850,
-        letterSpacing: '0.08em',
-        lineHeight: 1,
+        fontSize: compact ? 11 : 11.5,
+        fontWeight: 600,
+        lineHeight: 1.3,
         whiteSpace: 'nowrap',
       }}
     >
-      <Icon size={compact ? 13 : 14} strokeWidth={2.2} style={{ flexShrink: 0 }} />
+      <span
+        aria-hidden="true"
+        style={{ width: 6, height: 6, borderRadius: '50%', background: accent, flexShrink: 0 }}
+      />
       {label}
     </span>
   )
@@ -2859,11 +4300,11 @@ function EmployeeProfileStat({
     <div style={{ minWidth: 0 }}>
       <div
         style={{
-          color: 'var(--muted-foreground)',
-          fontSize: compact ? 10.5 : extended ? 13 : 12,
-          fontWeight: 800,
-          letterSpacing: '0.07em',
-          lineHeight: 1.1,
+          color: 'color-mix(in oklab, var(--muted-foreground) 80%, transparent)',
+          fontSize: compact ? 10 : extended ? 11 : 10.5,
+          fontWeight: 600,
+          letterSpacing: '0.05em',
+          lineHeight: 1.2,
           textTransform: 'uppercase',
           whiteSpace: 'nowrap',
           overflow: 'hidden',
@@ -2874,29 +4315,29 @@ function EmployeeProfileStat({
       </div>
       <div
         style={{
-          marginTop: compact ? 9 : 12,
+          marginTop: compact ? 5 : 7,
           display: 'flex',
           alignItems: 'center',
-          gap: compact ? 8 : 10,
+          gap: 7,
           minWidth: 0,
           color: 'var(--foreground)',
-          fontSize: compact ? 13 : extended ? 16 : 14.5,
-          fontWeight: 750,
-          lineHeight: 1.2,
+          fontSize: compact ? 12.5 : extended ? 14 : 13,
+          fontWeight: 600,
+          lineHeight: 1.25,
         }}
       >
-        <Icon size={compact ? 15 : 17} strokeWidth={2.1} style={{ color: iconColor, flexShrink: 0 }} />
+        <Icon size={compact ? 13 : 14} strokeWidth={2} style={{ color: iconColor, flexShrink: 0, opacity: 0.85 }} />
         <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</span>
       </div>
       {detail && (
         <div
           style={{
-            marginTop: 4,
-            paddingLeft: compact ? 23 : 27,
+            marginTop: 3,
+            paddingLeft: compact ? 20 : 21,
             color: 'var(--muted-foreground)',
-            fontSize: compact ? 10.5 : 11.5,
-            fontWeight: 600,
-            lineHeight: 1.25,
+            fontSize: compact ? 10.5 : 11,
+            fontWeight: 500,
+            lineHeight: 1.3,
             whiteSpace: 'nowrap',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
@@ -2930,22 +4371,22 @@ function EmployeeCardAction({
         onCopied?.()
       }}
       title={copy ? `${label}: ${value}` : label}
-      className="cursor-pointer transition-colors hover:text-accent"
+      className="cursor-pointer transition-colors hover:bg-muted hover:text-foreground"
       style={{
-        width: compact ? 24 : 28,
-        height: compact ? 24 : 28,
+        width: compact ? 26 : 30,
+        height: compact ? 26 : 30,
         display: 'inline-flex',
         alignItems: 'center',
         justifyContent: 'center',
         border: 0,
-        borderRadius: 6,
+        borderRadius: 8,
         background: 'transparent',
-        color: danger ? '#fb7185' : 'var(--muted-foreground)',
+        color: danger ? 'color-mix(in oklab, var(--st-alert, #fb7185) 80%, var(--muted-foreground))' : 'var(--muted-foreground)',
         padding: 0,
         flexShrink: 0,
       }}
     >
-      <Icon size={compact ? 17 : 19} strokeWidth={2} />
+      <Icon size={compact ? 15 : 16} strokeWidth={2} />
     </button>
   )
 }
@@ -3128,12 +4569,14 @@ function compactEmployeeNameColumnWidth({
   showEmployeeDot: boolean
   showTelegram: boolean
 }): number {
-  if (showTelegram) return 305
+  if (showTelegram) return 280
 
+  // Long role labels scroll horizontally inside the column instead of
+  // truncating, so the column can stay tight around the names.
   const meta = employeeMetaParts(sticky, showEmployeeDepartment, showEmployeeRole)
-  if (meta.count === 0) return showEmployeeDot ? 236 : 218
-  if (meta.count === 1) return meta.role ? 286 : 266
-  return showEmployeeDot ? 305 : 292
+  if (meta.count === 0) return showEmployeeDot ? 212 : 198
+  if (meta.count === 1) return meta.role ? 248 : 236
+  return showEmployeeDot ? 254 : 246
 }
 
 function detailEmployeeNameColumnWidth({
@@ -3235,10 +4678,7 @@ function DepartmentPositionCard({
         <>
           <span
             style={{
-              minWidth: 0,
-              maxWidth: 90,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
+              flexShrink: 0,
               color: 'var(--muted-foreground)',
               fontSize: 10 * textScale,
               fontWeight: 500,
@@ -3269,9 +4709,8 @@ function DepartmentPositionCard({
       {shouldShowPosition && (
         <span
           style={{
-            minWidth: 0,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
+            flexShrink: 0,
+            whiteSpace: 'nowrap',
             color: 'var(--foreground)',
             fontSize: 13.5 * textScale,
             fontWeight: 500,
@@ -3334,19 +4773,22 @@ function DepartmentPositionCard({
       )}
     </>
   )
+  // compactSchedule renders as a small badge pill: dot + department › role.
   const style: React.CSSProperties = isCompactSchedule ? {
     width,
     maxWidth: maxWidth ?? (shouldClamp ? '100%' : 'none'),
     minWidth: shouldClamp ? 0 : 'max-content',
     display: 'inline-flex',
     alignItems: 'center',
-    gap: 6,
+    alignSelf: 'flex-start',
+    gap: 5,
     flexShrink: shrink ? 1 : 0,
     overflow: shouldClamp ? 'hidden' : 'visible',
-    border: 0,
-    borderRadius: 0,
-    background: 'transparent',
-    boxShadow: 'none',
+    border: '1px solid color-mix(in oklab, var(--border) 82%, transparent)',
+    borderRadius: 999,
+    background: 'color-mix(in oklab, var(--grid-pill-bg) 88%, var(--surface) 12%)',
+    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+    padding: hasText ? '2.5px 8px 2.5px 6px' : 3,
     fontFamily: 'Inter, "SF Pro Display", var(--font-sans), system-ui, sans-serif',
     whiteSpace: 'nowrap',
   } : {
@@ -3376,7 +4818,7 @@ function DepartmentPositionCard({
         className="cursor-pointer transition-opacity hover:opacity-85"
         style={{
           ...style,
-          padding: 0,
+          ...(isCompactSchedule ? {} : { padding: 0 }),
         }}
       >
         {isCompactSchedule ? compactContent : content}
@@ -3462,8 +4904,7 @@ function EmployeeCalendarOverlay({
   for (let i = 0; i < firstDowMon0; i++) cells.push(null)
   for (let i = 0; i < days.length; i++) {
     const d = days[i]
-    let code = statusOf(empName, i, emp.s)
-    if (code === 'U' && i !== PROBLEM_DAY_IDX) code = 'W'
+    const code = statusOf(empName, i, emp.s)
     cells.push({ day: d.n, status: code, isWeekend: d.k === 'sat' || d.k === 'sun', idx: i })
   }
   while (cells.length % 7 !== 0) cells.push(null)
@@ -3506,8 +4947,9 @@ function EmployeeCalendarOverlay({
       onClick={onClose}
       style={{
         position: 'fixed', inset: 0, zIndex: 60,
-        background: mounted ? 'rgba(8,7,5,0.55)' : 'rgba(8,7,5,0)',
-        backdropFilter: mounted ? 'blur(6px)' : 'blur(0)',
+        background: mounted ? 'var(--overlay-scrim)' : 'transparent',
+        backdropFilter: mounted ? 'blur(8px)' : 'blur(0)',
+        WebkitBackdropFilter: mounted ? 'blur(8px)' : 'blur(0)',
         transition: 'background 240ms ease, backdrop-filter 240ms ease',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: 16,
@@ -3524,10 +4966,10 @@ function EmployeeCalendarOverlay({
           overflowY: 'auto',
           background: 'var(--surface)',
           color: 'var(--foreground)',
-          border: '1px solid var(--border)',
-          borderRadius: 16,
-          boxShadow: '0 32px 64px -16px rgba(0,0,0,0.45)',
-          transform: mounted ? 'translateY(0) scale(1)' : 'translateY(12px) scale(0.98)',
+          border: '1px solid var(--pop-border)',
+          borderRadius: 18,
+          boxShadow: 'var(--modal-shadow)',
+          transform: mounted ? 'translateY(0) scale(1)' : 'translateY(12px) scale(0.97)',
           opacity: mounted ? 1 : 0,
           transition: 'transform 280ms cubic-bezier(.32,.72,0,1), opacity 220ms ease',
         }}
@@ -3646,25 +5088,64 @@ function LegendDot({ color, label }: { color: string; label: string }) {
   )
 }
 
-function SettingRow({
-  label, value, onChange, indent = false,
-}: { label: string; value: boolean; onChange: (v: boolean) => void; indent?: boolean }) {
+// Apple-style segmented control: the white thumb slides under the active
+// option (measured from the real button rects so labels of any length work).
+function ModeSegmented({
+  mode, onChange, labels,
+}: {
+  mode: Mode
+  onChange: (m: Mode) => void
+  labels: Record<Mode, string>
+}) {
+  const wrapRef = useRef<HTMLDivElement | null>(null)
+  const btnRefs = useRef<Partial<Record<Mode, HTMLButtonElement | null>>>({})
+  const [thumb, setThumb] = useState<{ left: number; width: number } | null>(null)
+
+  useLayoutEffect(() => {
+    const update = () => {
+      const btn = btnRefs.current[mode]
+      if (!btn) return
+      setThumb({ left: btn.offsetLeft, width: btn.offsetWidth })
+    }
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [mode])
+
   return (
-    <label className="flex cursor-pointer items-center justify-between py-1.5 text-foreground" style={{ paddingLeft: indent ? 14 : 0 }}>
-      <span>{label}</span>
-      <button
-        type="button"
-        onClick={() => onChange(!value)}
-        className="relative h-5 w-9 rounded-full transition-colors"
-        style={{ background: value ? 'var(--accent)' : 'var(--muted)' }}
-        aria-pressed={value}
-      >
-        <span
-          className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all"
-          style={{ left: value ? '18px' : '2px' }}
-        />
-      </button>
-    </label>
+    <div ref={wrapRef} data-mode-pill className="smengo-seg w-full justify-center sm:w-auto">
+      {thumb && <span className="smengo-seg-thumb" style={{ left: thumb.left, width: thumb.width }} aria-hidden="true" />}
+      {(['compact', 'detail', 'extended'] as const).map((m) => (
+        <button
+          key={m}
+          ref={(el) => { btnRefs.current[m] = el }}
+          type="button"
+          data-active={mode === m}
+          onClick={() => onChange(m)}
+          className="flex-1 sm:flex-none"
+        >
+          {labels[m]}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function SettingRow({
+  label, value, onChange, disabled = false,
+}: { label: string; value: boolean; onChange: (v: boolean) => void; disabled?: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={() => { if (!disabled) onChange(!value) }}
+      aria-pressed={value}
+      aria-disabled={disabled}
+      className="smengo-pop-item justify-between"
+      style={{ opacity: disabled ? 0.45 : 1, cursor: disabled ? 'default' : 'pointer' }}
+    >
+      <span className="min-w-0 truncate">{label}</span>
+      <span className="smengo-switch" aria-pressed={value} aria-hidden="true" />
+    </button>
   )
 }
 
@@ -3915,21 +5396,27 @@ function AiOptimizeBar({
 
 /* ── Detail / Extended mode ────────────────────────────────────── */
 function DetailGrid({
-  mode, groups, days, statusOf, labels, chipLbl, chipLblFull, chipBg, chipFg, contrast, weekendBg,
+  mode, groups, days, todayDayIdx, customCellOf, statusOf, visualColors, siteTone, labels, chipLbl, chipBg, contrast, weekendBg,
   showTimes, merged, showGrid, sticky, onShiftScope, onShiftScopeChange, showEmployeeRole, showEmployeeDepartment, showEmployeeDot, showTelegram, onEmpClick, onToggleProjects, onProjectClick, editMode, onCellEdit,
   getEmpRoleKey, getEmpSpecialty, getRoleLabel, getRoleColor, getSpecialtyColor, onOpenRolePicker,
   dragEmp, setDragEmp, dragOverEmp, setDragOverEmp, dragOverGroup, setDragOverGroup, onMoveEmp,
   optimizedCellKeys, shiftedFromCellKeys, shiftedToCellKeys, optimizationRun, optimizationState,
+  problemDayIdx, cellBadgesOf,
 }: {
   mode: Mode
   groups: { key: string; name: string; shortName: string; min?: number; rows: EmpDef[] }[]
   days: MonthDay[]
+  todayDayIdx: number | null
+  problemDayIdx: number | null
+  cellBadgesOf: (name: string, dayIdx: number) => CellBadgeDef[]
+  customCellOf: (name: string, dayIdx: number) => CustomCellConfig | null
   statusOf: (name: string, dayIdx: number, base: string) => Status
+  visualColors: VisualCardColorConfig
+  siteTone: SiteTone
   labels: GridPreviewLabels
   chipLbl: Record<Exclude<Status, '-'>, string>
   chipLblFull: Record<Exclude<Status, '-'>, string>
   chipBg: (c: Exclude<Status, '-'>) => string
-  chipFg: (c: Exclude<Status, '-'>) => string
   contrast: boolean
   weekendBg: string
   showTimes: boolean
@@ -3967,6 +5454,25 @@ function DetailGrid({
   optimizationState: 'idle' | 'running' | 'done'
 }) {
   const [hoveredRun, setHoveredRun] = useState<string | null>(null)
+  const gridScrollerRef = useRef<HTMLDivElement | null>(null)
+  const nameScrollersRef = useRef(new Set<HTMLDivElement>())
+  const namePrimaryRef = useRef<HTMLDivElement | null>(null)
+  const nameSyncingRef = useRef(false)
+  const registerNameScroller = (el: HTMLDivElement | null) => {
+    if (!el) return
+    nameScrollersRef.current.add(el)
+    const primary = namePrimaryRef.current
+    if (!primary || !primary.isConnected || el.scrollWidth > primary.scrollWidth) namePrimaryRef.current = el
+  }
+  const handleNameScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (nameSyncingRef.current) return
+    nameSyncingRef.current = true
+    const left = e.currentTarget.scrollLeft
+    for (const el of nameScrollersRef.current) {
+      if (el !== e.currentTarget && el.isConnected) el.scrollLeft = left
+    }
+    requestAnimationFrame(() => { nameSyncingRef.current = false })
+  }
   const dayKey = (k: keyof GridPreviewLabels['days']) => labels.days[k]
   const isExt = mode === 'extended'
   const colW = isExt ? 86 : 56
@@ -3975,8 +5481,8 @@ function DetailGrid({
   const detailCellFontSize = isExt ? 13 : 11.2
   const detailCellAltFontSize = isExt ? 11.5 : 12
   const detailInlineChipMinHeight = isExt ? 46 : 36
-  const detailHeaderDayFontSize = isExt ? 11 : 14.5
-  const detailHeaderWeekdayFontSize = isExt ? 9 : 11.5
+  const detailHeaderDayFontSize = 13
+  const detailHeaderWeekdayFontSize = 8.5
   const nameColW = detailEmployeeNameColumnWidth({
     mode,
     sticky,
@@ -3987,24 +5493,193 @@ function DetailGrid({
   })
   const nameColTransition = 'width 160ms ease, min-width 160ms ease, max-width 160ms ease'
   const dndEnabled = false
-  const showProblemColumn = optimizationRun <= 1
   const allRows = groups.flatMap((group) => group.rows)
   const onShiftGroup = groups.find((group) => group.key === onShiftScope && group.rows.length > 0)
   const onShiftRows = onShiftGroup?.rows ?? allRows
-
-  function workLabel(emp: EmpDef): string {
-    if (!showTimes) return isExt ? chipLblFull.W : chipLbl.W
-    return compactShiftWindow(emp.shift)
-  }
 
   function shiftWindowParts(window: string): string[] {
     return window
       .split('–')
       .map((part) => `${part.trim().padStart(2, '0')}:00`)
   }
+  function visualForCode(code: Exclude<Status, '-'>): VisualCardColorValue {
+    if (code === 'W') return visualColors.work
+    if (code === 'V') return visualColors.vacation
+    if (code === 'S') return visualColors.sick
+    if (code === 'D') return visualColors.dayoff
+    return visualColors.uncovered
+  }
+
+  // Extended mode renders informative cards: header row (shift icon + hours
+  // chip), the time window, and any cell badges pinned to the bottom row.
+  const renderExtWorkCard = (emp: EmpDef, dayIdx: number) => {
+    const wm = workMeta(emp.shift, labels)
+    const bg = contrast ? wm.bg : 'var(--chip-w-bg)'
+    const visual = visualColors.work
+    const ShiftIcon = emp.shift === 'night' ? Moon : Sun
+    const [shiftStart, shiftEnd] = shiftWindowParts(wm.window)
+    const badges = cellBadgesOf(emp.name, dayIdx)
+    const hasBadges = badges.length > 0
+    return (
+      <div
+        className="smengo-schedule-chip"
+        style={{
+          position: 'relative',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 3,
+          background: bg,
+          color: visual.text,
+          padding: '5px 6px 6px',
+          borderRadius: 8,
+          minHeight: 46,
+          boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
+          textAlign: 'center',
+        }}
+      >
+        <span style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
+          <span
+            className="inline-flex shrink-0 items-center justify-center rounded-full bg-white/15"
+            style={{ width: 16, height: 16 }}
+          >
+            <ShiftIcon size={10} strokeWidth={2.5} color={visual.icon} />
+          </span>
+          <span
+            style={{
+              padding: '2.5px 6px',
+              borderRadius: 999,
+              background: 'rgba(255,255,255,0.15)',
+              fontSize: 8,
+              fontWeight: 750,
+              lineHeight: 1,
+              letterSpacing: '0.02em',
+              fontVariantNumeric: 'tabular-nums',
+            }}
+          >
+            {wm.hours}{labels.hourSuffix}
+          </span>
+        </span>
+        <span
+          style={{
+            minWidth: 0,
+            maxWidth: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: visual.text,
+            fontSize: detailCellFontSize,
+            fontWeight: 700,
+            lineHeight: 1.02,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {showTimes ? (
+            <>
+              <span>{shiftStart}</span>
+              <span>{shiftEnd}</span>
+            </>
+          ) : wm.name}
+        </span>
+        {hasBadges && (
+          <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3, minWidth: 0, maxWidth: '100%' }}>
+            {badges.map((b) => <CellBadgePill key={b.id} badge={b} />)}
+          </span>
+        )}
+      </div>
+    )
+  }
+
+  // Detail mode: compact two-line card — icon + window on top, hours and
+  // shift name underneath. Informative, no badges.
+  const renderDetailWorkChip = (emp: EmpDef) => {
+    const wm = workMeta(emp.shift, labels)
+    const bg = contrast ? wm.bg : 'var(--chip-w-bg)'
+    const WIcon = wm.Icon
+    return (
+      <div
+        className="smengo-schedule-chip"
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 3,
+          background: bg,
+          color: visualColors.work.text,
+          width: 'calc(100% - 4px)',
+          maxWidth: '100%',
+          boxSizing: 'border-box',
+          margin: '0 auto',
+          padding: '4px 3px',
+          borderRadius: 6,
+          minWidth: 0,
+          minHeight: detailInlineChipMinHeight,
+          whiteSpace: 'nowrap',
+        }}
+      >
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3.5, fontSize: 10.5, fontWeight: 750, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+          <WIcon size={10} strokeWidth={2.4} color={visualColors.work.icon} />
+          {showTimes ? compactShiftWindow(emp.shift) : wm.name}
+        </span>
+        <span style={{ fontSize: 8.2, fontWeight: 650, lineHeight: 1, opacity: 0.78, letterSpacing: '0.02em' }}>
+          {wm.hours}{labels.hourSuffix}{showTimes ? ` · ${wm.name}` : ''}
+        </span>
+      </div>
+    )
+  }
+
+  const renderExtDayoffCard = (emp: EmpDef, dayIdx: number) => {
+    const badges = cellBadgesOf(emp.name, dayIdx)
+    const hasBadges = badges.length > 0
+    return (
+      <div
+        className="smengo-schedule-chip"
+        style={{
+          position: 'relative',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 3,
+          width: '100%',
+          minHeight: 46,
+          background: chipBg('D'),
+          color: visualColors.dayoff.text,
+          padding: hasBadges ? '24px 7px 6px' : '5px 7px',
+          borderRadius: 8,
+          fontSize: 12,
+          fontWeight: 750,
+          lineHeight: 1.05,
+          boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
+          textAlign: 'center',
+        }}
+      >
+        <span
+          className="inline-flex shrink-0 items-center justify-center rounded-full bg-white/15"
+          style={{ position: 'absolute', top: 5, left: 6, width: 16, height: 16 }}
+        >
+          <CalendarDays size={10} strokeWidth={2.4} color={visualColors.dayoff.icon} />
+        </span>
+        {labels.shifts.dayoff}
+        {hasBadges && (
+          <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3, minWidth: 0, maxWidth: '100%' }}>
+            {badges.map((b) => <CellBadgePill key={b.id} badge={b} />)}
+          </span>
+        )}
+      </div>
+    )
+  }
 
   return (
-    <div style={{ overflowX: 'auto' }}>
+    <div>
+      <AppleHScrollbar
+        scrollerRef={gridScrollerRef}
+        style={{ marginLeft: nameColW, marginRight: 6 }}
+      />
+      <div ref={gridScrollerRef} style={{ overflowX: 'auto' }}>
 	      <table style={{ borderCollapse: 'separate', borderSpacing: 0, width: 'max-content', minWidth: 'max-content', fontSize: 11, tableLayout: 'fixed' }}>
         <thead>
           <tr style={{ borderBottom: '1px solid var(--border)' }}>
@@ -4021,7 +5696,7 @@ function DetailGrid({
                 color: 'var(--muted-foreground)', fontSize: 10,
               }}
             >
-              <div className="flex min-w-0 items-center justify-between gap-2">
+              <div className="flex min-w-0 items-center gap-2">
                 <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{labels.employee}</span>
                 <button
                   type="button"
@@ -4030,48 +5705,78 @@ function DetailGrid({
                   style={{
                     background: showTelegram ? 'var(--accent-soft)' : 'var(--grid-pill-bg)',
                     color: showTelegram ? 'var(--accent)' : 'var(--muted-foreground)',
-                    border: 0, borderRadius: 5, padding: '2px 7px',
+                    border: 0, borderRadius: 5, padding: '2px 9px',
                     fontSize: 9.5, fontWeight: 600,
                     textTransform: 'none', letterSpacing: 0,
-                    minWidth: 76,
                     textAlign: 'center',
+                    flexShrink: 0,
                   }}
                 >
                   {showTelegram ? labels.telegramBtn : labels.projectsBtn}
                 </button>
               </div>
+              <AppleHScrollbar scrollerRef={namePrimaryRef} size="sm" style={{ marginTop: 2 }} />
             </th>
             {days.map((d, ci) => {
               const isWkd = d.k === 'sat' || d.k === 'sun'
-              const isProblem = ci === PROBLEM_DAY_IDX && showProblemColumn
+              const isToday = ci === todayDayIdx
+              const isProblemCol = problemDayIdx !== null && ci === problemDayIdx
+              const isWeekBoundary = ci > 0 && (d.k === 'mon' || d.k === 'sat')
               return (
                 <th
                   key={d.n}
                   style={{
-	                    width: colW, minWidth: colMinW, padding: isExt ? '4px 2px' : '7px 4px', textAlign: 'center',
-                    background: isWkd ? weekendBg : 'var(--grid-cell)',
-                    color: 'var(--muted-foreground)',
+                    width: colW,
+                    minWidth: colMinW,
+                    height: 54,
+                    padding: '8px 4px',
+                    textAlign: 'center',
+                    background: isProblemCol
+                      ? 'var(--grid-problem-col)'
+                      : isWkd ? weekendBg : 'var(--grid-cell)',
+                    color: 'var(--foreground)',
                     position: 'relative',
                     overflow: 'hidden',
-                    ...problemColumnStyle(ci, showProblemColumn),
+                    borderLeft: isWeekBoundary ? '1px solid var(--border)' : 'none',
+                    borderRight: d.k === 'sun' ? '1px solid var(--border)' : 'none',
+                    boxShadow: isProblemCol ? 'inset 0 -2px 0 color-mix(in oklab, var(--st-alert) 55%, transparent)' : 'none',
+                    transition: 'background 360ms ease, box-shadow 360ms ease',
                   }}
                 >
-	                  <div style={{ fontWeight: 600, fontSize: detailHeaderDayFontSize }}>{d.n}</div>
-	                  <div style={{ fontSize: detailHeaderWeekdayFontSize, opacity: 0.65 }}>{dayKey(d.k)}</div>
-                  {isProblem && (
-                    <div
-                      title={labels.shortageLabel}
-                      aria-label={labels.shortageLabel}
+                  <div style={{ display: 'flex', minHeight: '100%', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+                    <span
                       style={{
-                        marginTop: 2,
-                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                        width: 14, height: 14, borderRadius: '50%',
-                        background: 'var(--accent)', color: '#fff',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        minWidth: isToday ? 27 : 'auto',
+                        height: isToday ? 28 : 'auto',
+                        padding: isToday ? '0 5px' : 0,
+                        borderRadius: isToday ? 8 : 0,
+                        background: isToday ? 'var(--accent)' : 'transparent',
+                        color: isToday ? '#fff' : isProblemCol ? 'var(--st-alert)' : (isWkd ? 'var(--muted-foreground)' : 'var(--foreground)'),
+                        fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", Inter, system-ui, sans-serif',
+                        fontWeight: 650,
+                        fontSize: detailHeaderDayFontSize,
+                        lineHeight: 1,
+                        fontVariantNumeric: 'tabular-nums',
                       }}
                     >
-                      <AlertCircle style={{ width: 9, height: 9 }} />
-                    </div>
-                  )}
+                      {d.n}
+                    </span>
+                    <span
+                      style={{
+                        color: 'var(--muted-foreground)',
+                        fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, system-ui, sans-serif',
+                        fontSize: detailHeaderWeekdayFontSize,
+                        fontWeight: 520,
+                        lineHeight: 1,
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      {dayKey(d.k)}
+                    </span>
+                  </div>
                 </th>
               )
             })}
@@ -4215,14 +5920,12 @@ function DetailGrid({
                         >
                           {employeeDisplayName(emp, labels)}
                         </button>
-                        <div style={{ marginTop: 4, minWidth: 0 }}>
+                        <div className="smengo-name-scroll" ref={registerNameScroller} onScroll={handleNameScroll} style={{ marginTop: 4 }}>
                           {showTelegram ? (
                             <DepartmentPositionCard
                               department={labels.telegramBtn}
                               position={emp.tg}
                               accent="#3884de"
-                              maxWidth="100%"
-                              shrink
                               onClick={() => onProjectClick(emp.name, emp.pIdx)}
                             />
                           ) : (
@@ -4234,12 +5937,36 @@ function DetailGrid({
                               showDepartment={sticky && showEmployeeDepartment}
                               showPosition={showEmployeeRole}
                               showDot={showEmployeeDot}
-                              maxWidth="100%"
-                              shrink
                               onClick={() => onOpenRolePicker(emp.name)}
                             />
                           )}
                         </div>
+                        {/* Extended mode adds the month summary right next to the name */}
+                        {(() => {
+                          let off = 0, work = 0
+                          days.forEach((_d, ci) => {
+                            const s = statusOf(emp.name, ci, emp.s)
+                            if (s === 'V' || s === 'S' || s === 'D') off++
+                            else if (s === 'W') work++
+                          })
+                          const hrs = work * workMeta(emp.shift, labels).hours
+                          const chip: React.CSSProperties = {
+                            display: 'inline-flex', alignItems: 'center', gap: 3,
+                            borderRadius: 6, padding: '2px 7px',
+                            fontSize: 10, fontWeight: 700,
+                            fontVariantNumeric: 'tabular-nums', lineHeight: 1.2,
+                          }
+                          return (
+                            <div style={{ marginTop: 5, display: 'flex', gap: 4, minWidth: 0 }}>
+                              <span title={labels.colWorkHrs} style={{ ...chip, background: 'color-mix(in oklab, var(--st-work) 16%, transparent)', color: 'var(--foreground)' }}>
+                                {hrs}{labels.hourSuffix}
+                              </span>
+                              <span title={labels.colOffDays} style={{ ...chip, background: 'var(--grid-pill-bg)', color: 'var(--muted-foreground)' }}>
+                                {labels.colOffDays} {off}
+                              </span>
+                            </div>
+                          )
+                        })()}
                       </div>
                     </div>
 	                  ) : (
@@ -4286,12 +6013,12 @@ function DetailGrid({
 	                        >
 	                          {employeeDisplayName(emp, labels)}
 	                        </button>
+	                        <div className="smengo-name-scroll" ref={registerNameScroller} onScroll={handleNameScroll}>
 	                        <button
 	                          type="button"
 	                          onClick={() => showTelegram ? onProjectClick(emp.name, emp.pIdx) : onOpenRolePicker(emp.name)}
-	                          className="truncate bg-transparent p-0 text-left"
+	                          className="bg-transparent p-0 text-left"
 	                          style={{
-	                            minWidth: 0,
 	                            border: 0,
 	                            color: 'var(--muted-foreground)',
 	                            cursor: 'pointer',
@@ -4302,6 +6029,7 @@ function DetailGrid({
 	                            display: 'inline-flex',
 	                            alignItems: 'center',
 	                            gap: 5,
+	                            whiteSpace: 'nowrap',
 	                          }}
 	                        >
 	                          <span
@@ -4315,150 +6043,96 @@ function DetailGrid({
 	                              boxShadow: `0 0 0 2px color-mix(in oklab, ${showTelegram ? '#3884de' : getRoleColor(getEmpRoleKey(emp))} 18%, transparent)`,
 	                            }}
 	                          />
-	                          <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+	                          <span style={{ whiteSpace: 'nowrap' }}>
 	                            {showTelegram ? `${labels.telegramBtn} › ${emp.tg}` : `${dept.name} › ${getEmpSpecialty(emp)}`}
 	                          </span>
 	                        </button>
+	                        </div>
 	                      </div>
 	                    </div>
 	                  )}
                 </td>
-                {merged ? (() => {
+                {(merged || days.some((_d, ci) => {
+                  const code = statusOf(emp.name, ci, emp.s)
+                  return isDefaultMergedLeaveStatus(code)
+                })) ? (() => {
                   type Run = { code: Status | undefined; indices: number[] }
                   const runs: Run[] = []
                   days.forEach((_d, ci) => {
-                    let code = statusOf(emp.name, ci, emp.s)
-                    if (code === 'U' && ci !== PROBLEM_DAY_IDX) code = 'W'
+                    const code = statusOf(emp.name, ci, emp.s)
                     const last = runs[runs.length - 1]
-                    if (last && last.code === code) { last.indices.push(ci) }
+                    if (last && last.code === code && shouldMergeScheduleRun(code, merged)) { last.indices.push(ci) }
                     else { runs.push({ code, indices: [ci] }) }
                   })
-                  return runs.map((run, ri) => {
-                    const { code, indices } = run
-                    const span = indices.length
-                    const isOff = code === '-' || code === undefined
+	                  return runs.map((run, ri) => {
+	                    const { code, indices } = run
+	                    const span = indices.length
+	                    const customCell = span === 1 ? customCellOf(emp.name, indices[0] ?? 0) : null
+	                    const isOff = code === '-' || code === undefined
                     const allWkd = indices.every(i => { const d = days[i]; return d.k === 'sat' || d.k === 'sun' })
                     const raw = code as Exclude<Status, '-'>
+                    const isProblemRun = problemDayIdx !== null && span === 1 && indices[0] === problemDayIdx
                     const runKey = `${emp.name}-${ri}`
                     const isHovered = hoveredRun === runKey
                     const isOptimizedRun = optimizationState !== 'idle' && optimizationRun > 1 && indices.some((i) => optimizedCellKeys[`${emp.name}-${i}`])
                     return (
-                      <td
-                        key={`run-${ri}`}
-                        colSpan={span}
-                        onMouseEnter={() => setHoveredRun(runKey)}
-                        onMouseLeave={() => setHoveredRun(null)}
-                        style={{
-                          padding: rowPad, textAlign: 'center',
-                          position: 'relative',
-                          background: allWkd ? weekendBg : 'var(--grid-cell)',
-                          borderRight: showGrid ? '1px solid var(--border)' : 'none',
-                          animation: isOptimizedRun ? 'smengo-ai-cell-pop 760ms cubic-bezier(.22,1,.36,1)' : 'none',
-                        }}
-                      >
+	                      <td
+	                        key={`run-${ri}`}
+	                        className={editMode ? 'smengo-schedule-cell smengo-schedule-edit-cell' : 'smengo-schedule-cell'}
+	                        colSpan={span}
+	                        onClick={editMode ? (e) => {
+	                          const target = scheduleRunClickTarget(e, indices)
+	                          onCellEdit(emp.name, target.dayIdx, target.anchorX, target.anchorBottom + 6)
+	                        } : undefined}
+	                        onMouseEnter={() => setHoveredRun(runKey)}
+	                        onMouseLeave={() => setHoveredRun(null)}
+	                        style={{
+	                          padding: rowPad, textAlign: 'center',
+	                          position: 'relative',
+	                          background: isProblemRun
+	                            ? 'var(--grid-problem-col)'
+	                            : allWkd ? weekendBg : 'var(--grid-cell)',
+	                          borderRight: showGrid ? '1px solid var(--border)' : 'none',
+	                          cursor: editMode ? 'pointer' : 'default',
+	                          transition: 'background 360ms ease',
+	                          animation: isOptimizedRun ? 'smengo-ai-cell-pop 760ms cubic-bezier(.22,1,.36,1)' : 'none',
+	                        }}
+	                      >
                         {isHovered && span > 1 && (
                           <div style={{
                             position: 'absolute', inset: 0, pointerEvents: 'none',
                             backgroundImage: `repeating-linear-gradient(to right, transparent 0, transparent calc(${100 / span}% - 0.5px), var(--border) calc(${100 / span}% - 0.5px), var(--border) calc(${100 / span}%))`,
                           }} />
                         )}
-                        {!isOff && (isExt ? (() => {
+	                        {customCell ? (
+		                          <CustomScheduleChip config={customCell} tone={siteTone} compact={!isExt} minHeight={isExt ? 46 : detailInlineChipMinHeight} />
+	                        ) : isOff ? (
+	                          <span style={{ fontSize: 9, color: 'var(--grid-empty-fg)' }}>—</span>
+	                        ) : (isExt ? (() => {
                           const runCode = raw as Exclude<Status, '-'>
                           const wm = workMeta(emp.shift, labels)
                           const bg = runCode === 'W' ? (contrast ? wm.bg : 'var(--chip-w-bg)') : chipBg(runCode)
+                          const visual = visualForCode(runCode)
                           const isU = runCode === 'U'
 
-                          if (runCode === 'W') {
-                            const ShiftIcon = emp.shift === 'night' ? Moon : Sun
-                            const [shiftStart, shiftEnd] = shiftWindowParts(wm.window)
-                            return (
-                              <div
-                                style={{
-                                  position: 'relative',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  background: bg,
-                                  color: '#fff',
-                                  padding: '5px 6px',
-                                  borderRadius: 8,
-                                  minHeight: 46,
-                                  boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
-                                  textAlign: 'center',
-                                }}
-                              >
-                                <span
-                                  className="inline-flex shrink-0 items-center justify-center rounded-full bg-white/15"
-                                  style={{ position: 'absolute', top: 5, left: 6, width: 16, height: 16 }}
-                                >
-                                  <ShiftIcon size={10} strokeWidth={2.5} className="text-white" />
-                                </span>
-                                <span
-                                  style={{
-                                    minWidth: 0,
-                                    maxWidth: '100%',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    color: '#fff',
-                                    fontSize: detailCellFontSize,
-                                    fontWeight: 700,
-                                    lineHeight: 1.02,
-                                    whiteSpace: 'nowrap',
-                                    transform: 'translateX(8px)',
-                                  }}
-                                >
-                                  {showTimes ? (
-                                    <>
-                                      <span>{shiftStart}</span>
-                                      <span>{shiftEnd}</span>
-                                    </>
-                                  ) : wm.name}
-                                </span>
-                              </div>
-                            )
-                          }
+                          if (runCode === 'W') return renderExtWorkCard(emp, indices[0] ?? 0)
 
-                          if (runCode === 'D') {
-                            return (
-                              <div
-                                style={{
-                                  display: 'inline-flex',
+                          if (runCode === 'D') return renderExtDayoffCard(emp, indices[0] ?? 0)
+
+	                          if (runCode === 'V' || runCode === 'S') {
+	                            const LeaveIcon = runCode === 'S' ? Thermometer : TreePalm
+	                            return (
+	                              <div
+	                                className="smengo-schedule-chip smengo-leave-chip"
+	                                style={{
+	                                  position: 'relative',
+	                                  display: 'flex',
                                   alignItems: 'center',
                                   justifyContent: 'center',
                                   width: '100%',
                                   minHeight: 46,
                                   background: bg,
-                                  color: 'var(--chip-d-fg)',
-                                  padding: '5px 7px',
-                                  borderRadius: 8,
-                                  fontSize: 12,
-                                  fontWeight: 750,
-                                  lineHeight: 1.05,
-                                  boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
-                                  textAlign: 'center',
-                                }}
-                              >
-                                {labels.shifts.dayoff}
-                              </div>
-                            )
-                          }
-
-                          if (runCode === 'V' || runCode === 'S') {
-                            const LeaveIcon = runCode === 'S' ? Thermometer : TreePalm
-                            const label = runCode === 'S' ? labels.shifts.sick : labels.shifts.vacation
-                            return (
-                              <div
-                                style={{
-                                  position: 'relative',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  width: '100%',
-                                  minHeight: 46,
-                                  background: bg,
-                                  color: '#fff',
+                                  color: visual.text,
                                   padding: '5px 7px',
                                   borderRadius: 8,
                                   boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
@@ -4469,38 +6143,42 @@ function DetailGrid({
                                   className="inline-flex shrink-0 items-center justify-center rounded-full bg-white/15"
                                   style={{ position: 'absolute', top: 5, left: 6, width: 16, height: 16 }}
                                 >
-                                  <LeaveIcon size={10} strokeWidth={2.5} className="text-white" />
+		                                  <LeaveIcon size={10} strokeWidth={2.5} color={runCode === 'S' ? visualColors.sick.icon : visualColors.vacation.icon} />
                                 </span>
                                 <span
                                   style={{
-                                    color: '#fff',
-                                    fontSize: 11.5,
-                                    fontWeight: 750,
-                                    lineHeight: 1.05,
-                                    whiteSpace: 'normal',
-                                    overflowWrap: 'anywhere',
-                                    transform: 'translateY(7px)',
-                                  }}
-                                >
-                                  {label}
-                                </span>
-                              </div>
-                            )
-                          }
+	                                    color: visual.text,
+	                                    fontSize: 11.5,
+	                                    fontWeight: 750,
+	                                    lineHeight: 1.05,
+	                                    minWidth: 0,
+	                                    maxWidth: '100%',
+	                                    overflow: 'hidden',
+	                                    whiteSpace: 'nowrap',
+	                                    transform: 'translateY(7px)',
+	                                  }}
+	                                >
+	                                  <ScheduleLeaveLabelText code={runCode} labels={labels} />
+	                                </span>
+	                              </div>
+	                            )
+	                          }
 
                           const label = labels.statusUncovered
                           return (
                             <div
-                              style={{
-                                display: 'inline-flex',
+	                                className="smengo-schedule-chip"
+	                                style={{
+                                      position: 'relative',
+	                                  display: 'inline-flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 gap: 5,
                                 width: '100%',
                                 minHeight: 46,
                                 background: isU ? 'transparent' : bg,
-                                color: isU ? 'var(--st-uncovered)' : '#fff',
-                                border: isU ? '1.5px dashed var(--st-uncovered)' : 'none',
+                                color: visual.text,
+                                border: isU ? `1.5px dashed ${visual.text}` : 'none',
                                 padding: '5px 7px',
                                 borderRadius: 8,
                                 fontSize: 12,
@@ -4510,37 +6188,42 @@ function DetailGrid({
                                 boxShadow: isU ? 'none' : '0 1px 2px rgba(0,0,0,0.08)',
                               }}
                             >
-                              {isU && <AlertCircle size={11} strokeWidth={2.4} />}
+		                              {isU && <AlertCircle size={11} strokeWidth={2.4} color={visualColors.uncovered.icon} />}
                               <span>{label}</span>
                             </div>
                           )
-                        })() : (
-	                          <div style={{
-	                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-	                            background: chipBg(raw), color: chipFg(raw),
-	                            width: 'calc(100% - 4px)',
+	                        })() : (() => {
+	                          if (raw === 'W') return renderDetailWorkChip(emp)
+	                          const isLeave = isDefaultMergedLeaveStatus(raw)
+	                          const visual = visualForCode(raw)
+	                          return (
+		                          <div className={`smengo-schedule-chip${isLeave ? ' smengo-leave-chip' : ''}`} style={{
+		                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+		                            background: chipBg(raw), color: visual.text,
+		                            width: 'calc(100% - 4px)',
 	                            maxWidth: '100%',
 	                            boxSizing: 'border-box',
 	                            margin: '0 auto',
 	                            padding: '1px 5px', borderRadius: 3,
 	                            minWidth: 0,
-	                            minHeight: detailInlineChipMinHeight,
-	                            fontSize: (code === 'W' || code === 'S') && showTimes ? detailCellFontSize : detailCellAltFontSize,
-	                            fontWeight: 500, whiteSpace: 'nowrap',
-	                          }}>
-                            {code === 'W' ? workLabel(emp) : chipLbl[raw]}
-                          </div>
-                        ))}
+		                            minHeight: detailInlineChipMinHeight,
+		                            fontSize: (code === 'W' || code === 'S') && showTimes ? detailCellFontSize : detailCellAltFontSize,
+		                            fontWeight: 500, whiteSpace: 'nowrap',
+		                          }}>
+	                            {isLeave ? <ScheduleLeaveLabelText code={raw} labels={labels} /> : chipLbl[raw]}
+	                          </div>
+	                          )
+	                        })())}
                       </td>
                     )
                   })
                 })() : days.map((d, ci) => {
-                  let raw = statusOf(emp.name, ci, emp.s)
-                  if (raw === 'U' && ci !== PROBLEM_DAY_IDX) raw = 'W'
-                  const isWkd = d.k === 'sat' || d.k === 'sun'
-                  const isOff = raw === '-' || raw === undefined
-                  const cellInteractive = editMode
-                  const tip = isOff || (isExt && raw === 'W') ? '' : cellTooltip(raw, emp.shift, labels)
+                  const raw = statusOf(emp.name, ci, emp.s)
+	                  const isWkd = d.k === 'sat' || d.k === 'sun'
+	                  const isOff = raw === '-' || raw === undefined
+	                  const isProblemCol = problemDayIdx !== null && ci === problemDayIdx
+	                  const customCell = customCellOf(emp.name, ci)
+	                  const cellInteractive = editMode
                   const aiCellKey = `${emp.name}-${ci}`
                   const aiCanAnimate = optimizationState !== 'idle' && optimizationRun > 1
                   const isOptimizedCell = aiCanAnimate && optimizedCellKeys[aiCellKey]
@@ -4550,126 +6233,58 @@ function DetailGrid({
                   return (
 	                    <td
 	                      key={d.n}
-	                      className={editMode ? 'smengo-schedule-edit-cell' : undefined}
-	                      title={tip || undefined}
+	                      className={editMode ? 'smengo-schedule-cell smengo-schedule-edit-cell' : 'smengo-schedule-cell'}
+	                      data-ai={isAiAnimatedCell ? aiCellKind(!!isShiftSourceCell, !!isShiftTargetCell) : undefined}
 	                      onClick={cellInteractive ? (e) => {
                         const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
                         onCellEdit(emp.name, ci, r.left + r.width / 2, r.bottom + 6)
                       } : undefined}
                       style={{
                         padding: rowPad, textAlign: 'center',
-	                        background: isWkd ? weekendBg : 'var(--grid-cell)',
+	                        background: isProblemCol
+	                          ? 'var(--grid-problem-col)'
+	                          : isWkd ? weekendBg : 'var(--grid-cell)',
 	                        position: 'relative',
 	                        borderRight: showGrid ? '1px solid var(--border)' : 'none',
 	                        cursor: cellInteractive ? 'pointer' : 'default',
-	                        animation: aiCellAnimation(!!isOptimizedCell, !!isShiftSourceCell, !!isShiftTargetCell),
+	                        transition: 'background 360ms ease',
+	                        animation: aiCellAnimation(!!isOptimizedCell, !!isShiftSourceCell, !!isShiftTargetCell, ci),
+	                        ...(isAiAnimatedCell ? { ['--ai-delay' as string]: `${aiWaveDelayMs(ci)}ms` } : {}),
 	                        transformOrigin: 'center',
 	                        willChange: isAiAnimatedCell ? 'box-shadow' : 'auto',
-	                        contain: isAiAnimatedCell ? 'paint' : undefined,
 	                      }}
                     >
-                      {isOff ? (
-                        <span style={{ fontSize: 9, color: 'var(--grid-empty-fg)' }}>—</span>
-                      ) : (() => {
+	                      {customCell ? (
+	                        <CustomScheduleChip config={customCell} tone={siteTone} compact={!isExt} minHeight={isExt ? 46 : detailInlineChipMinHeight} />
+	                      ) : isOff ? (
+	                        <span style={{ fontSize: 9, color: 'var(--grid-empty-fg)' }}>—</span>
+	                      ) : (() => {
                         const code = raw as Exclude<Status, '-'>
                         const wm = workMeta(emp.shift, labels)
-                        const WIcon = wm.Icon
                         const StIcon = statusIcon(code)
                         const bg = code === 'W' ? (contrast ? wm.bg : 'var(--chip-w-bg)') : chipBg(code)
-                        const fg = chipFg(code)
+                        const visual = visualForCode(code)
+                        const fg = visual.text
                         const isU = code === 'U'
                         if (isExt) {
-                          if (code === 'W') {
-                            const ShiftIcon = emp.shift === 'night' ? Moon : Sun
-                            const [shiftStart, shiftEnd] = shiftWindowParts(wm.window)
-                            return (
-                              <div
-                                style={{
-                                  position: 'relative',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  background: bg,
-                                  color: '#fff',
-                                  padding: '5px 6px',
-                                  borderRadius: 8,
-                                  minHeight: 46,
-                                  boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
-                                  textAlign: 'center',
-                                }}
-                              >
-                                <span
-                                  className="inline-flex shrink-0 items-center justify-center rounded-full bg-white/15"
-                                  style={{ position: 'absolute', top: 5, left: 6, width: 16, height: 16 }}
-                                >
-                                  <ShiftIcon size={10} strokeWidth={2.5} className="text-white" />
-                                </span>
-                                <span
-                                  style={{
-                                    minWidth: 0,
-                                    maxWidth: '100%',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    color: '#fff',
-                                    fontSize: detailCellFontSize,
-                                    fontWeight: 700,
-                                    lineHeight: 1.02,
-                                    whiteSpace: 'nowrap',
-                                    transform: 'translateX(8px)',
-                                  }}
-                                >
-                                  {showTimes ? (
-                                    <>
-                                      <span>{shiftStart}</span>
-                                      <span>{shiftEnd}</span>
-                                    </>
-                                  ) : wm.name}
-                                </span>
-                              </div>
-                            )
-                          }
+                          if (code === 'W') return renderExtWorkCard(emp, ci)
 
-                          if (code === 'D') {
-                            return (
-                              <div
-                                style={{
-                                  display: 'inline-flex',
+                          if (code === 'D') return renderExtDayoffCard(emp, ci)
+
+	                          if (code === 'V' || code === 'S') {
+	                            const LeaveIcon = code === 'S' ? Thermometer : TreePalm
+	                            return (
+	                              <div
+	                                className="smengo-schedule-chip smengo-leave-chip"
+	                                style={{
+	                                  position: 'relative',
+	                                  display: 'flex',
                                   alignItems: 'center',
                                   justifyContent: 'center',
                                   width: '100%',
                                   minHeight: 46,
                                   background: bg,
-                                  color: 'var(--chip-d-fg)',
-                                  padding: '5px 7px',
-                                  borderRadius: 8,
-                                  fontSize: 12,
-                                  fontWeight: 750,
-                                  lineHeight: 1.05,
-                                  boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
-                                  textAlign: 'center',
-                                }}
-                              >
-                                {labels.shifts.dayoff}
-                              </div>
-                            )
-                          }
-
-                          if (code === 'V' || code === 'S') {
-                            const LeaveIcon = code === 'S' ? Thermometer : TreePalm
-                            const label = code === 'S' ? labels.shifts.sick : labels.shifts.vacation
-                            return (
-                              <div
-                                style={{
-                                  position: 'relative',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  width: '100%',
-                                  minHeight: 46,
-                                  background: bg,
-                                  color: '#fff',
+                                  color: visual.text,
                                   padding: '5px 7px',
                                   borderRadius: 8,
                                   boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
@@ -4680,29 +6295,32 @@ function DetailGrid({
                                   className="inline-flex shrink-0 items-center justify-center rounded-full bg-white/15"
                                   style={{ position: 'absolute', top: 5, left: 6, width: 16, height: 16 }}
                                 >
-                                  <LeaveIcon size={10} strokeWidth={2.5} className="text-white" />
+	                                  <LeaveIcon size={10} strokeWidth={2.5} color={code === 'S' ? visualColors.sick.icon : visualColors.vacation.icon} />
                                 </span>
                                 <span
                                   style={{
-                                    color: '#fff',
-                                    fontSize: 11.5,
-                                    fontWeight: 750,
-                                    lineHeight: 1.05,
-                                    whiteSpace: 'normal',
-                                    overflowWrap: 'anywhere',
-                                    transform: 'translateY(7px)',
-                                  }}
-                                >
-                                  {label}
-                                </span>
-                              </div>
-                            )
-                          }
+	                                    color: visual.text,
+	                                    fontSize: 11.5,
+	                                    fontWeight: 750,
+	                                    lineHeight: 1.05,
+	                                    minWidth: 0,
+	                                    maxWidth: '100%',
+	                                    overflow: 'hidden',
+	                                    whiteSpace: 'nowrap',
+	                                    transform: 'translateY(7px)',
+	                                  }}
+	                                >
+	                                  <ScheduleLeaveLabelText code={code} labels={labels} />
+	                                </span>
+	                              </div>
+	                            )
+	                          }
 
                           const label = labels.statusUncovered
 
                           return (
                             <div
+                              className="smengo-schedule-chip"
                               style={{
                                 display: 'inline-flex',
                                 alignItems: 'center',
@@ -4711,8 +6329,8 @@ function DetailGrid({
                                 width: '100%',
                                 minHeight: 46,
                                 background: isU ? 'transparent' : bg,
-                                color: isU ? 'var(--st-uncovered)' : '#fff',
-                                border: isU ? '1.5px dashed var(--st-uncovered)' : 'none',
+                                color: visual.text,
+                                border: isU ? `1.5px dashed ${visual.text}` : 'none',
                                 padding: '5px 7px',
                                 borderRadius: 8,
                                 fontSize: 12,
@@ -4722,18 +6340,21 @@ function DetailGrid({
                                 boxShadow: isU ? 'none' : '0 1px 2px rgba(0,0,0,0.08)',
                               }}
                             >
-                              {isU && <AlertCircle size={11} strokeWidth={2.4} />}
+	                              {isU && <AlertCircle size={11} strokeWidth={2.4} color={visualColors.uncovered.icon} />}
                               <span>{label}</span>
                             </div>
                           )
                         }
-                        return (
-                          <div
-                            style={{
-                              display: 'inline-flex', alignItems: 'center', gap: 2,
-                              background: isU ? 'transparent' : bg,
-                              color: isU ? 'var(--st-uncovered)' : fg,
-                              border: isU ? '1.5px dashed var(--st-uncovered)' : 'none',
+	                        if (code === 'W') return renderDetailWorkChip(emp)
+	                        const isLeave = isDefaultMergedLeaveStatus(code)
+	                        return (
+	                          <div
+	                            className={`smengo-schedule-chip${isLeave ? ' smengo-leave-chip' : ''}`}
+	                            style={{
+	                              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 2,
+	                              background: isU ? 'transparent' : bg,
+                              color: fg,
+                              border: isU ? `1.5px dashed ${fg}` : 'none',
 	                              width: 'calc(100% - 4px)',
 	                              maxWidth: '100%',
 	                              boxSizing: 'border-box',
@@ -4741,19 +6362,14 @@ function DetailGrid({
 	                              padding: '1px 5px', borderRadius: 3,
 	                              minWidth: 0,
 	                              minHeight: detailInlineChipMinHeight,
-	                              fontSize: (code === 'W' || code === 'S') && showTimes ? detailCellFontSize : detailCellAltFontSize,
+	                              fontSize: code === 'S' && showTimes ? detailCellFontSize : detailCellAltFontSize,
 	                              fontWeight: 500, whiteSpace: 'nowrap',
 	                            }}
                           >
-                            {code === 'W' ? (
-                              <>
-                                <WIcon size={9} strokeWidth={2.4} />
-                                {showTimes ? workLabel(emp) : null}
-                              </>
-	                            ) : StIcon ? (
+                            {StIcon ? (
 	                              <>
-	                                <StIcon size={11} />
-	                                {code === 'S' ? labels.statusSick : chipLbl[code]}
+		                                <StIcon size={11} color={visualForCode(code).icon} />
+		                                {isLeave ? <ScheduleLeaveLabelText code={code} labels={labels} /> : chipLbl[code]}
 	                              </>
 	                            ) : (
 	                              chipLbl[code]
@@ -4767,8 +6383,7 @@ function DetailGrid({
                 {(() => {
                   let off = 0, work = 0
                   days.forEach((_d, ci) => {
-                    let s = statusOf(emp.name, ci, emp.s)
-                    if (s === 'U' && ci !== PROBLEM_DAY_IDX) s = 'W'
+                    const s = statusOf(emp.name, ci, emp.s)
                     if (s === 'V' || s === 'S' || s === 'D') off++
                     else if (s === 'W') work++
                   })
@@ -4811,13 +6426,14 @@ function DetailGrid({
                   whiteSpace: 'nowrap',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
                   <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{labels.onShiftRowLabel}</span>
                   <OnShiftScopePicker labels={labels} groups={groups} value={onShiftScope} onChange={onShiftScopeChange} />
                 </div>
               </td>
               {onShiftCountsForRows(onShiftRows, statusOf, days).map((count, ci) => {
                 const isWkd = days[ci].k === 'sat' || days[ci].k === 'sun'
+                const isProblemCol = problemDayIdx !== null && ci === problemDayIdx
                 return (
                   <td
                     key={ci}
@@ -4826,8 +6442,9 @@ function DetailGrid({
                       minWidth: colMinW,
 	                      padding: isExt ? '5px 2px' : '7px 4px',
                       textAlign: 'center',
-                      background: isWkd ? weekendBg : 'var(--grid-cell)',
+                      background: isProblemCol ? 'var(--grid-problem-col)' : isWkd ? weekendBg : 'var(--grid-cell)',
                       borderRight: showGrid ? '1px solid var(--border)' : 'none',
+                      transition: 'background 360ms ease',
                     }}
                   >
                     <OnShiftCountCell count={count} total={onShiftRows.length} compact={!isExt} />
@@ -4839,24 +6456,30 @@ function DetailGrid({
             </tr>
           </tfoot>
       </table>
+      </div>
     </div>
   )
 }
 
 /* ── Compact mode ──────────────────────────────────────────────── */
 function CompactGrid({
-  groups, days, statusOf, weekendBg, chipBg, chipFg, contrast, labels,
+  groups, days, todayDayIdx, customCellOf, statusOf, weekendBg, chipBg, visualColors, siteTone, contrast, labels,
   showTimes, merged, showGrid, sticky, onShiftScope, onShiftScopeChange, showEmployeeRole, showEmployeeDepartment, showEmployeeDot, showTelegram, onEmpClick, editMode, onToggleProjects, onProjectClick, onCellEdit,
   getEmpRoleKey, getEmpSpecialty, getRoleColor, getSpecialtyColor, onOpenRolePicker,
   dragEmp, setDragEmp, dragOverEmp, setDragOverEmp, dragOverGroup, setDragOverGroup, onMoveEmp,
   optimizedCellKeys, shiftedFromCellKeys, shiftedToCellKeys, optimizationRun, optimizationState,
+  problemDayIdx,
 }: {
   groups: { key: string; name: string; shortName: string; min?: number; rows: EmpDef[] }[]
   days: MonthDay[]
+  todayDayIdx: number | null
+  problemDayIdx: number | null
+  customCellOf: (name: string, dayIdx: number) => CustomCellConfig | null
   statusOf: (name: string, dayIdx: number, base: string) => Status
   weekendBg: string
   chipBg: (c: Exclude<Status, '-'>) => string
-  chipFg: (c: Exclude<Status, '-'>) => string
+  visualColors: VisualCardColorConfig
+  siteTone: SiteTone
   contrast: boolean
   labels: GridPreviewLabels
   showTimes: boolean
@@ -4893,6 +6516,25 @@ function CompactGrid({
   optimizationState: 'idle' | 'running' | 'done'
 }) {
   const [hoveredRun, setHoveredRun] = useState<string | null>(null)
+  const gridScrollerRef = useRef<HTMLDivElement | null>(null)
+  const nameScrollersRef = useRef(new Set<HTMLDivElement>())
+  const namePrimaryRef = useRef<HTMLDivElement | null>(null)
+  const nameSyncingRef = useRef(false)
+  const registerNameScroller = (el: HTMLDivElement | null) => {
+    if (!el) return
+    nameScrollersRef.current.add(el)
+    const primary = namePrimaryRef.current
+    if (!primary || !primary.isConnected || el.scrollWidth > primary.scrollWidth) namePrimaryRef.current = el
+  }
+  const handleNameScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (nameSyncingRef.current) return
+    nameSyncingRef.current = true
+    const left = e.currentTarget.scrollLeft
+    for (const el of nameScrollersRef.current) {
+      if (el !== e.currentTarget && el.isConnected) el.scrollLeft = left
+    }
+    requestAnimationFrame(() => { nameSyncingRef.current = false })
+  }
   const nameColW = compactEmployeeNameColumnWidth({
     sticky,
     showEmployeeRole,
@@ -4901,25 +6543,34 @@ function CompactGrid({
     showTelegram,
   })
   const nameColTransition = 'width 160ms ease, min-width 160ms ease, max-width 160ms ease'
-  const dayMinW = 32
-  const offColW = 60
-  const hoursColW = 60
-  const minTableW = nameColW + days.length * dayMinW + offColW + hoursColW
+  const dayMinW = 44
+  const scheduleChipMinHeight = 34
+  // Compact mode is a pure overview: no totals columns, the month gets the full width.
+  const minTableW = nameColW + days.length * dayMinW
   const dndEnabled = false
-  const showProblemColumn = optimizationRun <= 1
   const allRows = groups.flatMap((group) => group.rows)
   const onShiftGroup = groups.find((group) => group.key === onShiftScope && group.rows.length > 0)
   const onShiftRows = onShiftGroup?.rows ?? allRows
+  function visualForCode(code: Exclude<Status, '-'>): VisualCardColorValue {
+    if (code === 'W') return visualColors.work
+    if (code === 'V') return visualColors.vacation
+    if (code === 'S') return visualColors.sick
+    if (code === 'D') return visualColors.dayoff
+    return visualColors.uncovered
+  }
   return (
-    <div style={{ overflowX: 'auto' }}>
+    <div>
+      <AppleHScrollbar
+        scrollerRef={gridScrollerRef}
+        style={{ marginLeft: nameColW, marginRight: 6 }}
+      />
+      <div ref={gridScrollerRef} style={{ overflowX: 'auto' }}>
       <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: minTableW, fontSize: 10, tableLayout: 'fixed' }}>
         <colgroup>
           <col style={{ width: nameColW }} />
           {days.map((d) => (
-            <col key={d.n} />
+            <col key={d.n} style={{ width: dayMinW }} />
           ))}
-          <col style={{ width: offColW }} />
-          <col style={{ width: hoursColW }} />
         </colgroup>
         <thead>
           <tr style={{ borderBottom: '1px solid var(--border)' }}>
@@ -4940,7 +6591,7 @@ function CompactGrid({
                 textTransform: 'uppercase', letterSpacing: '0.05em',
               }}
             >
-              <div className="flex min-w-0 items-center justify-between gap-2">
+              <div className="flex min-w-0 items-center gap-2">
                 <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{labels.employee}</span>
                 <button
                   type="button"
@@ -4949,58 +6600,81 @@ function CompactGrid({
                   style={{
                     background: showTelegram ? 'var(--accent-soft)' : 'var(--grid-pill-bg)',
                     color: showTelegram ? 'var(--accent)' : 'var(--muted-foreground)',
-                    border: 0, borderRadius: 5, padding: '2px 6px',
+                    border: 0, borderRadius: 5, padding: '2px 8px',
                     fontSize: 9, fontWeight: 600,
                     textTransform: 'none', letterSpacing: 0,
-                    minWidth: 74,
                     textAlign: 'center',
+                    flexShrink: 0,
                   }}
                 >
                   {showTelegram ? labels.telegramBtn : labels.projectsBtn}
                 </button>
               </div>
+              <AppleHScrollbar scrollerRef={namePrimaryRef} size="sm" style={{ marginTop: 2 }} />
             </th>
             {days.map((d, ci) => {
               const isWkd = d.k === 'sat' || d.k === 'sun'
-              const isProblem = ci === PROBLEM_DAY_IDX && showProblemColumn
+              const isToday = ci === todayDayIdx
+              const isProblemCol = problemDayIdx !== null && ci === problemDayIdx
+              const isWeekBoundary = ci > 0 && (d.k === 'mon' || d.k === 'sat')
               return (
                 <th
                   key={d.n}
                   style={{
-                    padding: '4px 0', textAlign: 'center',
-                    background: isWkd ? weekendBg : 'var(--grid-cell)',
-                    color: 'var(--muted-foreground)',
-                    fontWeight: 500, fontSize: 9.5,
+                    height: 44,
+                    padding: '5px 0',
+                    textAlign: 'center',
+                    background: isProblemCol
+                      ? 'var(--grid-problem-col)'
+                      : isWkd ? weekendBg : 'var(--grid-cell)',
+                    color: 'var(--foreground)',
+                    fontWeight: 500,
+                    fontSize: 9.5,
                     position: 'relative',
                     overflow: 'hidden',
-                    ...problemColumnStyle(ci, showProblemColumn),
+                    borderLeft: isWeekBoundary ? '1px solid var(--border)' : 'none',
+                    borderRight: d.k === 'sun' ? '1px solid var(--border)' : 'none',
+                    boxShadow: isProblemCol ? 'inset 0 -2px 0 color-mix(in oklab, var(--st-alert) 55%, transparent)' : 'none',
+                    transition: 'background 360ms ease, box-shadow 360ms ease',
                   }}
                 >
-                  <div style={{ fontWeight: 500, fontSize: 9.5 }}>{d.n}</div>
-                  <div style={{ fontSize: 8, opacity: 0.65 }}>{labels.days[d.k]}</div>
-                  {isProblem && (
-                    <div
-                      title={labels.shortageLabel}
-                      aria-label={labels.shortageLabel}
+                  <div style={{ display: 'flex', minHeight: '100%', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+                    <span
                       style={{
-                        marginTop: 2,
-                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                        width: 12, height: 12, borderRadius: '50%',
-                        background: 'var(--accent)', color: '#fff',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        minWidth: isToday ? 22 : 'auto',
+                        height: isToday ? 23 : 'auto',
+                        padding: isToday ? '0 4px' : 0,
+                        borderRadius: isToday ? 7 : 0,
+                        background: isToday ? 'var(--accent)' : 'transparent',
+                        color: isToday ? '#fff' : isProblemCol ? 'var(--st-alert)' : (isWkd ? 'var(--muted-foreground)' : 'var(--foreground)'),
+                        fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", Inter, system-ui, sans-serif',
+                        fontWeight: 600,
+                        fontSize: 10.5,
+                        lineHeight: 1,
+                        fontVariantNumeric: 'tabular-nums',
                       }}
                     >
-                      <AlertCircle style={{ width: 8, height: 8 }} />
-                    </div>
-                  )}
+                      {d.n}
+                    </span>
+                    <span
+                      style={{
+                        color: 'var(--muted-foreground)',
+                        fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, system-ui, sans-serif',
+                        fontSize: 7.2,
+                        fontWeight: 500,
+                        lineHeight: 1,
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      {labels.days[d.k]}
+                    </span>
+                  </div>
                 </th>
               )
             })}
-            <th style={{ width: offColW, minWidth: offColW, maxWidth: offColW, padding: '4px 4px', textAlign: 'center', background: 'var(--grid-cell)', color: 'var(--muted-foreground)', fontSize: 9, fontWeight: 600, borderLeft: '2px solid var(--border)', whiteSpace: 'nowrap' }}>
-              {labels.colOffDays}
-            </th>
-            <th style={{ width: hoursColW, minWidth: hoursColW, maxWidth: hoursColW, padding: '4px 4px', textAlign: 'center', background: 'var(--grid-cell)', color: 'var(--muted-foreground)', fontSize: 9, fontWeight: 600, borderLeft: '1px solid var(--border)', whiteSpace: 'nowrap' }}>
-              {labels.colWorkHrs}
-            </th>
           </tr>
         </thead>
         <tbody>
@@ -5050,7 +6724,7 @@ function CompactGrid({
                 />
                 ▸ {dept.name}
               </td>
-              <td colSpan={days.length + 2} style={{ background: dndEnabled && dragOverGroup === dept.key ? 'var(--accent-soft)' : 'var(--grid-dept-bg)' }} />
+              <td colSpan={days.length} style={{ background: dndEnabled && dragOverGroup === dept.key ? 'var(--accent-soft)' : 'var(--grid-dept-bg)' }} />
             </tr>
             )]),
             ...dept.rows.map((emp, ei) => (
@@ -5086,147 +6760,180 @@ function CompactGrid({
                   }}
                 >
                   <div
-                    className="flex min-w-0 items-center gap-2"
-                    style={{ cursor: 'default', maxWidth: '100%', overflow: 'hidden' }}
+                    className="min-w-0"
+                    style={{
+                      cursor: 'default',
+                      maxWidth: '100%',
+                      overflow: 'hidden',
+                      display: 'grid',
+                      gridTemplateColumns: '16px minmax(0, 1fr)',
+                      alignItems: 'center',
+                      columnGap: 8,
+                    }}
                   >
                     <Avatar name={emp.name} size={16} />
-                    <button
-                      type="button"
-                      draggable={dndEnabled}
-                      onClick={() => { if (!dndEnabled) onEmpClick(emp.name) }}
-                      onDragStart={(e) => {
-                        if (!dndEnabled) {
-                          e.preventDefault()
-                          return
-                        }
-                        setDragEmp(emp.name)
-                        e.dataTransfer.effectAllowed = 'move'
-                        e.dataTransfer.setData('text/plain', emp.name)
-                        setEmployeeRowDragImage(e, e.currentTarget.closest('[data-employee-row]') as HTMLElement | null)
-                      }}
-                      onDragEnd={() => { setDragEmp(null); setDragOverEmp(null); setDragOverGroup(null) }}
-                      className="cursor-pointer truncate bg-transparent p-0 text-left transition-colors hover:text-accent"
-                      style={{
-                        flex: '0 1 auto',
-                        minWidth: 0,
-                        border: 0,
-                        color: 'inherit',
-                        cursor: dndEnabled ? 'grab' : 'pointer',
-                        fontFamily: 'inherit',
-                        fontSize: 14.5 * 0.85,
-                        lineHeight: 1.1,
-                        userSelect: dndEnabled ? 'none' : 'auto',
-                      }}
-                    >
-                      {employeeDisplayName(emp, labels)}
-                    </button>
-                    {showTelegram ? (
-                      <DepartmentPositionCard
-                        department={labels.telegramBtn}
-                        position={emp.tg}
-                        accent="#3884de"
-                        compact
-                        maxWidth={146}
-                        shrink
-                        onClick={() => onProjectClick(emp.name, emp.pIdx)}
-                      />
-                    ) : (
-                      <DepartmentPositionCard
-                        department={dept.name}
-                        departmentShort={dept.shortName}
-                        position={getEmpSpecialty(emp)}
-                        departmentAccent={getRoleColor(getEmpRoleKey(emp))}
-                        accent={getSpecialtyColor(getEmpSpecialty(emp))}
-                        compact
-                        variant="compactSchedule"
-                        maxWidth={178}
-                        textScale={0.85}
-                        showDepartment={sticky && showEmployeeDepartment}
-                        showPosition={showEmployeeRole}
-                        showDot={showEmployeeDot}
-                        shrink
-                        onClick={() => onOpenRolePicker(emp.name)}
-                      />
-                    )}
+                    <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                      <button
+                        type="button"
+                        draggable={dndEnabled}
+                        onClick={() => { if (!dndEnabled) onEmpClick(emp.name) }}
+                        onDragStart={(e) => {
+                          if (!dndEnabled) {
+                            e.preventDefault()
+                            return
+                          }
+                          setDragEmp(emp.name)
+                          e.dataTransfer.effectAllowed = 'move'
+                          e.dataTransfer.setData('text/plain', emp.name)
+                          setEmployeeRowDragImage(e, e.currentTarget.closest('[data-employee-row]') as HTMLElement | null)
+                        }}
+                        onDragEnd={() => { setDragEmp(null); setDragOverEmp(null); setDragOverGroup(null) }}
+                        className="cursor-pointer truncate bg-transparent p-0 text-left transition-colors hover:text-accent"
+                        style={{
+                          minWidth: 0,
+                          width: '100%',
+                          border: 0,
+                          color: 'inherit',
+                          cursor: dndEnabled ? 'grab' : 'pointer',
+                          fontFamily: 'inherit',
+                          fontSize: 14.5 * 0.85,
+                          lineHeight: 1.1,
+                          userSelect: dndEnabled ? 'none' : 'auto',
+                        }}
+                      >
+                        {employeeDisplayName(emp, labels)}
+                      </button>
+                      <div className="smengo-name-scroll" ref={registerNameScroller} onScroll={handleNameScroll}>
+                        {showTelegram ? (
+                          <DepartmentPositionCard
+                            department={labels.telegramBtn}
+                            position={emp.tg}
+                            accent="#3884de"
+                            compact
+                            onClick={() => onProjectClick(emp.name, emp.pIdx)}
+                          />
+                        ) : (
+                          <DepartmentPositionCard
+                            department={dept.name}
+                            departmentShort={dept.shortName}
+                            position={getEmpSpecialty(emp)}
+                            departmentAccent={getRoleColor(getEmpRoleKey(emp))}
+                            accent={getSpecialtyColor(getEmpSpecialty(emp))}
+                            compact
+                            variant="compactSchedule"
+                            textScale={0.85}
+                            showDepartment={sticky && showEmployeeDepartment}
+                            showPosition={showEmployeeRole}
+                            showDot={showEmployeeDot}
+                            onClick={() => onOpenRolePicker(emp.name)}
+                          />
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </td>
-                {merged ? (() => {
+                {(merged || days.some((_d, ci) => {
+                  const code = statusOf(emp.name, ci, emp.s)
+                  return isDefaultMergedLeaveStatus(code)
+                })) ? (() => {
                   type Run = { code: Status | undefined; indices: number[] }
                   const runs: Run[] = []
                   days.forEach((_d, ci) => {
-                    let code = statusOf(emp.name, ci, emp.s)
-                    if (code === 'U' && ci !== PROBLEM_DAY_IDX) code = 'W'
+                    const code = statusOf(emp.name, ci, emp.s)
                     const last = runs[runs.length - 1]
-                    if (last && last.code === code) { last.indices.push(ci) }
+                    if (last && last.code === code && shouldMergeScheduleRun(code, merged)) { last.indices.push(ci) }
                     else { runs.push({ code, indices: [ci] }) }
                   })
-                  return runs.map((run, ri) => {
-                    const { code, indices } = run
-                    const span = indices.length
-                    const isOff = code === '-' || code === undefined
+	                  return runs.map((run, ri) => {
+	                    const { code, indices } = run
+	                    const span = indices.length
+	                    const customCell = span === 1 ? customCellOf(emp.name, indices[0] ?? 0) : null
+	                    const isOff = code === '-' || code === undefined
                     const allWkd = indices.every(i => { const d = days[i]; return d.k === 'sat' || d.k === 'sun' })
+                    const isProblemRun = problemDayIdx !== null && span === 1 && indices[0] === problemDayIdx
                     const runKey = `${emp.name}-${ri}`
                     const isHovered = hoveredRun === runKey
                     const isOptimizedRun = optimizationState !== 'idle' && optimizationRun > 1 && indices.some((i) => optimizedCellKeys[`${emp.name}-${i}`])
                     return (
-                      <td
-                        key={`run-${ri}`}
-                        colSpan={span}
-                        onMouseEnter={() => setHoveredRun(runKey)}
-                        onMouseLeave={() => setHoveredRun(null)}
-                        style={{
-                          padding: '2px 1px',
-                          position: 'relative',
-                          textAlign: 'center',
-                          background: allWkd ? weekendBg : 'var(--grid-cell)',
-                          borderRight: showGrid ? '1px solid var(--border)' : 'none',
-                          animation: isOptimizedRun ? 'smengo-ai-cell-pop 760ms cubic-bezier(.22,1,.36,1)' : 'none',
-                        }}
-                      >
+	                      <td
+	                        key={`run-${ri}`}
+	                        className={editMode ? 'smengo-schedule-cell smengo-schedule-edit-cell' : 'smengo-schedule-cell'}
+	                        colSpan={span}
+	                        onClick={editMode ? (e) => {
+	                          const target = scheduleRunClickTarget(e, indices)
+	                          onCellEdit(emp.name, target.dayIdx, target.anchorX, target.anchorBottom + 4)
+	                        } : undefined}
+	                        onMouseEnter={() => setHoveredRun(runKey)}
+	                        onMouseLeave={() => setHoveredRun(null)}
+	                        style={{
+	                          padding: '2px 1px',
+	                          position: 'relative',
+	                          textAlign: 'center',
+	                          background: isProblemRun
+	                            ? 'var(--grid-problem-col)'
+	                            : allWkd ? weekendBg : 'var(--grid-cell)',
+	                          borderRight: showGrid ? '1px solid var(--border)' : 'none',
+	                          cursor: editMode ? 'pointer' : 'default',
+	                          transition: 'background 360ms ease',
+	                          animation: isOptimizedRun ? 'smengo-ai-cell-pop 760ms cubic-bezier(.22,1,.36,1)' : 'none',
+	                        }}
+	                      >
                         {isHovered && span > 1 && (
                           <div style={{
                             position: 'absolute', inset: 0, pointerEvents: 'none',
                             backgroundImage: `repeating-linear-gradient(to right, transparent 0, transparent calc(${100 / span}% - 0.5px), var(--border) calc(${100 / span}% - 0.5px), var(--border) calc(${100 / span}%))`,
                           }} />
                         )}
-                        {!isOff && (
-                          <div style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
+		                        {customCell ? (
+		                          <CustomScheduleChip config={customCell} tone={siteTone} compact minHeight={scheduleChipMinHeight} />
+		                        ) : isOff ? (
+		                          <span style={{ fontSize: 9, color: 'var(--grid-empty-fg)' }}>—</span>
+		                        ) : (() => {
+	                          const runCode = code as Exclude<Status, '-'>
+	                          const wm = workMeta(emp.shift, labels)
+	                          const shiftParts = runCode === 'W' && showTimes ? shiftWindowParts(wm.window) : null
+	                          const isLeave = isDefaultMergedLeaveStatus(runCode)
+	                          const visual = visualForCode(runCode)
+	                          return (
+	                          <div className={`smengo-schedule-chip${isLeave ? ' smengo-leave-chip' : ''}`} style={{
+	                            display: 'inline-flex',
+	                            alignItems: 'center',
+	                            justifyContent: 'center',
                             width: 'calc(100% - 4px)',
                             maxWidth: '100%',
                             boxSizing: 'border-box',
                             margin: '0 auto',
                             minWidth: 0,
                             background: chipBg(code as Exclude<Status, '-'>),
-                            color: chipFg(code as Exclude<Status, '-'>),
+                            color: visual.text,
                             borderRadius: 4,
-                            fontSize: (code === 'W' || code === 'S') && showTimes ? 7.5 : 9,
+                            fontSize: shiftParts ? 8.2 : (runCode === 'S' && showTimes ? 7.5 : 9),
                             fontWeight: 600,
-                            padding: '3px 2px',
+                            padding: shiftParts ? '4px 2px' : '3px 2px',
                             lineHeight: 1.1,
                             textAlign: 'center',
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                          }}>
-                            {code === 'W' && showTimes
-                              ? compactShiftWindow(emp.shift)
-                              : code === 'S'
-                                ? labels.statusSick
-                                : code}
-                          </div>
-                        )}
+                            minHeight: scheduleChipMinHeight,
+                            whiteSpace: shiftParts ? 'normal' : 'nowrap',
+	                            overflow: 'hidden',
+	                          }}>
+	                            {shiftParts ? (
+	                              <ShiftTimeStack start={shiftParts[0]} end={shiftParts[1]} fontSize={8.2} />
+	                            ) : isLeave ? (
+	                              <ScheduleLeaveLabelText code={runCode} labels={labels} />
+	                            ) : runCode === 'U' ? '?' : null}
+	                          </div>
+	                          )
+	                        })()}
                       </td>
                     )
                   })
                 })() : days.map((d, ci) => {
-                  let code = statusOf(emp.name, ci, emp.s)
-                  if (code === 'U' && ci !== PROBLEM_DAY_IDX) code = 'W'
-                  const isWkd = d.k === 'sat' || d.k === 'sun'
-                  const isOff = code === '-' || code === undefined
-                  const tip = isOff ? '' : cellTooltip(code, emp.shift, labels)
-                  const aiCellKey = `${emp.name}-${ci}`
+                  const code = statusOf(emp.name, ci, emp.s)
+	                  const isWkd = d.k === 'sat' || d.k === 'sun'
+	                  const isOff = code === '-' || code === undefined
+	                  const isProblemCol = problemDayIdx !== null && ci === problemDayIdx
+	                  const customCell = customCellOf(emp.name, ci)
+	                  const aiCellKey = `${emp.name}-${ci}`
                   const aiCanAnimate = optimizationState !== 'idle' && optimizationRun > 1
                   const isOptimizedCell = aiCanAnimate && optimizedCellKeys[aiCellKey]
                   const isShiftSourceCell = aiCanAnimate && shiftedFromCellKeys[aiCellKey]
@@ -5235,37 +6942,42 @@ function CompactGrid({
                   return (
 	                    <td
 	                      key={d.n}
-	                      className={editMode ? 'smengo-schedule-edit-cell' : undefined}
-	                      title={tip || undefined}
+	                      className={editMode ? 'smengo-schedule-cell smengo-schedule-edit-cell' : 'smengo-schedule-cell'}
+	                      data-ai={isAiAnimatedCell ? aiCellKind(!!isShiftSourceCell, !!isShiftTargetCell) : undefined}
 	                      onClick={editMode ? (e) => {
                         const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
                         onCellEdit(emp.name, ci, r.left + r.width / 2, r.bottom + 4)
                       } : undefined}
                       style={{
 	                        padding: 2, textAlign: 'center',
-	                        background: isWkd ? weekendBg : 'var(--grid-cell)',
+	                        background: isProblemCol
+	                          ? 'var(--grid-problem-col)'
+	                          : isWkd ? weekendBg : 'var(--grid-cell)',
 	                        position: 'relative',
 	                        borderRight: showGrid ? '1px solid var(--border)' : 'none',
 	                        cursor: editMode ? 'pointer' : 'default',
-	                        animation: aiCellAnimation(!!isOptimizedCell, !!isShiftSourceCell, !!isShiftTargetCell),
+	                        transition: 'background 360ms ease',
+	                        animation: aiCellAnimation(!!isOptimizedCell, !!isShiftSourceCell, !!isShiftTargetCell, ci),
+	                        ...(isAiAnimatedCell ? { ['--ai-delay' as string]: `${aiWaveDelayMs(ci)}ms` } : {}),
 	                        transformOrigin: 'center',
 	                        willChange: isAiAnimatedCell ? 'box-shadow' : 'auto',
-	                        contain: isAiAnimatedCell ? 'paint' : undefined,
 	                      }}
                     >
-                      {isOff ? (
-                        <span style={{ fontSize: 9, color: 'var(--grid-empty-fg)' }}>—</span>
-                      ) : (() => {
+	                      {customCell ? (
+	                        <CustomScheduleChip config={customCell} tone={siteTone} compact minHeight={scheduleChipMinHeight} />
+	                      ) : isOff ? (
+	                        <span style={{ fontSize: 9, color: 'var(--grid-empty-fg)' }}>—</span>
+	                      ) : (() => {
                         const cc = code as Exclude<Status, '-'>
                         const wm = workMeta(emp.shift, labels)
-                        const bg = cc === 'W' ? (contrast ? wm.bg : 'var(--chip-w-bg)') : chipBg(cc)
-                        const isU = cc === 'U'
-                        const timeText = cc === 'W' && showTimes
-                          ? compactShiftWindow(emp.shift)
-                          : ''
-                        const sickText = cc === 'S' ? labels.statusSick : ''
-                        return (
-                          <div
+	                        const bg = cc === 'W' ? (contrast ? wm.bg : 'var(--chip-w-bg)') : chipBg(cc)
+	                        const visual = visualForCode(cc)
+	                        const isU = cc === 'U'
+	                        const shiftParts = cc === 'W' && showTimes ? shiftWindowParts(wm.window) : null
+	                        const isLeave = isDefaultMergedLeaveStatus(cc)
+	                        return (
+	                          <div
+	                            className={`smengo-schedule-chip${isLeave ? ' smengo-leave-chip' : ''}`}
 	                            style={{
 	                              display: 'inline-flex',
 	                              alignItems: 'center',
@@ -5276,45 +6988,29 @@ function CompactGrid({
 	                              margin: '0 auto',
 	                              minWidth: 0,
 	                              background: isU ? 'transparent' : bg,
-	                              color: isU ? 'var(--st-uncovered)' : cc === 'W' ? (contrast ? 'var(--st-work-fg)' : chipFg('W')) : chipFg(cc),
-	                              border: isU ? '1px dashed var(--st-uncovered)' : 'none',
+	                              color: visual.text,
+                              border: isU ? `1px dashed ${visual.text}` : 'none',
                               borderRadius: 4,
-                              fontSize: (cc === 'W' || cc === 'S') && showTimes ? 9 : 10.5,
+                              fontSize: shiftParts ? 8.5 : ((cc === 'W' || cc === 'S') && showTimes ? 9 : 10.5),
                               fontWeight: 600,
-                              padding: '3px 2px', lineHeight: 1.15,
-                              minHeight: 16,
-                              whiteSpace: 'nowrap',
+                              padding: shiftParts ? '4px 2px' : '3px 2px',
+                              lineHeight: 1.15,
+                              minHeight: scheduleChipMinHeight,
+                              whiteSpace: shiftParts ? 'normal' : 'nowrap',
                               overflow: 'hidden',
-                            }}
-                          >
-                            {isU ? '?' : cc === 'S' ? sickText : timeText}
-                          </div>
+	                            }}
+	                          >
+	                            {isU ? '?' : isLeave ? (
+	                              <ScheduleLeaveLabelText code={cc} labels={labels} />
+	                            ) : shiftParts ? (
+	                              <ShiftTimeStack start={shiftParts[0]} end={shiftParts[1]} fontSize={8.5} />
+	                            ) : null}
+	                          </div>
                         )
                       })()}
                     </td>
                   )
                 })}
-                {(() => {
-                  let off = 0, work = 0
-                  days.forEach((_d, ci) => {
-                    let s = statusOf(emp.name, ci, emp.s)
-                    if (s === 'U' && ci !== PROBLEM_DAY_IDX) s = 'W'
-                    if (s === 'V' || s === 'S' || s === 'D') off++
-                    else if (s === 'W') work++
-                  })
-                  const wm = workMeta(emp.shift, labels)
-                  const hrs = work * wm.hours
-                  return (
-                    <>
-                      <td style={{ borderLeft: '2px solid var(--border)', width: offColW, minWidth: offColW, maxWidth: offColW, textAlign: 'center', background: 'var(--grid-cell)', padding: '2px 2px' }}>
-                        <span style={{ fontSize: 9, color: 'var(--muted-foreground)', fontWeight: 600 }}>{off || '—'}</span>
-                      </td>
-                      <td style={{ borderLeft: '1px solid var(--border)', width: hoursColW, minWidth: hoursColW, maxWidth: hoursColW, textAlign: 'center', background: 'var(--grid-cell)', padding: '2px 2px' }}>
-                        <span style={{ fontSize: 9, color: 'var(--foreground)', fontWeight: 600 }}>{hrs > 0 ? `${hrs}${labels.hourSuffix}` : '—'}</span>
-                      </td>
-                    </>
-                  )
-                })()}
               </tr>
             )),
           ])}
@@ -5341,32 +7037,33 @@ function CompactGrid({
                   whiteSpace: 'nowrap',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
                   <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{labels.onShiftRowLabel}</span>
                   <OnShiftScopePicker labels={labels} groups={groups} value={onShiftScope} onChange={onShiftScopeChange} />
                 </div>
               </td>
               {onShiftCountsForRows(onShiftRows, statusOf, days).map((count, ci) => {
                 const isWkd = days[ci].k === 'sat' || days[ci].k === 'sun'
+                const isProblemCol = problemDayIdx !== null && ci === problemDayIdx
                 return (
                   <td
                     key={ci}
                     style={{
                       padding: '4px 0',
                       textAlign: 'center',
-                      background: isWkd ? weekendBg : 'var(--grid-cell)',
+                      background: isProblemCol ? 'var(--grid-problem-col)' : isWkd ? weekendBg : 'var(--grid-cell)',
                       borderRight: showGrid ? '1px solid var(--border)' : 'none',
+                      transition: 'background 360ms ease',
                     }}
                   >
                     <OnShiftCountCell count={count} total={onShiftRows.length} compact />
                   </td>
                 )
               })}
-              <td style={{ borderLeft: '2px solid var(--border)', width: offColW, minWidth: offColW, maxWidth: offColW, background: 'var(--grid-cell)' }} />
-              <td style={{ borderLeft: '1px solid var(--border)', width: hoursColW, minWidth: hoursColW, maxWidth: hoursColW, background: 'var(--grid-cell)' }} />
             </tr>
           </tfoot>
       </table>
+      </div>
     </div>
   )
 }

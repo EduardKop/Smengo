@@ -232,7 +232,7 @@ export function RolesAnimVisual({ labels }: { labels: RolesLabels }) {
       speedRef.current += (target - speedRef.current) * factor
       const close = Math.abs(speedRef.current - target) < 0.004
       const s = close ? target : speedRef.current
-      animsRef.current.forEach(a => { try { a.playbackRate = s } catch (_) {} })
+      animsRef.current.forEach(a => { try { a.playbackRate = s } catch {} })
       speedRef.current = s
       if (!close) rafRef.current = requestAnimationFrame(tick)
     }

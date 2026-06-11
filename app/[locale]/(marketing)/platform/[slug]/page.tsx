@@ -9,6 +9,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { routing, type Locale } from '@/i18n/routing'
+import { ComingSoon } from '@/components/marketing/coming-soon'
 
 export const revalidate = 3600
 
@@ -58,7 +59,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale, slug } = await params
   if (!VALID_SLUGS.includes(slug as PlatformSlug)) return {}
-  const t = await getTranslations({ locale, namespace: 'platform.items' })
+  const t = await getTranslations({ locale, namespace: 'marketing.platform.items' })
   const itemKey = SLUG_TO_KEY[slug as PlatformSlug]
   return {
     title: `Smengo · ${t(itemKey as Parameters<typeof t>[0])}`,
@@ -74,18 +75,17 @@ export default async function PlatformPage({
   if (!VALID_SLUGS.includes(slug as PlatformSlug)) notFound()
   setRequestLocale(locale)
 
-  const t = await getTranslations({ locale, namespace: 'platform.items' })
+  const t = await getTranslations({ locale, namespace: 'marketing.platform.items' })
   const itemKey = SLUG_TO_KEY[slug as PlatformSlug]
   const label = t(itemKey as Parameters<typeof t>[0])
   const Icon = ICON_FOR[slug as PlatformSlug]
 
   return (
-    <div className="mx-auto max-w-3xl px-6 py-32 text-center">
-      <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/60">
-        <Icon size={32} strokeWidth={1.75} />
-      </div>
-      <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{label}</h1>
-      <p className="mt-3 text-muted-foreground">Coming soon</p>
-    </div>
+    <ComingSoon
+      locale={locale}
+      label={label}
+      icon={<Icon size={30} strokeWidth={1.75} />}
+      variant="platform"
+    />
   )
 }
