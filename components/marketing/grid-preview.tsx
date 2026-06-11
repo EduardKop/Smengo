@@ -600,9 +600,9 @@ const DEFAULT_VISUAL_ICON_COLORS: VisualCardColorThemes = {
   },
   dark: {
     work: { icon: '#ffffff', text: '#e4e4e7' },
-    vacation: { icon: '#fcd34d', text: '#ffffff' },
+    vacation: { icon: '#ffd9a8', text: '#ffffff' },
     sick: { icon: '#fca5a5', text: '#ffffff' },
-    dayoff: { icon: '#94a3b8', text: '#94a3b8' },
+    dayoff: { icon: '#a9b4c2', text: '#a9b4c2' },
     uncovered: { icon: '#fb7c64', text: '#fb7c64' },
   },
 }
@@ -1144,16 +1144,25 @@ function CustomCellPreview({
   config,
   tone,
   label,
+  modeLabels,
 }: {
   config: CustomCellConfig
   tone: SiteTone
   label: string
+  modeLabels: { compact: string; detail: string; extended: string }
 }) {
+  // One chip per grid mode: sizes mirror the real cells (compact 34px /
+  // detail 36px / extended 46px) so the user sees the result everywhere.
+  const variants: Array<{ key: string; caption: string; width: number; minHeight: number; compact: boolean }> = [
+    { key: 'compact', caption: modeLabels.compact, width: 60, minHeight: 34, compact: true },
+    { key: 'detail', caption: modeLabels.detail, width: 70, minHeight: 36, compact: true },
+    { key: 'extended', caption: modeLabels.extended, width: 100, minHeight: 46, compact: false },
+  ]
   return (
     <div
       style={{
         display: 'grid',
-        gap: 7,
+        gap: 8,
         alignContent: 'start',
         justifyItems: 'center',
         padding: '9px 8px',
@@ -1174,9 +1183,16 @@ function CustomCellPreview({
       >
         {label}
       </span>
-      <div style={{ width: 104, height: 58, display: 'grid', alignItems: 'center' }}>
-        <CustomScheduleChip config={config} tone={tone} minHeight={52} />
-      </div>
+      {variants.map((v) => (
+        <div key={v.key} style={{ display: 'grid', gap: 3, justifyItems: 'center' }}>
+          <span style={{ color: 'var(--muted-foreground)', fontSize: 8.5, fontWeight: 650, lineHeight: 1, opacity: 0.85 }}>
+            {v.caption}
+          </span>
+          <div style={{ width: v.width, display: 'grid', alignItems: 'center' }}>
+            <CustomScheduleChip config={config} tone={tone} compact={v.compact} minHeight={v.minHeight} />
+          </div>
+        </div>
+      ))}
     </div>
   )
 }
@@ -1303,14 +1319,29 @@ function CustomCellEditor({
             </div>
           </div>
           <div style={{ display: 'grid', gap: 10, position: 'sticky', top: 0 }}>
-            <CustomCellPreview config={lightConfig} tone="light" label={labels.siteThemeLight} />
-            <CustomCellPreview config={darkConfig} tone="dark" label={labels.siteThemeDark} />
+            <CustomCellPreview
+              config={lightConfig}
+              tone="light"
+              label={labels.siteThemeLight}
+              modeLabels={{ compact: labels.modeCompact, detail: labels.modeDetail, extended: labels.modeExtended }}
+            />
+            <CustomCellPreview
+              config={darkConfig}
+              tone="dark"
+              label={labels.siteThemeDark}
+              modeLabels={{ compact: labels.modeCompact, detail: labels.modeDetail, extended: labels.modeExtended }}
+            />
           </div>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 136px', gap: 12, alignItems: 'start' }}>
           <CustomCellBodyEditor body={activeBody} labels={labels} onChange={setSingleBody} />
-          <CustomCellPreview config={normalized} tone={siteTone} label={siteTone === 'dark' ? labels.siteThemeDark : labels.siteThemeLight} />
+          <CustomCellPreview
+            config={normalized}
+            tone={siteTone}
+            label={siteTone === 'dark' ? labels.siteThemeDark : labels.siteThemeLight}
+            modeLabels={{ compact: labels.modeCompact, detail: labels.modeDetail, extended: labels.modeExtended }}
+          />
         </div>
       )}
 
@@ -5631,6 +5662,7 @@ function DetailGrid({
     )
   }
 
+  // Icon sits in its own centered row above the label (never overlaps text).
   const renderExtDayoffCard = (emp: EmpDef, dayIdx: number) => {
     const badges = cellBadgesOf(emp.name, dayIdx)
     const hasBadges = badges.length > 0
@@ -5638,7 +5670,6 @@ function DetailGrid({
       <div
         className="smengo-schedule-chip"
         style={{
-          position: 'relative',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -5648,7 +5679,7 @@ function DetailGrid({
           minHeight: 46,
           background: chipBg('D'),
           color: visualColors.dayoff.text,
-          padding: hasBadges ? '24px 7px 6px' : '5px 7px',
+          padding: '5px 7px',
           borderRadius: 8,
           fontSize: 12,
           fontWeight: 750,
@@ -5659,11 +5690,13 @@ function DetailGrid({
       >
         <span
           className="inline-flex shrink-0 items-center justify-center rounded-full bg-white/15"
-          style={{ position: 'absolute', top: 5, left: 6, width: 16, height: 16 }}
+          style={{ width: 16, height: 16 }}
         >
           <CalendarDays size={10} strokeWidth={2.4} color={visualColors.dayoff.icon} />
         </span>
-        {labels.shifts.dayoff}
+        <span style={{ minWidth: 0, maxWidth: '100%', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+          {labels.shifts.dayoff}
+        </span>
         {hasBadges && (
           <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3, minWidth: 0, maxWidth: '100%' }}>
             {badges.map((b) => <CellBadgePill key={b.id} badge={b} />)}
@@ -6121,19 +6154,23 @@ function DetailGrid({
 
 	                          if (runCode === 'V' || runCode === 'S') {
 	                            const LeaveIcon = runCode === 'S' ? Thermometer : TreePalm
+	                            const leaveIconColor = runCode === 'S' ? visualColors.sick.icon : visualColors.vacation.icon
+	                            const isWideRun = span > 1
 	                            return (
 	                              <div
 	                                className="smengo-schedule-chip smengo-leave-chip"
 	                                style={{
 	                                  position: 'relative',
 	                                  display: 'flex',
+	                                  flexDirection: isWideRun ? 'row' : 'column',
                                   alignItems: 'center',
                                   justifyContent: 'center',
+                                  gap: isWideRun ? 0 : 3,
                                   width: '100%',
                                   minHeight: 46,
                                   background: bg,
                                   color: visual.text,
-                                  padding: '5px 7px',
+                                  padding: isWideRun ? '5px 26px' : '5px 7px',
                                   borderRadius: 8,
                                   boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
                                   textAlign: 'center',
@@ -6141,9 +6178,11 @@ function DetailGrid({
                               >
                                 <span
                                   className="inline-flex shrink-0 items-center justify-center rounded-full bg-white/15"
-                                  style={{ position: 'absolute', top: 5, left: 6, width: 16, height: 16 }}
+                                  style={isWideRun
+                                    ? { position: 'absolute', top: '50%', left: 7, transform: 'translateY(-50%)', width: 16, height: 16 }
+                                    : { width: 16, height: 16 }}
                                 >
-		                                  <LeaveIcon size={10} strokeWidth={2.5} color={runCode === 'S' ? visualColors.sick.icon : visualColors.vacation.icon} />
+		                                  <LeaveIcon size={10} strokeWidth={2.5} color={leaveIconColor} />
                                 </span>
                                 <span
                                   style={{
@@ -6155,7 +6194,6 @@ function DetailGrid({
 	                                    maxWidth: '100%',
 	                                    overflow: 'hidden',
 	                                    whiteSpace: 'nowrap',
-	                                    transform: 'translateY(7px)',
 	                                  }}
 	                                >
 	                                  <ScheduleLeaveLabelText code={runCode} labels={labels} />

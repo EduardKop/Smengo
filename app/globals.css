@@ -1103,18 +1103,20 @@ tr:hover > .smengo-schedule-cell::before {
   --st-work-night:   rgba(139, 92, 246, 0.58);
   --st-work-fg: #e4e4e7;
 
-  /* Solid statuses (contrast mode) — same glow approach */
+  /* Solid statuses (contrast mode) — same glow approach.
+     Vacation leans amber/bronze (not yellow: yellow over dark reads olive);
+     dayoff is visible as a card, not a void. */
   --st-work:     rgba(16, 185, 129, 0.55);
-  --st-vacation: rgba(251, 191, 36,  0.32);
+  --st-vacation: rgba(226, 153, 66, 0.42);
   --st-sick:     rgba(248, 113, 113, 0.30);
-  --st-dayoff:   rgba(148, 163, 184, 0.07);
+  --st-dayoff:   rgba(148, 163, 184, 0.14);
   --st-late:     rgba(216, 180, 254, 0.28);
 
   /* Status chip palette (dark) — Linear-style: subtle tint + colored text */
   --chip-w-bg: rgba(74, 222, 128, 0.10);  --chip-w-fg: #86efac;
-  --chip-v-bg: rgba(251, 191, 36, 0.10);  --chip-v-fg: #fcd34d;
+  --chip-v-bg: rgba(226, 153, 66, 0.16);  --chip-v-fg: #f3c489;
   --chip-s-bg: rgba(248, 113, 113, 0.10); --chip-s-fg: #fca5a5;
-  --chip-d-bg: rgba(148, 163, 184, 0.06); --chip-d-fg: #94a3b8;
+  --chip-d-bg: rgba(148, 163, 184, 0.13); --chip-d-fg: #a9b4c2;
   --chip-l-bg: rgba(216, 180, 254, 0.10); --chip-l-fg: #d8b4fe;
 }
 
