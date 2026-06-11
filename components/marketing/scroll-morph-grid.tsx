@@ -32,59 +32,24 @@ function isSafariBrowser() {
   )
 }
 
+/**
+ * Safari fallback: the grid renders at its NATIVE width (no transform scale).
+ * Safari rasterizes transformed subtrees at 1× and stretches the cached layer,
+ * which made the scaled variant blurry on 1080p screens and forced huge
+ * composited layers. Native layout text stays crisp and costs nothing on scroll.
+ */
 function SafariDemoGrid({ labels }: { labels: GridPreviewLabels }) {
-  const gridRef = useRef<HTMLDivElement>(null)
-  const [bubbleWidth, setBubbleWidth] = useState(() => Math.min(window.innerWidth - 32, 1800))
-  const [naturalHeight, setNaturalHeight] = useState(620)
-  const scale = bubbleWidth / NATURAL_W
-
-  useEffect(() => {
-    const updateBubbleWidth = () => setBubbleWidth(Math.min(window.innerWidth - 32, 1800))
-
-    updateBubbleWidth()
-    window.addEventListener('resize', updateBubbleWidth)
-
-    return () => window.removeEventListener('resize', updateBubbleWidth)
-  }, [])
-
-  useEffect(() => {
-    const grid = gridRef.current
-    if (!grid) return
-
-    const updateHeight = () => {
-      const nextHeight = grid.offsetHeight
-      if (nextHeight > 0) setNaturalHeight(nextHeight)
-    }
-
-    updateHeight()
-    const ro = new ResizeObserver(updateHeight)
-    ro.observe(grid)
-
-    return () => ro.disconnect()
-  }, [])
-
   return (
     <div
-      className="overflow-hidden rounded-2xl drop-shadow-[0_24px_50px_rgba(0,0,0,0.14)] dark:drop-shadow-[0_24px_50px_rgba(0,0,0,0.5)]"
+      className="overflow-hidden rounded-2xl shadow-[0_24px_50px_rgba(0,0,0,0.14)] dark:shadow-[0_24px_50px_rgba(0,0,0,0.5)]"
       style={{
         position: 'relative',
         left: '50%',
-        width: bubbleWidth + 'px',
-        height: naturalHeight * scale + 'px',
         transform: 'translateX(-50%)',
+        width: 'min(1800px, calc(100vw - 32px))',
       }}
     >
-      <div
-        style={{
-          width: NATURAL_W + 'px',
-          transform: `scale(${scale})`,
-          transformOrigin: 'top left',
-        }}
-      >
-        <div ref={gridRef}>
-          <GridPreview labels={labels} />
-        </div>
-      </div>
+      <GridPreview labels={labels} />
     </div>
   )
 }
@@ -94,6 +59,15 @@ function SafariDemoGrid({ labels }: { labels: GridPreviewLabels }) {
  * interpolates its position, size, and top-crop between two anchor slots
  * (hero and demo) as the user scrolls. In the hero state the right side
  * bleeds off the viewport; in the demo state it appears fully revealed.
+ *
+ * Perf notes:
+ * - The scroll path reads NO layout: slot geometry is cached in document
+ *   coordinates (refreshed on resize / ResizeObserver) and per-frame math
+ *   uses window.scrollY only.
+ * - Once the bubble animation finishes, the card "settles": it switches to
+ *   absolute positioning in document flow coordinates, the scroll listener
+ *   is removed and will-change is cleared. Scrolling the rest of the page
+ *   costs nothing, and the browser re-rasterizes the settled card sharply.
  *
  * Desktop-only (>= lg). On smaller viewports the demo slot renders a
  * standalone fallback (handled in the page, not here).
@@ -167,6 +141,7 @@ export function ScrollMorphGrid({ labels, heroSlotId, demoSlotId }: ScrollMorphG
     let raf = 0
     let seated = false
     let locked = false
+    let settled = false
     let bubbleRaf = 0
     let bubbleEndAt = 0
     // Captured at lock-time so the bubble grow tween interpolates from the slot's
@@ -176,25 +151,89 @@ export function ScrollMorphGrid({ labels, heroSlotId, demoSlotId }: ScrollMorphG
     let lockStartLeft = 0
     const BUBBLE_MS = 700
 
+    // Slot geometry cached in DOCUMENT coordinates. The per-frame scroll path
+    // derives viewport positions from window.scrollY — zero layout reads.
+    const geo = {
+      heroTop: 0, heroLeft: 0, heroW: 0, heroH: 0,
+      demoTop: 0, demoLeft: 0, demoW: 0, demoH: 0,
+      naturalH: 620,
+      vw: window.innerWidth,
+      vh: window.innerHeight,
+    }
+
+    const measure = () => {
+      const h = hero.getBoundingClientRect()
+      const d = demo.getBoundingClientRect()
+      const sy = window.scrollY
+      geo.heroTop = h.top + sy
+      geo.heroLeft = h.left
+      geo.heroW = h.width
+      geo.heroH = h.height
+      geo.demoTop = d.top + sy
+      geo.demoLeft = d.left
+      geo.demoW = d.width
+      geo.demoH = d.height
+      geo.naturalH = grid.offsetHeight || geo.naturalH
+      geo.vw = window.innerWidth
+      geo.vh = window.innerHeight
+    }
+
     // Compute the bubble target dimensions given the current viewport.
     // Width: stretch close to viewport width (capped for ultra-wide). Height: derived from scale.
     const bubbleDims = () => {
-      const naturalH = grid.offsetHeight || 620
-      const bw = Math.min(window.innerWidth - 32, 1800)
+      const bw = Math.min(geo.vw - 32, 1800)
       const scale = bw / NATURAL_W
-      const bh = naturalH * scale
-      const bleft = (window.innerWidth - bw) / 2
+      const bh = geo.naturalH * scale
+      const bleft = (geo.vw - bw) / 2
       return { bw, bh, bleft }
+    }
+
+    // Final resting state: absolute positioning in document coordinates.
+    // After this the card scrolls with the page natively — no scroll listener,
+    // no will-change, and the browser re-rasterizes the text sharply.
+    const applySettled = () => {
+      const b = bubbleDims()
+      const scale = b.bw / NATURAL_W
+      const height = geo.naturalH * scale
+
+      wrap.style.position = 'absolute'
+      const parent = wrap.offsetParent as HTMLElement | null
+      let pTop = 0
+      let pLeft = 0
+      if (parent) {
+        const pr = parent.getBoundingClientRect()
+        pTop = pr.top + window.scrollY
+        pLeft = pr.left + window.scrollX
+      }
+      wrap.style.top = (geo.demoTop - pTop) + 'px'
+      wrap.style.left = (b.bleft - pLeft) + 'px'
+      wrap.style.width = b.bw + 'px'
+      wrap.style.height = height + 'px'
+      wrap.style.willChange = 'auto'
+      inner.style.transform = `translateY(0px) scale(${scale})`
+
+      const desired = Math.round(height)
+      if (Math.abs(desired - (parseFloat(demo.style.height) || 0)) > 1) {
+        demo.style.height = desired + 'px'
+        geo.demoH = desired
+      }
+    }
+
+    const settle = () => {
+      if (settled) return
+      settled = true
+      window.removeEventListener('scroll', onScroll)
+      measure()
+      applySettled()
     }
 
     const update = () => {
       raf = 0
-      const h = hero.getBoundingClientRect()
-      const d = demo.getBoundingClientRect()
-      const vh = window.innerHeight
-      const target = vh / 2
-      const hCenter = h.top + h.height / 2
-      const dCenter = d.top + d.height / 2
+      if (settled) return
+      const sy = window.scrollY
+      const target = geo.vh / 2
+      const hCenter = (geo.heroTop - sy) + geo.heroH / 2
+      const dCenter = (geo.demoTop - sy) + geo.demoH / 2
       const range = dCenter - hCenter
 
       const raw = range === 0 ? 0 : (target - hCenter) / range
@@ -210,8 +249,8 @@ export function ScrollMorphGrid({ labels, heroSlotId, demoSlotId }: ScrollMorphG
 
       // Demo-state target. Pre-lock: snap to slot's rect. Post-lock: tween from the slot's
       // width (captured at lock-time) to the viewport-wide bubble over BUBBLE_MS.
-      let demoLeft = d.left
-      let demoWidth = d.width
+      let demoLeft = geo.demoLeft
+      let demoWidth = geo.demoW
       if (locked) {
         const elapsed = performance.now() - lockTime
         const bp = Math.max(0, Math.min(1, elapsed / BUBBLE_MS))
@@ -222,14 +261,13 @@ export function ScrollMorphGrid({ labels, heroSlotId, demoSlotId }: ScrollMorphG
         demoLeft = lockStartLeft + (b.bleft - lockStartLeft) * eased
       }
 
-      const left = lerp(h.left, demoLeft)
-      const top = lerp(h.top, d.top)
-      const width = lerp(h.width, demoWidth)
+      const left = lerp(geo.heroLeft, demoLeft)
+      const top = lerp(geo.heroTop - sy, geo.demoTop - sy)
+      const width = lerp(geo.heroW, demoWidth)
 
-      const naturalH = grid.offsetHeight || 620
       const cropTop = lerp(TOP_CROP, 0)
       const scale = width / NATURAL_W
-      const height = (naturalH - cropTop) * scale
+      const height = (geo.naturalH - cropTop) * scale
 
       wrap.style.left = left + 'px'
       wrap.style.top = top + 'px'
@@ -251,14 +289,12 @@ export function ScrollMorphGrid({ labels, heroSlotId, demoSlotId }: ScrollMorphG
       // (e.g. the top toolbar fades in adding ~52px), so without this the
       // bubble grows beyond the slot and visually overlaps content below.
       if (locked) {
-        const slot = document.querySelector('[data-demo-slot]') as HTMLElement | null
-        if (slot) {
-          const { bh } = bubbleDims()
-          const desired = Math.round(bh)
-          const current = parseFloat(slot.style.height) || 0
-          if (Math.abs(desired - current) > 1) {
-            slot.style.height = desired + 'px'
-          }
+        const { bh } = bubbleDims()
+        const desired = Math.round(bh)
+        const current = parseFloat(demo.style.height) || 0
+        if (Math.abs(desired - current) > 1) {
+          demo.style.height = desired + 'px'
+          geo.demoH = desired
         }
       }
 
@@ -279,28 +315,26 @@ export function ScrollMorphGrid({ labels, heroSlotId, demoSlotId }: ScrollMorphG
         if (seated && !locked) {
           locked = true
           lockTime = performance.now()
-          lockStartWidth = d.width
-          lockStartLeft = d.left
+          lockStartWidth = geo.demoW
+          lockStartLeft = geo.demoLeft
           document.body.dataset.gridLocked = 'true'
 
           // Grow the slot's CSS height to the bubble height so the layout below reflows
           // and there's no empty gap. Slot has its own height-only CSS transition.
-          // (Slot height is also re-synced every frame below to track grid growth,
-          //  e.g. when the top toolbar fades in and adds ~52px.)
-          const slot = document.querySelector('[data-demo-slot]') as HTMLElement | null
-          if (slot) {
-            const { bh } = bubbleDims()
-            slot.style.height = bh + 'px'
-          }
+          const { bh } = bubbleDims()
+          demo.style.height = bh + 'px'
+          geo.demoH = bh
 
           // rAF burst drives the JS bubble tween (width/left interpolation) frame-by-frame
-          // through BUBBLE_MS without fighting any CSS transition on the wrap itself.
+          // through BUBBLE_MS, then the card settles into document flow for good.
           bubbleEndAt = performance.now() + BUBBLE_MS + 100
           const tick = () => {
             bubbleRaf = 0
             update()
             if (performance.now() < bubbleEndAt) {
               bubbleRaf = requestAnimationFrame(tick)
+            } else {
+              settle()
             }
           }
           bubbleRaf = requestAnimationFrame(tick)
@@ -313,20 +347,48 @@ export function ScrollMorphGrid({ labels, heroSlotId, demoSlotId }: ScrollMorphG
       raf = requestAnimationFrame(update)
     }
 
-    update()
-    const t1 = window.setTimeout(update, 100)
-    const t2 = window.setTimeout(update, 500)
-    window.addEventListener('scroll', onScroll, { passive: true })
-    window.addEventListener('resize', onScroll)
+    const onResize = () => {
+      if (settled) {
+        measure()
+        applySettled()
+      } else {
+        measure()
+        onScroll()
+      }
+    }
 
-    const ro = new ResizeObserver(onScroll)
+    measure()
+    update()
+    const remeasure = () => {
+      measure()
+      update()
+    }
+    const t1 = window.setTimeout(remeasure, 100)
+    const t2 = window.setTimeout(remeasure, 500)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onResize)
+
+    // Sizes change → re-cache geometry. After settle, only the grid's own
+    // height matters (the user can switch grid modes, which changes height).
+    const ro = new ResizeObserver(() => {
+      if (settled) {
+        const nh = grid.offsetHeight || geo.naturalH
+        if (Math.abs(nh - geo.naturalH) > 1) {
+          geo.naturalH = nh
+          applySettled()
+        }
+      } else {
+        measure()
+        onScroll()
+      }
+    })
     ro.observe(hero)
     ro.observe(demo)
     ro.observe(grid)
 
     return () => {
       window.removeEventListener('scroll', onScroll)
-      window.removeEventListener('resize', onScroll)
+      window.removeEventListener('resize', onResize)
       window.clearTimeout(t1)
       window.clearTimeout(t2)
       ro.disconnect()
@@ -344,7 +406,7 @@ export function ScrollMorphGrid({ labels, heroSlotId, demoSlotId }: ScrollMorphG
       {!safariStaticSlots && (
         <div
           ref={wrapRef}
-          className="fixed left-0 top-0 z-[70] hidden overflow-hidden drop-shadow-[0_24px_50px_rgba(0,0,0,0.16)] dark:drop-shadow-[0_24px_50px_rgba(0,0,0,0.55)] lg:block"
+          className="fixed left-0 top-0 z-[70] hidden overflow-hidden shadow-[0_24px_50px_rgba(0,0,0,0.16)] dark:shadow-[0_24px_50px_rgba(0,0,0,0.55)] lg:block"
           style={{
             width: 0,
             height: 0,
