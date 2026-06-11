@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { paddleProvider } from '@/lib/billing/paddle'
+import type { Json } from '@/supabase/types'
 
 export async function POST(req: Request) {
   const rawBody = await req.text()
@@ -40,6 +41,8 @@ export async function POST(req: Request) {
         const { orgId, plan, status, subscriptionId, customerId, currentPeriodEnd, cancelAtPeriodEnd } = event
         if (!orgId || !subscriptionId) break
 
+        // One subscription row per org (unique org_id): the trialing row created
+        // at org creation gets overwritten by the first real Paddle subscription.
         await admin.from('subscriptions').upsert(
           {
             org_id: orgId,
@@ -50,7 +53,7 @@ export async function POST(req: Request) {
             current_period_end: currentPeriodEnd,
             cancel_at_period_end: cancelAtPeriodEnd,
           },
-          { onConflict: 'paddle_subscription_id' },
+          { onConflict: 'org_id' },
         )
 
         // Sync plan on organizations — ⚠️ must filter by org_id (no RLS)
@@ -98,7 +101,7 @@ export async function POST(req: Request) {
   await admin.from('webhook_events').insert({
     id: event.id,
     type: event.type,
-    payload: event.raw as Record<string, unknown>,
+    payload: event.raw as Json,
     processed_at: new Date().toISOString(),
   })
 

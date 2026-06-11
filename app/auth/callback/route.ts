@@ -10,7 +10,10 @@ export async function GET(request: NextRequest) {
 
   if (code) {
     const supabase = await createClient()
-    await supabase.auth.exchangeCodeForSession(code)
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    if (error) {
+      return NextResponse.redirect(`${origin}/login?error=auth_callback`)
+    }
   }
 
   // Password reset flow — send to the reset form (user is now authenticated)

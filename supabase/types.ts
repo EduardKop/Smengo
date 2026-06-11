@@ -1,322 +1,766 @@
-// NOTE: Keep in sync with the DB by running:
-//   npx supabase gen types typescript --project-id <id> > supabase/types.ts
-// The types below are the hand-written source of truth until the first gen run.
-
-export type UserRole = 'owner' | 'admin' | 'manager' | 'viewer'
-export type SubscriptionStatus = 'trialing' | 'active' | 'past_due' | 'paused' | 'canceled'
-export type PlanTier = 'start' | 'team' | 'business'
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
+  }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
-      organizations: {
+      alert_configs: {
         Row: {
-          id: string
-          name: string
-          slug: string
-          billing_email: string
-          default_locale: string
-          timezone: string
-          plan: PlanTier
-          trial_ends_at: string | null
           created_at: string
-          updated_at: string
-        }
-        Insert: Omit<Database['public']['Tables']['organizations']['Row'], 'id' | 'created_at' | 'updated_at'> & { id?: string }
-        Update: Partial<Database['public']['Tables']['organizations']['Insert']>
-        Relationships: []
-      }
-      profiles: {
-        Row: {
+          department_id: string
           id: string
-          full_name: string | null
-          avatar_url: string | null
-          locale: string | null
-          created_at: string
-        }
-        Insert: Omit<Database['public']['Tables']['profiles']['Row'], 'created_at'>
-        Update: Partial<Database['public']['Tables']['profiles']['Insert']>
-        Relationships: []
-      }
-      memberships: {
-        Row: {
-          id: string
+          is_active: boolean
+          min_present: number
+          notify_user_ids: string[]
           org_id: string
-          user_id: string
-          role: UserRole
-          created_at: string
         }
-        Insert: Omit<Database['public']['Tables']['memberships']['Row'], 'id' | 'created_at'> & { id?: string }
-        Update: Partial<Database['public']['Tables']['memberships']['Insert']>
+        Insert: {
+          created_at?: string
+          department_id: string
+          id?: string
+          is_active?: boolean
+          min_present?: number
+          notify_user_ids?: string[]
+          org_id: string
+        }
+        Update: {
+          created_at?: string
+          department_id?: string
+          id?: string
+          is_active?: boolean
+          min_present?: number
+          notify_user_ids?: string[]
+          org_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: 'memberships_org_id_fkey'
-            columns: ['org_id']
+            foreignKeyName: "alert_configs_department_id_fkey"
+            columns: ["department_id", "org_id"]
             isOneToOne: false
-            referencedRelation: 'organizations'
-            referencedColumns: ['id']
+            referencedRelation: "departments"
+            referencedColumns: ["id", "org_id"]
+          },
+          {
+            foreignKeyName: "alert_configs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
           },
         ]
       }
       departments: {
         Row: {
+          created_at: string
+          geo: string | null
           id: string
+          name: string
           org_id: string
           parent_id: string | null
-          name: string
-          geo: string | null
           sort_order: number
-          created_at: string
+          updated_at: string
         }
-        Insert: Omit<Database['public']['Tables']['departments']['Row'], 'id' | 'created_at'> & { id?: string }
-        Update: Partial<Database['public']['Tables']['departments']['Insert']>
+        Insert: {
+          created_at?: string
+          geo?: string | null
+          id?: string
+          name: string
+          org_id: string
+          parent_id?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          geo?: string | null
+          id?: string
+          name?: string
+          org_id?: string
+          parent_id?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: 'departments_org_id_fkey'
-            columns: ['org_id']
+            foreignKeyName: "departments_org_id_fkey"
+            columns: ["org_id"]
             isOneToOne: false
-            referencedRelation: 'organizations'
-            referencedColumns: ['id']
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'departments_parent_id_fkey'
-            columns: ['parent_id']
+            foreignKeyName: "departments_parent_id_fkey"
+            columns: ["parent_id", "org_id"]
             isOneToOne: false
-            referencedRelation: 'departments'
-            referencedColumns: ['id']
-          },
-        ]
-      }
-      manager_departments: {
-        Row: {
-          membership_id: string
-          department_id: string
-        }
-        Insert: Database['public']['Tables']['manager_departments']['Row']
-        Update: Partial<Database['public']['Tables']['manager_departments']['Row']>
-        Relationships: [
-          {
-            foreignKeyName: 'manager_departments_membership_id_fkey'
-            columns: ['membership_id']
-            isOneToOne: false
-            referencedRelation: 'memberships'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'manager_departments_department_id_fkey'
-            columns: ['department_id']
-            isOneToOne: false
-            referencedRelation: 'departments'
-            referencedColumns: ['id']
+            referencedRelation: "departments"
+            referencedColumns: ["id", "org_id"]
           },
         ]
       }
       employees: {
         Row: {
-          id: string
-          org_id: string
+          birth_date: string | null
+          created_at: string
+          deleted_at: string | null
           dept_id: string | null
+          email: string | null
           full_name: string
+          hired_on: string | null
+          id: string
+          note: string | null
+          org_id: string
+          phone: string | null
           position: string | null
           sort_order: number
-          deleted_at: string | null
-          created_at: string
+          telegram: string | null
+          updated_at: string
         }
-        Insert: Omit<Database['public']['Tables']['employees']['Row'], 'id' | 'created_at'> & { id?: string }
-        Update: Partial<Database['public']['Tables']['employees']['Insert']>
+        Insert: {
+          birth_date?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          dept_id?: string | null
+          email?: string | null
+          full_name: string
+          hired_on?: string | null
+          id?: string
+          note?: string | null
+          org_id: string
+          phone?: string | null
+          position?: string | null
+          sort_order?: number
+          telegram?: string | null
+          updated_at?: string
+        }
+        Update: {
+          birth_date?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          dept_id?: string | null
+          email?: string | null
+          full_name?: string
+          hired_on?: string | null
+          id?: string
+          note?: string | null
+          org_id?: string
+          phone?: string | null
+          position?: string | null
+          sort_order?: number
+          telegram?: string | null
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: 'employees_org_id_fkey'
-            columns: ['org_id']
+            foreignKeyName: "employees_dept_id_fkey"
+            columns: ["dept_id", "org_id"]
             isOneToOne: false
-            referencedRelation: 'organizations'
-            referencedColumns: ['id']
+            referencedRelation: "departments"
+            referencedColumns: ["id", "org_id"]
           },
           {
-            foreignKeyName: 'employees_dept_id_fkey'
-            columns: ['dept_id']
+            foreignKeyName: "employees_org_id_fkey"
+            columns: ["org_id"]
             isOneToOne: false
-            referencedRelation: 'departments'
-            referencedColumns: ['id']
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          org_id: string
+          role: Database["public"]["Enums"]["user_role"]
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          org_id: string
+          role?: Database["public"]["Enums"]["user_role"]
+          token: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          org_id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invitations_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      manager_departments: {
+        Row: {
+          department_id: string
+          membership_id: string
+        }
+        Insert: {
+          department_id: string
+          membership_id: string
+        }
+        Update: {
+          department_id?: string
+          membership_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manager_departments_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manager_departments_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      memberships: {
+        Row: {
+          created_at: string
+          id: string
+          org_id: string
+          role: Database["public"]["Enums"]["user_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          org_id: string
+          role?: Database["public"]["Enums"]["user_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          org_id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memberships_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          billing_email: string
+          created_at: string
+          default_locale: string
+          id: string
+          name: string
+          plan: Database["public"]["Enums"]["plan_tier"]
+          slug: string
+          timezone: string
+          trial_ends_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          billing_email: string
+          created_at?: string
+          default_locale?: string
+          id?: string
+          name: string
+          plan?: Database["public"]["Enums"]["plan_tier"]
+          slug: string
+          timezone?: string
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          billing_email?: string
+          created_at?: string
+          default_locale?: string
+          id?: string
+          name?: string
+          plan?: Database["public"]["Enums"]["plan_tier"]
+          slug?: string
+          timezone?: string
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          locale: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          locale?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          locale?: string | null
+        }
+        Relationships: []
+      }
+      schedule_entries: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          employee_id: string
+          end_time: string | null
+          entry_date: string
+          id: string
+          note: string | null
+          org_id: string
+          start_time: string | null
+          status_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          employee_id: string
+          end_time?: string | null
+          entry_date: string
+          id?: string
+          note?: string | null
+          org_id: string
+          start_time?: string | null
+          status_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          employee_id?: string
+          end_time?: string | null
+          entry_date?: string
+          id?: string
+          note?: string | null
+          org_id?: string
+          start_time?: string | null
+          status_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedule_entries_employee_id_fkey"
+            columns: ["employee_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id", "org_id"]
+          },
+          {
+            foreignKeyName: "schedule_entries_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schedule_entries_status_id_fkey"
+            columns: ["status_id"]
+            isOneToOne: false
+            referencedRelation: "status_types"
+            referencedColumns: ["id"]
           },
         ]
       }
       status_types: {
         Row: {
-          id: string
-          org_id: string | null
           code: string
-          label: Record<'ru' | 'uk' | 'en', string>
           color: string
           counts_as_present: boolean
+          created_at: string
+          end_time: string | null
+          id: string
           is_system: boolean
+          label: Json
+          org_id: string | null
           sort_order: number
-          created_at: string
+          start_time: string | null
         }
-        Insert: Omit<Database['public']['Tables']['status_types']['Row'], 'id' | 'created_at'> & { id?: string }
-        Update: Partial<Database['public']['Tables']['status_types']['Insert']>
+        Insert: {
+          code: string
+          color: string
+          counts_as_present?: boolean
+          created_at?: string
+          end_time?: string | null
+          id?: string
+          is_system?: boolean
+          label: Json
+          org_id?: string | null
+          sort_order?: number
+          start_time?: string | null
+        }
+        Update: {
+          code?: string
+          color?: string
+          counts_as_present?: boolean
+          created_at?: string
+          end_time?: string | null
+          id?: string
+          is_system?: boolean
+          label?: Json
+          org_id?: string | null
+          sort_order?: number
+          start_time?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: 'status_types_org_id_fkey'
-            columns: ['org_id']
+            foreignKeyName: "status_types_org_id_fkey"
+            columns: ["org_id"]
             isOneToOne: false
-            referencedRelation: 'organizations'
-            referencedColumns: ['id']
-          },
-        ]
-      }
-      schedule_entries: {
-        Row: {
-          id: string
-          org_id: string
-          employee_id: string
-          entry_date: string          // ISO date "YYYY-MM-DD"
-          status_id: string
-          note: string | null
-          created_by: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: Omit<Database['public']['Tables']['schedule_entries']['Row'], 'id' | 'created_at' | 'updated_at'> & { id?: string }
-        Update: Partial<Database['public']['Tables']['schedule_entries']['Insert']>
-        Relationships: [
-          {
-            foreignKeyName: 'schedule_entries_org_id_fkey'
-            columns: ['org_id']
-            isOneToOne: false
-            referencedRelation: 'organizations'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'schedule_entries_employee_id_fkey'
-            columns: ['employee_id']
-            isOneToOne: false
-            referencedRelation: 'employees'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'schedule_entries_status_id_fkey'
-            columns: ['status_id']
-            isOneToOne: false
-            referencedRelation: 'status_types'
-            referencedColumns: ['id']
-          },
-        ]
-      }
-      alert_configs: {
-        Row: {
-          id: string
-          org_id: string
-          department_id: string
-          min_present: number
-          notify_user_ids: string[]
-          is_active: boolean
-          created_at: string
-        }
-        Insert: Omit<Database['public']['Tables']['alert_configs']['Row'], 'id' | 'created_at'> & { id?: string }
-        Update: Partial<Database['public']['Tables']['alert_configs']['Insert']>
-        Relationships: [
-          {
-            foreignKeyName: 'alert_configs_org_id_fkey'
-            columns: ['org_id']
-            isOneToOne: false
-            referencedRelation: 'organizations'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'alert_configs_department_id_fkey'
-            columns: ['department_id']
-            isOneToOne: false
-            referencedRelation: 'departments'
-            referencedColumns: ['id']
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
           },
         ]
       }
       subscriptions: {
         Row: {
-          id: string
-          org_id: string
-          plan: PlanTier
-          status: SubscriptionStatus
-          paddle_customer_id: string | null
-          paddle_subscription_id: string | null
-          current_period_end: string | null
           cancel_at_period_end: boolean
           created_at: string
+          current_period_end: string | null
+          id: string
+          org_id: string
+          paddle_customer_id: string | null
+          paddle_subscription_id: string | null
+          plan: Database["public"]["Enums"]["plan_tier"]
+          status: Database["public"]["Enums"]["subscription_status"]
           updated_at: string
         }
-        Insert: Omit<Database['public']['Tables']['subscriptions']['Row'], 'id' | 'created_at' | 'updated_at'> & { id?: string }
-        Update: Partial<Database['public']['Tables']['subscriptions']['Insert']>
+        Insert: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          org_id: string
+          paddle_customer_id?: string | null
+          paddle_subscription_id?: string | null
+          plan: Database["public"]["Enums"]["plan_tier"]
+          status: Database["public"]["Enums"]["subscription_status"]
+          updated_at?: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          org_id?: string
+          paddle_customer_id?: string | null
+          paddle_subscription_id?: string | null
+          plan?: Database["public"]["Enums"]["plan_tier"]
+          status?: Database["public"]["Enums"]["subscription_status"]
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: 'subscriptions_org_id_fkey'
-            columns: ['org_id']
-            isOneToOne: false
-            referencedRelation: 'organizations'
-            referencedColumns: ['id']
+            foreignKeyName: "subscriptions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
           },
         ]
       }
       webhook_events: {
         Row: {
           id: string
-          type: string
-          payload: Record<string, unknown>
+          payload: Json
           processed_at: string
+          type: string
         }
-        Insert: Database['public']['Tables']['webhook_events']['Row']
-        Update: Partial<Database['public']['Tables']['webhook_events']['Row']>
+        Insert: {
+          id: string
+          payload: Json
+          processed_at?: string
+          type: string
+        }
+        Update: {
+          id?: string
+          payload?: Json
+          processed_at?: string
+          type?: string
+        }
         Relationships: []
       }
-      invitations: {
-        Row: {
-          id: string
-          org_id: string
-          email: string
-          role: UserRole
-          token: string
-          expires_at: string
-          accepted_at: string | null
-          created_at: string
-        }
-        Insert: Omit<Database['public']['Tables']['invitations']['Row'], 'id' | 'created_at' | 'accepted_at'> & { id?: string; accepted_at?: string | null }
-        Update: Partial<Database['public']['Tables']['invitations']['Insert']>
-        Relationships: [
-          {
-            foreignKeyName: 'invitations_org_id_fkey'
-            columns: ['org_id']
-            isOneToOne: false
-            referencedRelation: 'organizations'
-            referencedColumns: ['id']
-          },
-        ]
-      }
     }
-    Views: Record<string, never>
+    Views: {
+      [_ in never]: never
+    }
     Functions: {
-      auth_org_ids: {
-        Args: Record<PropertyKey, never>
-        Returns: string[]
-      }
-      visible_department_ids: {
-        Args: Record<PropertyKey, never>
-        Returns: string[]
-      }
-      create_organization: {
+      accept_invitation: { Args: { p_token: string }; Returns: string }
+      auth_has_role: {
         Args: {
-          p_name: string
-          p_slug: string
-          p_billing_email: string
-          p_timezone?: string
-          p_locale?: string
+          p_org_id: string
+          p_roles: Database["public"]["Enums"]["user_role"][]
+        }
+        Returns: boolean
+      }
+      auth_org_ids: { Args: never; Returns: string[] }
+      create_invitation: {
+        Args: {
+          p_email: string
+          p_org_id: string
+          p_role: Database["public"]["Enums"]["user_role"]
         }
         Returns: string
       }
+      create_organization: {
+        Args: {
+          p_billing_email: string
+          p_locale?: string
+          p_name: string
+          p_slug: string
+          p_timezone?: string
+        }
+        Returns: string
+      }
+      get_invitation: {
+        Args: { p_token: string }
+        Returns: {
+          accepted_at: string
+          email: string
+          expires_at: string
+          org_name: string
+          role: Database["public"]["Enums"]["user_role"]
+        }[]
+      }
+      remove_member: {
+        Args: { p_org_id: string; p_user_id: string }
+        Returns: undefined
+      }
+      update_member_role: {
+        Args: {
+          p_org_id: string
+          p_role: Database["public"]["Enums"]["user_role"]
+          p_user_id: string
+        }
+        Returns: undefined
+      }
+      visible_department_ids: { Args: never; Returns: string[] }
     }
     Enums: {
-      user_role: UserRole
-      subscription_status: SubscriptionStatus
-      plan_tier: PlanTier
+      plan_tier: "start" | "team" | "business"
+      subscription_status:
+        | "trialing"
+        | "active"
+        | "past_due"
+        | "paused"
+        | "canceled"
+      user_role: "owner" | "admin" | "manager" | "viewer"
+    }
+    CompositeTypes: {
+      [_ in never]: never
     }
   }
 }
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
+  public: {
+    Enums: {
+      plan_tier: ["start", "team", "business"],
+      subscription_status: [
+        "trialing",
+        "active",
+        "past_due",
+        "paused",
+        "canceled",
+      ],
+      user_role: ["owner", "admin", "manager", "viewer"],
+    },
+  },
+} as const
+
+// ─── App-friendly aliases (preserve existing imports) ───────────────────────
+export type UserRole = Database['public']['Enums']['user_role']
+export type SubscriptionStatus = Database['public']['Enums']['subscription_status']
+export type PlanTier = Database['public']['Enums']['plan_tier']
