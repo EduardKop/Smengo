@@ -75,13 +75,22 @@
     "createButton": "Create company"
   },
   "marketing": {
+    "comingSoon": {
+      "badge": "Coming soon to Smengo",
+      "subtitlePlatform": "This module page is still in the works. The platform itself is live: shift schedule, employee database and HR dashboard are free to try.",
+      "subtitleIndustry": "The landing page for this industry is still in the works. Smengo already helps teams like yours plan shifts: try it free.",
+      "ctaStart": "Start free",
+      "ctaHome": "Back to home",
+      "availableTitle": "Available now",
+      "hint": "14 days free, no card needed"
+    },
     "seo": {
       "landingTitle": "Smengo - Smart Shift Scheduling Software for Teams of 15–300",
       "landingDescription": "Replace Excel with a smart shift planner. See your team's entire month at a glance: who's working, vacations, sick days, coverage conflicts. Telegram notifications, PDF export, role-based access. 14 days free, no credit card.",
       "ogLandingTitle": "Smengo - Smart Shift Scheduling for Teams",
       "ogLandingDescription": "Your team's whole month on one screen. Telegram alerts, projects, PDF export. 14 days free.",
       "pricingTitle": "Smengo Pricing - Plans for Shift Scheduling Software",
-      "pricingDescription": "Transparent pricing: Start free for teams up to 10, Team $29, Business $79 per month. 14 days full access, no card required. Unlimited employees, exports, Telegram notifications.",
+      "pricingDescription": "Transparent pricing: Start free for teams up to 15, Team $29, Business $79 per month. 14 days full access, no card required. Unlimited employees, exports, Telegram notifications.",
       "ogPricingTitle": "Pricing - Smengo",
       "ogPricingDescription": "Start free / Team $29 / Business $79. 14-day free trial, no card."
     },
@@ -401,7 +410,29 @@
       "ariaMore": "More",
       "employeeTrainee": "Trainee",
       "employeeStaff": "Employee",
-      "themeLabel": "Theme",
+      "themeLabel": "Visuals",
+      "iconColorsLabel": "Icon colors",
+      "iconColorLabel": "Icon",
+      "textColorLabel": "Text",
+      "customByThemeLabel": "Customize per site theme",
+      "siteThemeLight": "Light",
+      "siteThemeDark": "Dark",
+      "badgesLabel": "Badges",
+      "badgeAddLabel": "Custom badge",
+      "badgePlaceholder": "Badge text",
+      "badgeRegister": "Register",
+      "badgeHall": "Floor",
+      "badgeDelivery": "Delivery",
+      "badgeVip": "VIP",
+      "badgeTraining": "Training",
+      "customPhraseLabel": "Phrase",
+      "customSectors2": "2 sectors",
+      "customSectors3": "3 sectors",
+      "customAnyPhrase": "Any phrase",
+      "customPhraseN": "Phrase {n}",
+      "customEmojiLabel": "Emoji",
+      "customLogoLabel": "Logo",
+      "favoriteBtn": "Add to favorites",
       "themeStandard": "Standard",
       "themeClassic": "Classic",
       "classicTeams": "Teams",
@@ -412,8 +443,8 @@
       "telegramBtn": "Telegram",
       "editBtn": "Edit",
       "editDone": "Done",
-      "allOnShift": "94% coverage · 2 slots need attention · workload balanced",
-      "coverageSummary": "94% coverage · 2 slots need attention · workload balanced",
+      "allOnShift": "94% coverage · 2 unassigned shifts · uneven daily workload",
+      "coverageSummary": "94% coverage · 2 unassigned shifts · uneven daily workload",
       "toastCopied": "Nickname copied",
       "toastExported": "Schedule exported",
       "toastAdded": "Employee added",
@@ -560,7 +591,7 @@
       "aiPrompt": "Optimize my schedule",
       "aiRun": "Run",
       "aiDone": "Optimized",
-      "aiOptimizedSummary": "Coverage 100% · gaps closed · workload balanced"
+      "aiOptimizedSummary": "100% coverage · all shifts assigned · workload balanced"
     },
     "pricingPreview": {
       "title": "Simple pricing",
@@ -684,6 +715,752 @@
       "i9Desc": "Full access from day one. Enter billing details only if you choose to upgrade.",
       "i10Title": "Open API",
       "i10Desc": "Connect your tools, scripts, or bots. Build on top of Smengo with a documented REST API."
+    },
+    "employeeDatabase": {
+      "seo": {
+        "title": "Online Employee Database — Cards, Documents, Dates | Smengo",
+        "description": "One employee card instead of spreadsheets and folders: contacts, documents with expiry dates, tenure and change history. For teams of 15–300. Free for 14 days, no card.",
+        "keywords": [
+          "employee database",
+          "employee records",
+          "employee card",
+          "online hr records",
+          "employee documents",
+          "hr database",
+          "personnel files",
+          "staff directory"
+        ],
+        "ogTitle": "Smengo — all employee data in one card",
+        "ogDescription": "Contacts, documents, dates and access — in one place, not five. Find anyone in two seconds.",
+        "appDescription": "An employee database: cards with contacts, documents, expiry dates and change history in one loop with the shift schedule.",
+        "breadcrumbPlatform": "Platform",
+        "breadcrumbPage": "Employee database"
+      },
+      "hero": {
+        "eyebrow": "SMENGO · EMPLOYEE DATABASE",
+        "title": "Any employee — in two seconds.",
+        "subtitle": "Contacts, documents, dates and tenure in one card instead of five spreadsheets. Try the search in the demo — it's live.",
+        "ctaStart": "Start for free",
+        "ctaPricing": "View pricing",
+        "hint": "14 days, no card required",
+        "demoHint": "Live demo — search, click, copy"
+      },
+      "bento": {
+        "eyebrow": "WHAT'S INSIDE A CARD",
+        "title": "One card instead of five spreadsheets",
+        "subtitle": "Everything usually scattered across Excel, folders and chats — collected per person.",
+        "t1Title": "Contacts and Telegram",
+        "t1Desc": "Phone, email and handle — copied in one click. No more \"send me Anna's number\".",
+        "t2Title": "Documents with expiry dates",
+        "t2Desc": "Contract, health book, NDA — with statuses and dates. Anything expiring gets highlighted early.",
+        "t3Title": "Dates and tenure",
+        "t3Desc": "Birthday, first shift, days at the company — counted automatically.",
+        "t4Title": "Roles and access",
+        "t4Desc": "Who sees the card: owner, admin, the manager of their own department. Nobody sees more than they should.",
+        "t5Title": "Change history",
+        "t5Desc": "Who changed what is always visible. No more \"who edited this?\" debates.",
+        "t6Title": "Linked to the schedule",
+        "t6Desc": "The card and the shifts are one loop: statuses, vacations and hours stay in sync."
+      },
+      "chaos": {
+        "eyebrow": "SOUND FAMILIAR?",
+        "title": "Right now your team's data lives in five places",
+        "subtitle": "Phones in a chat, contracts in a folder, dates in Excel, and health books \"in Olga's drawer\". Every lookup is a small investigation.",
+        "item1": "The Excel with dates nobody opened for a month",
+        "item2": "The folder \"Scans_2024_new_final\"",
+        "item3": "Phone numbers in the manager's personal chats",
+        "item4": "A sticky note \"renew the health book!\" on the monitor",
+        "resultTitle": "In Smengo:",
+        "resultText": "one card per person — with search, expiry dates and history. Open it, find it, done.",
+        "cta": "Bring your team into one place"
+      },
+      "rest": {
+        "eyebrow": "WORKS WITH THE REST OF THE PLATFORM",
+        "title": "Cards feed the whole platform",
+        "subtitle": "Enter the data once — the schedule, the dashboard and onboarding use it from there.",
+        "c1Title": "Shift schedule",
+        "c1Desc": "An employee from the card appears in the grid with their shifts right away.",
+        "c1Note": "Statuses and hours stay in sync with the card.",
+        "c2Title": "HR Dashboard",
+        "c2Desc": "Tenure, birthdays and headcount on the dashboard are computed from the cards.",
+        "c2Note": "No double data entry.",
+        "c3Title": "Employee onboarding",
+        "c3Desc": "The newcomer's checklist fills the card as onboarding progresses.",
+        "c3Note": "Documents land in the right place by themselves.",
+        "more": "Learn more"
+      },
+      "final": {
+        "title": "Bring your team's data into one place",
+        "subtitle": "Free 14-day trial. No card. Cancel anytime.",
+        "ctaStart": "Start for free",
+        "ctaPricing": "View pricing",
+        "hint": "14 days, no card required"
+      },
+      "demoLabels": {
+        "chrome": "smengo · Employees",
+        "searchPlaceholder": "Search: name or role…",
+        "deptAll": "All",
+        "departments": [
+          "Sales",
+          "Development",
+          "HR"
+        ],
+        "emptySearch": "Nobody found — try another name",
+        "tabProfile": "Profile",
+        "tabDocs": "Documents",
+        "tabDates": "Dates",
+        "phone": "Phone",
+        "telegram": "Telegram",
+        "email": "Email",
+        "copyTitle": "Copy",
+        "copiedTitle": "Copied",
+        "docSigned": "Signed",
+        "docExpiring": "Expiring",
+        "docMissing": "Missing",
+        "docRequest": "Request",
+        "docRequested": "Requested ✓",
+        "docNames": [
+          "Contract",
+          "Health book",
+          "NDA"
+        ],
+        "datesBirthday": "Birthday",
+        "datesTenure": "At the company",
+        "datesFirstShift": "First shift",
+        "statusActive": "Active",
+        "employees": [
+          {
+            "name": "Anna Petrova",
+            "role": "Sales",
+            "dept": 0,
+            "phone": "+380 99 123 45 67",
+            "tg": "@anna_p",
+            "email": "anna@smengo.app",
+            "birthday": "18.06.1997",
+            "tenure": "1340 days",
+            "firstShift": "12.09.2022",
+            "docs": [
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "name": "Mark Sidorov",
+            "role": "Retention",
+            "dept": 0,
+            "phone": "+380 99 234 56 78",
+            "tg": "@mark_s",
+            "email": "mark@smengo.app",
+            "birthday": "03.11.1995",
+            "tenure": "1198 days",
+            "firstShift": "01.02.2023",
+            "docs": [
+              0,
+              1,
+              0
+            ]
+          },
+          {
+            "name": "Kate Volkova",
+            "role": "Sales",
+            "dept": 0,
+            "phone": "+380 99 345 67 89",
+            "tg": "@kate_v",
+            "email": "kate@smengo.app",
+            "birthday": "28.05.2001",
+            "tenure": "71 days",
+            "firstShift": "04.03.2026",
+            "docs": [
+              0,
+              2,
+              1
+            ]
+          },
+          {
+            "name": "Daria Kos",
+            "role": "Front-End",
+            "dept": 1,
+            "phone": "+380 99 456 78 90",
+            "tg": "@daria_k",
+            "email": "daria@smengo.app",
+            "birthday": "21.12.1999",
+            "tenure": "850 days",
+            "firstShift": "15.01.2024",
+            "docs": [
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "name": "Alex Novikov",
+            "role": "Back-End",
+            "dept": 1,
+            "phone": "+380 99 567 89 01",
+            "tg": "@alex_n",
+            "email": "alex@smengo.app",
+            "birthday": "07.07.2002",
+            "tenure": "42 days",
+            "firstShift": "02.04.2026",
+            "docs": [
+              0,
+              2,
+              2
+            ]
+          },
+          {
+            "name": "Yulia Lebed",
+            "role": "HR",
+            "dept": 2,
+            "phone": "+380 99 678 90 12",
+            "tg": "@yulia_l",
+            "email": "yulia@smengo.app",
+            "birthday": "01.10.2000",
+            "tenure": "360 days",
+            "firstShift": "19.05.2025",
+            "docs": [
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    },
+    "onboarding": {
+      "seo": {
+        "title": "Employee Onboarding — a 30-Day Checklist Track | Smengo",
+        "description": "A newcomer's onboarding track: day 1, first week, first month. Checklists with owners, a mentor and visible progress — instead of \"ask around\". Free for 14 days.",
+        "keywords": [
+          "employee onboarding",
+          "onboarding checklist",
+          "new hire onboarding",
+          "onboarding plan",
+          "staff adaptation",
+          "new employee training",
+          "mentorship",
+          "onboarding software"
+        ],
+        "ogTitle": "Smengo — newcomer onboarding without chaos",
+        "ogDescription": "From day one to a solo shift: checklists, a mentor and progress everyone can see.",
+        "appDescription": "An employee onboarding system: a 30-day track, checklists with owners and a newcomer readiness status.",
+        "breadcrumbPlatform": "Platform",
+        "breadcrumbPage": "Onboarding"
+      },
+      "hero": {
+        "eyebrow": "SMENGO · ONBOARDING",
+        "title": "New hires start a shift. Not a void.",
+        "subtitle": "The first 30 days on a track: documents, access, a mentor and training — with checklists, not \"ask around\".",
+        "ctaStart": "Start for free",
+        "ctaPricing": "View pricing",
+        "hint": "14 days, no card required",
+        "stepDay1": "Day 1",
+        "stepWeek": "Week 1",
+        "stepMonth": "Month"
+      },
+      "demo": {
+        "eyebrow": "INTERACTIVE DEMO",
+        "title": "Walk a newcomer down the onboarding track",
+        "subtitle": "Click through the stages and tick the tasks. When everything's done, the trainee becomes an employee."
+      },
+      "timeline": {
+        "eyebrow": "THE FIRST 30 DAYS",
+        "title": "A track that lets nothing slip",
+        "subtitle": "Every stage has its tasks and its owners. HR sees progress, the mentor sees their steps, the newcomer sees what's next.",
+        "s1Title": "Before day one",
+        "s1Desc": "Documents, access and the workplace are ready in advance — not on the first morning.",
+        "s2Title": "Day 1",
+        "s2Desc": "Meeting the team, mentor assigned, the first task is clear.",
+        "s3Title": "Week 1",
+        "s3Desc": "Role training and first shifts with the mentor as backup.",
+        "s4Title": "Month",
+        "s4Desc": "A solo shift, feedback, and the decision: the trainee becomes an employee."
+      },
+      "personas": {
+        "eyebrow": "ONE TRACK — THREE ROLES",
+        "title": "Everyone sees their part",
+        "subtitle": "Onboarding breaks when \"everyone owns everything\". In Smengo every step has an owner.",
+        "p1Title": "HR",
+        "p1Desc": "Sees every newcomer's progress at once: who's stuck, whose step is overdue, who's ready for the team.",
+        "p1Chip": "control and deadlines",
+        "p2Title": "Mentor",
+        "p2Desc": "Gets their own steps: show the processes, back up the first shifts, give feedback.",
+        "p2Chip": "their own tasks",
+        "p3Title": "Newcomer",
+        "p3Desc": "Knows what's next: a checklist instead of awkward questions, progress instead of uncertainty.",
+        "p3Chip": "clarity from day one"
+      },
+      "compare": {
+        "eyebrow": "NO TRACK / WITH A TRACK",
+        "title": "Why new hires quit in the first month",
+        "badTitle": "Improvised onboarding",
+        "bad1": "Day one: \"sit tight, we'll figure something out\"",
+        "bad2": "Access and documents trail behind for weeks",
+        "bad3": "The mentor is \"whoever's free\" and has no plan",
+        "bad4": "A month later nobody knows if the person is ready",
+        "goodTitle": "Onboarding in Smengo",
+        "good1": "Everything is ready before day one: documents, access, plan",
+        "good2": "Every step has an owner and a deadline",
+        "good3": "The mentor sees their tasks on the same track",
+        "good4": "Readiness is measurable: 100% — and they're on the team"
+      },
+      "flow": {
+        "title": "Onboarding is one link in the chain",
+        "subtitle": "A candidate arrives from hiring and gets shifts in the schedule after the track.",
+        "s1": "Hiring",
+        "s2": "Onboarding",
+        "s3": "Shift schedule",
+        "s4": "HR Dashboard",
+        "linkLabel": "Open"
+      },
+      "final": {
+        "title": "Walk your next newcomer down the track",
+        "subtitle": "Free 14-day trial. No card. Cancel anytime.",
+        "ctaStart": "Start for free",
+        "ctaPricing": "View pricing",
+        "hint": "14 days, no card required"
+      },
+      "demoLabels": {
+        "chrome": "smengo · Onboarding",
+        "newcomerName": "Kate Volkova",
+        "newcomerRole": "Barista · location #2",
+        "badgeTrainee": "Trainee",
+        "badgeStaff": "Employee",
+        "mentorLabel": "Mentor",
+        "mentorName": "Mark Sidorov",
+        "progressLabel": "Readiness",
+        "phaseDone": "Stage complete",
+        "completeTitle": "Onboarding complete 🎉",
+        "completeText": "Kate has joined the team — her first solo shift is already on the schedule.",
+        "owners": [
+          "HR",
+          "Mentor",
+          "Newcomer"
+        ],
+        "phases": [
+          {
+            "title": "Before day one",
+            "tasks": [
+              {
+                "text": "Contract signed",
+                "owner": 0
+              },
+              {
+                "text": "Access and uniform ready",
+                "owner": 0
+              }
+            ]
+          },
+          {
+            "title": "Day 1",
+            "tasks": [
+              {
+                "text": "Tour and meeting the team",
+                "owner": 1
+              },
+              {
+                "text": "Mentor assigned",
+                "owner": 0
+              },
+              {
+                "text": "Workstation and till basics covered",
+                "owner": 2
+              }
+            ]
+          },
+          {
+            "title": "Week 1",
+            "tasks": [
+              {
+                "text": "Training: menu and standards",
+                "owner": 2
+              },
+              {
+                "text": "Three shifts with the mentor",
+                "owner": 1
+              }
+            ]
+          },
+          {
+            "title": "Month",
+            "tasks": [
+              {
+                "text": "A solo shift",
+                "owner": 2
+              },
+              {
+                "text": "Feedback and the team decision",
+                "owner": 0
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "hrDashboard": {
+      "seo": {
+        "title": "Online HR Dashboard — Your Team's Metrics on One Screen | Smengo",
+        "description": "A live HR dashboard for teams of 15–300: headcount, attendance, hours, hiring and leave — without hand-built reports. Free for 14 days, no card required.",
+        "keywords": [
+          "hr dashboard",
+          "hr analytics",
+          "people metrics",
+          "online workforce tracking",
+          "employee attendance",
+          "hr reports",
+          "team dashboard",
+          "hr software for small business"
+        ],
+        "ogTitle": "Smengo — an HR dashboard without manual reports",
+        "ogDescription": "Your team in numbers on one screen: attendance, hours, hiring and leave. It updates itself — you just decide.",
+        "appDescription": "An HR dashboard with live team metrics: attendance, hours, hiring, leave and performance in real time.",
+        "breadcrumbPlatform": "Platform",
+        "breadcrumbPage": "HR Dashboard"
+      },
+      "hero": {
+        "title": "Your whole team in numbers. On one screen.",
+        "subtitle": "Headcount, attendance, hours and hiring update themselves — instead of reports someone hand-builds for Monday morning.",
+        "ctaStart": "Start for free",
+        "ctaPricing": "View pricing",
+        "hint": "14 days, no card required"
+      },
+      "demo": {
+        "title": "Click around — this dashboard is live.",
+        "subtitle": "Switch the chart period, hover the data points, open the meetings and tick off HR tasks."
+      },
+      "caps": {
+        "title": "What the Smengo HR dashboard shows",
+        "i1Title": "Metrics that update themselves",
+        "i1Desc": "Headcount, on-shift today, applicants and open roles are computed from live schedule and hiring data — not from a hand-built file.",
+        "i1B1": "Attendance and hours come straight from the shift schedule",
+        "i1B2": "Month-over-month trend on every metric",
+        "i1B3": "No exports or pivot tables",
+        "i1MetricValue": "0",
+        "i1MetricLabel": "manual Monday reports",
+        "i2Title": "Team hours and workload",
+        "i2Desc": "Planned vs actual hours in one chart: overtime and under-scheduling are visible before they hit payroll.",
+        "i2B1": "Plan vs actual by week and month",
+        "i2B2": "Overtime shows up early, not on payday",
+        "i2B3": "Vacations and sick leave in the same picture",
+        "i3Title": "Team calendar and events",
+        "i3Desc": "Meetings, events and birthdays sit right next to the metrics. One screen in the morning instead of five tabs.",
+        "i3B1": "Team meetings and events",
+        "i3B2": "Vacations and sick leave on the calendar",
+        "i3B3": "HR tasks with due dates"
+      },
+      "vs": {
+        "eyebrow": "COMPARISON",
+        "title": "Manual reports vs a live dashboard",
+        "subtitle": "You need a team summary every week. The only question is who builds it — a person or the system.",
+        "leftTitle": "Excel + chat polls",
+        "leftNote": "every report is stale the moment it's sent",
+        "smengoTitle": "Smengo",
+        "smengoNote": "metrics computed from live data",
+        "r1Left": "HR collects numbers from chats and timesheets",
+        "r1Smengo": "The dashboard updates itself from the shift schedule",
+        "r2Left": "Lateness and no-shows surface at month end",
+        "r2Smengo": "Attendance is visible the same day",
+        "r3Left": "Overtime gets noticed on payday",
+        "r3Smengo": "Hours and overtime are counted automatically",
+        "r4Left": "Every manager has their own version of the numbers",
+        "r4Smengo": "One picture for every role and location",
+        "pill1": "Metrics with zero manual collection",
+        "pill2": "Hours and overtime under control",
+        "pill3": "One version of the truth for everyone",
+        "footerTitle": "The real difference:",
+        "footerText": "you don't build this dashboard — it's already built when you open Smengo.",
+        "ctaStart": "Try the dashboard for free",
+        "ctaPricing": "View pricing"
+      },
+      "rest": {
+        "eyebrow": "WORKS WITH THE REST OF THE PLATFORM",
+        "title": "The dashboard is part of the platform",
+        "subtitle": "The numbers come from the tools your team already works in: the shift schedule, check-ins and hiring.",
+        "c1Title": "Shift schedule",
+        "c1Desc": "Attendance and hours flow in from the live schedule your manager runs.",
+        "c1Note": "No double data entry needed.",
+        "c2Title": "HR Management",
+        "c2Desc": "The hiring pipeline and employee journey feed the applicant and vacancy metrics.",
+        "c2Note": "Hiring and onboarding in one loop.",
+        "c3Title": "Employee database",
+        "c3Desc": "Employee cards, documents and dates are the dashboard's data source.",
+        "c3Note": "Birthdays and tenure count themselves.",
+        "more": "Learn more"
+      },
+      "final": {
+        "title": "Start your morning with a ready team summary",
+        "subtitle": "Free 14-day trial. No card. Cancel anytime.",
+        "ctaStart": "Start for free",
+        "ctaPricing": "View pricing",
+        "hint": "14 days, no card required"
+      },
+      "demoLabels": {
+        "chrome": "smengo · HR dashboard",
+        "greeting": "Good morning, Olga!",
+        "greetingNote": "Today's team summary is ready.",
+        "dateLabel": "Thu, May 14, 2026",
+        "kpiEmployees": "Employees",
+        "kpiOnShift": "On shift today",
+        "kpiApplicants": "Applicants this month",
+        "kpiOpenRoles": "Open roles",
+        "kpiVsPrev": "vs last month",
+        "chartTitle": "Team hours",
+        "chartMonthly": "Month",
+        "chartWeekly": "Week",
+        "chartPlanned": "Planned",
+        "chartActual": "Actual",
+        "hourSuffix": "h",
+        "chartMonths": [
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun",
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec"
+        ],
+        "chartWeekdays": [
+          "Mon",
+          "Tue",
+          "Wed",
+          "Thu",
+          "Fri",
+          "Sat",
+          "Sun"
+        ],
+        "statusTitle": "Employment type",
+        "statusPermanent": "Permanent",
+        "statusContract": "Contract",
+        "statusTrainee": "Trainees",
+        "perfTitle": "Performance",
+        "perfTasks": "Tasks",
+        "perfPresence": "Presence",
+        "perfMeetings": "Meetings",
+        "calTitle": "Calendar",
+        "calMonth": "May 2026",
+        "today": "Today",
+        "tabMeetings": "Meetings",
+        "tabEvents": "Events",
+        "meetings": [
+          {
+            "title": "Interview: barista",
+            "time": "9:30 – 10:30",
+            "place": "location #2"
+          },
+          {
+            "title": "1:1 with Mark",
+            "time": "12:00 – 12:30",
+            "place": "online"
+          },
+          {
+            "title": "Shift planning sync",
+            "time": "16:00 – 16:40",
+            "place": "office"
+          }
+        ],
+        "events": [
+          {
+            "title": "Anna's birthday",
+            "time": "June 18",
+            "place": "sales team"
+          },
+          {
+            "title": "Team workshop",
+            "time": "May 22",
+            "place": "office"
+          },
+          {
+            "title": "Payroll day",
+            "time": "May 30",
+            "place": "whole team"
+          }
+        ],
+        "leaveTitle": "Leave and sick days",
+        "leaveAnnual": "Vacation days left",
+        "leaveSick": "Sick days this month",
+        "notesTitle": "HR tasks",
+        "notes": [
+          {
+            "text": "Close the barista vacancy",
+            "tag": "Hiring"
+          },
+          {
+            "text": "Renew Ivan's contract",
+            "tag": "Documents"
+          },
+          {
+            "text": "Launch the engagement survey",
+            "tag": "Team"
+          }
+        ],
+        "perfNames": [
+          "Anna",
+          "Mark",
+          "Daria",
+          "Yulia"
+        ]
+      }
+    },
+    "hrManagement": {
+      "seo": {
+        "title": "HR Management — Hiring and Onboarding Online | Smengo",
+        "description": "A candidate pipeline, onboarding checklists and the employee journey from application to first shift — no spreadsheets, no lost candidates. Free for 14 days, no card.",
+        "keywords": [
+          "hr management",
+          "employee hiring",
+          "hiring crm",
+          "employee onboarding",
+          "staff onboarding software",
+          "hr system",
+          "candidate pipeline",
+          "online hr records"
+        ],
+        "ogTitle": "Smengo — hiring and the employee journey without chaos",
+        "ogDescription": "Candidates move through stages, onboarding follows a checklist, and the new hire lands straight in the schedule.",
+        "appDescription": "An HR system with a hiring pipeline, onboarding checklists and employee cards in one loop with the shift schedule.",
+        "breadcrumbPlatform": "Platform",
+        "breadcrumbPage": "HR Management"
+      },
+      "hero": {
+        "title": "Hiring and the employee journey. No lost candidates.",
+        "subtitle": "From application to first shift: a candidate pipeline, onboarding checklists and HR records — in the same system where your schedule lives.",
+        "ctaStart": "Start for free",
+        "ctaPricing": "View pricing",
+        "hint": "14 days, no card required"
+      },
+      "demo": {
+        "title": "Walk a candidate all the way to the team — right here.",
+        "subtitle": "Move candidates through the stages and tick off onboarding steps — this demo actually works."
+      },
+      "caps": {
+        "title": "What HR Management does in Smengo",
+        "i1Title": "A candidate pipeline with stages",
+        "i1Desc": "Application, interview, offer, onboarding — every candidate sits at their stage. Nothing gets lost in chats and phone notes.",
+        "i1B1": "See how many candidates are at each stage",
+        "i1B2": "Source and waiting time on every card",
+        "i1B3": "Decision history is preserved",
+        "i1MetricValue": "0",
+        "i1MetricLabel": "candidates lost in chats",
+        "i2Title": "Onboarding by checklist",
+        "i2Desc": "Documents, access, a mentor, the first shift — a ready checklist instead of \"ask Olga what's next\".",
+        "i2B1": "Onboarding steps with owners",
+        "i2B2": "Progress visible to HR and the manager",
+        "i2B3": "New hires start their first shift without chaos",
+        "i3Title": "From candidate straight into the schedule",
+        "i3Desc": "A hired employee appears in the database and the shift schedule automatically — no manual data transfer.",
+        "i3B1": "The employee card is created in one click",
+        "i3B2": "The first shift goes straight into the grid",
+        "i3B3": "Documents and dates in one place"
+      },
+      "vs": {
+        "eyebrow": "COMPARISON",
+        "title": "Hiring in spreadsheets vs Smengo",
+        "subtitle": "Notes are fine while you have three candidates. By the tenth, people, deadlines and agreements start slipping.",
+        "leftTitle": "Spreadsheets + chats",
+        "leftNote": "candidates live in five places at once",
+        "smengoTitle": "Smengo",
+        "smengoNote": "one pipeline from application to shift",
+        "r1Left": "Applications scattered across email and messengers",
+        "r1Smengo": "Every candidate in one pipeline",
+        "r2Left": "Unclear who is at which stage",
+        "r2Smengo": "Stage and next step visible for everyone",
+        "r3Left": "Onboarding lives in HR's memory",
+        "r3Smengo": "An onboarding checklist with progress",
+        "r4Left": "New-hire data gets re-entered into the schedule",
+        "r4Smengo": "A candidate becomes an employee in one click",
+        "pill1": "Candidates don't get lost",
+        "pill2": "Onboarding follows a checklist",
+        "pill3": "Hiring is connected to the schedule",
+        "footerTitle": "The real difference:",
+        "footerText": "Smengo walks a person from application to their first shift — in one loop with the schedule.",
+        "ctaStart": "Try hiring for free",
+        "ctaPricing": "View pricing"
+      },
+      "rest": {
+        "eyebrow": "WORKS WITH THE REST OF THE PLATFORM",
+        "title": "Hiring is part of the platform",
+        "subtitle": "A candidate doesn't end at the offer: next come onboarding, the schedule and team metrics.",
+        "c1Title": "HR Dashboard",
+        "c1Desc": "Hiring and team metrics are computed from the pipeline automatically.",
+        "c1Note": "Conversion and time-to-hire always at hand.",
+        "c2Title": "Employee onboarding",
+        "c2Desc": "Onboarding checklists walk the new hire from offer to full readiness.",
+        "c2Note": "HR and the manager see the same progress.",
+        "c3Title": "Shift schedule",
+        "c3Desc": "A new hire gets shifts in the team's live schedule right away.",
+        "c3Note": "No data re-entry.",
+        "more": "Learn more"
+      },
+      "final": {
+        "title": "Walk your next candidate through without chaos",
+        "subtitle": "Free 14-day trial. No card. Cancel anytime.",
+        "ctaStart": "Start for free",
+        "ctaPricing": "View pricing",
+        "hint": "14 days, no card required"
+      },
+      "demoLabels": {
+        "chrome": "smengo · Hiring",
+        "boardTitle": "Hiring pipeline",
+        "boardSubtitle": "Barista · 2 locations",
+        "stageApplied": "Applied",
+        "stageInterview": "Interview",
+        "stageOffer": "Offer",
+        "stageOnboarding": "Onboarding",
+        "advance": "Advance",
+        "hire": "Hire",
+        "hired": "On the team",
+        "daysShort": "d",
+        "emptyStage": "Empty for now",
+        "selectHint": "Click a candidate card to see their journey",
+        "candidates": [
+          {
+            "name": "Sofia Orlova",
+            "role": "Barista",
+            "source": "job board"
+          },
+          {
+            "name": "Denys Kramar",
+            "role": "Barista",
+            "source": "referral"
+          },
+          {
+            "name": "Alina Shevchuk",
+            "role": "Barista",
+            "source": "website"
+          },
+          {
+            "name": "Nikita Volkov",
+            "role": "Barista",
+            "source": "website"
+          },
+          {
+            "name": "Maria Honchar",
+            "role": "Barista",
+            "source": "referral"
+          }
+        ],
+        "journeyTitle": "Employee journey",
+        "journeySubtitle": "Onboarding checklist",
+        "journeyProgress": "Readiness",
+        "journeyMentor": "Mentor",
+        "journeyMentorName": "Mark Sidorov",
+        "steps": [
+          "Documents signed",
+          "Access granted",
+          "Mentor assigned",
+          "Training completed",
+          "First shift scheduled"
+        ],
+        "statConversion": "Hire conversion",
+        "statTime": "Avg. time to hire",
+        "statDays": "days"
+      }
     },
     "scheduleGrid": {
       "seo": {

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { Check } from 'lucide-react'
 
 type FeatureKey =
@@ -15,12 +15,23 @@ type FeatureKey =
   | 'feature_api'
   | 'feature_support'
 
+// Display currency per locale. uk → UAH, everything else → USD.
+// Keep in sync with the price strings in messages/{locale}.json (marketing.plans + seo).
+type CurrencyCode = 'usd' | 'uah'
+
+const CURRENCIES: Record<CurrencyCode, { symbol: string; prices: Record<'start' | 'team' | 'business', number> }> = {
+  usd: { symbol: '$', prices: { start: 0, team: 29, business: 79 } },
+  uah: { symbol: '₴', prices: { start: 0, team: 1199, business: 3299 } },
+}
+
+function currencyForLocale(locale: string): CurrencyCode {
+  return locale === 'uk' ? 'uah' : 'usd'
+}
+
 interface Plan {
   key: 'start' | 'team' | 'business'
   nameKey: 'planStart' | 'planTeam' | 'planBusiness'
   descKey: 'planStartDesc' | 'planTeamDesc' | 'planBusinessDesc'
-  /** monthly price in USD */
-  price: number
   /** seat capacity for per-employee anchor */
   capacity: number
   employees: string
@@ -38,7 +49,6 @@ const PLANS: Plan[] = [
     key: 'start',
     nameKey: 'planStart',
     descKey: 'planStartDesc',
-    price: 0,
     capacity: 15,
     employees: '15',
     groups: '2',
@@ -51,7 +61,6 @@ const PLANS: Plan[] = [
     key: 'team',
     nameKey: 'planTeam',
     descKey: 'planTeamDesc',
-    price: 29,
     capacity: 75,
     employees: '75',
     groups: null,
@@ -64,7 +73,6 @@ const PLANS: Plan[] = [
     key: 'business',
     nameKey: 'planBusiness',
     descKey: 'planBusinessDesc',
-    price: 79,
     capacity: 300,
     employees: '300',
     groups: null,
@@ -77,6 +85,8 @@ const PLANS: Plan[] = [
 
 export function PricingCards() {
   const t = useTranslations('pricing')
+  const locale = useLocale()
+  const currency = currencyForLocale(locale)
   const [yearly, setYearly] = useState(false)
 
   return (
@@ -126,20 +136,36 @@ export function PricingCards() {
       {/* ── 3 cards ── */}
       <div className="mx-auto grid max-w-5xl items-stretch gap-5 sm:grid-cols-3">
         {PLANS.map((plan) => (
-          <PricingCard key={plan.key} plan={plan} yearly={yearly} />
+          <PricingCard key={plan.key} plan={plan} yearly={yearly} currency={currency} />
         ))}
       </div>
     </>
   )
 }
 
-function PricingCard({ plan, yearly }: { plan: Plan; yearly: boolean }) {
+function PricingCard({
+  plan,
+  yearly,
+  currency,
+}: {
+  plan: Plan
+  yearly: boolean
+  currency: CurrencyCode
+}) {
   const t = useTranslations('pricing')
+  const { symbol, prices } = CURRENCIES[currency]
+  const price = prices[plan.key]
 
   // Yearly = 10× monthly (2 months free). Display monthly equivalent rounded.
-  const displayPrice = yearly ? Math.round((plan.price * 10) / 12) : plan.price
-  const yearlyTotal = plan.price * 10
-  const perEmployee = plan.price > 0 ? (displayPrice / plan.capacity).toFixed(2) : null
+  const displayPrice = yearly ? Math.round((price * 10) / 12) : price
+  const yearlyTotal = price * 10
+  // UAH amounts are large enough that cents are noise; USD keeps two decimals.
+  const perEmployee =
+    price > 0
+      ? currency === 'uah'
+        ? String(Math.round(displayPrice / plan.capacity))
+        : (displayPrice / plan.capacity).toFixed(2)
+      : null
 
   return (
     <div
@@ -186,7 +212,7 @@ function PricingCard({ plan, yearly }: { plan: Plan; yearly: boolean }) {
             className="font-semibold text-foreground"
             style={{ fontSize: 40, letterSpacing: '-0.025em', lineHeight: 1 }}
           >
-            ${displayPrice}
+            {symbol}{displayPrice}
           </span>
           <span className="text-[15px] font-medium text-foreground">{t('monthly')}</span>
         </div>
@@ -201,9 +227,9 @@ function PricingCard({ plan, yearly }: { plan: Plan; yearly: boolean }) {
           </p>
         )}
         {/* Yearly fineprint */}
-        {yearly && plan.price > 0 && (
+        {yearly && price > 0 && (
           <p className="mt-1 text-[11.5px]" style={{ color: 'var(--subtle)' }}>
-            ${yearlyTotal} / {t('billedAnnually')}
+            {symbol}{yearlyTotal} / {t('billedAnnually')}
           </p>
         )}
       </div>
