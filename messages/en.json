@@ -1842,7 +1842,18 @@
       "title": "Schedule",
       "emptyTitle": "Your team's shift grid will live here",
       "emptyText": "A month at a glance: rows are employees, columns are days. Start by adding employees and departments.",
-      "cta": "Go to employees"
+      "cta": "Go to employees",
+      "days": {
+        "mon": "Mo",
+        "tue": "Tu",
+        "wed": "We",
+        "thu": "Th",
+        "fri": "Fr",
+        "sat": "Sa",
+        "sun": "Su"
+      },
+      "deptNoDept": "No department",
+      "employeesCount": "{count} ppl"
     },
     "employees": {
       "title": "Employees",
