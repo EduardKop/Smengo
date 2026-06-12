@@ -1845,6 +1845,7 @@
       "modeCompact": "Compact",
       "modeDetail": "Detail",
       "modeExtended": "Extended",
+      "modeGroup": "View mode",
       "searchPlaceholder": "Search by name…",
       "legendLabel": "Statuses",
       "clearSearch": "Clear search",

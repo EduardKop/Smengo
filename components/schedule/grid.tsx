@@ -90,13 +90,18 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
   // Local search input state — debounced 200ms before pushing to URL
   const [searchInput, setSearchInput] = useState(searchParams.get('q') ?? '')
 
+  // Sync search input when navigating back/forward (URL changes externally)
+  useEffect(() => {
+    setSearchInput(searchParams.get('q') ?? '')
+  }, [searchParams])
+
   /** Shallow URL update — does NOT trigger RSC refetch; useSearchParams picks it up */
   const setShallowParam = useCallback((key: string, value: string | null) => {
-    const next = new URLSearchParams(searchParams.toString())
-    if (value === null) next.delete(key)
-    else next.set(key, value)
-    window.history.replaceState(null, '', `${pathname}?${next.toString()}`)
-  }, [searchParams, pathname])
+    const params = new URLSearchParams(window.location.search)
+    if (value === null) params.delete(key)
+    else params.set(key, value)
+    window.history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`)
+  }, [])
 
   const handleDeptChange = useCallback((value: string | null) => {
     setShallowParam('dept', value)

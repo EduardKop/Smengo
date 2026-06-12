@@ -22,7 +22,7 @@ export function ModeSwitcher({ value, onChange }: ModeSwitcherProps) {
   return (
     <div
       role="group"
-      aria-label={t('modeDetail')}
+      aria-label={t('modeGroup')}
       className="flex h-8 items-stretch rounded-md border border-border bg-background overflow-hidden"
     >
       {MODES.map((mode) => {
@@ -31,7 +31,6 @@ export function ModeSwitcher({ value, onChange }: ModeSwitcherProps) {
           <button
             key={mode}
             type="button"
-            role="button"
             aria-pressed={active}
             onClick={() => onChange(mode)}
             className={[
