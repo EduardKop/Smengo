@@ -1,6 +1,5 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
 import { getActionContext } from '@/lib/actions/context'
 import { assertCan } from '@/lib/permissions'
 import { toClientError } from '@/lib/actions/db-error'
@@ -33,6 +32,9 @@ export async function saveGridViewAction(input: GridViewSettings): Promise<GridV
   )
   if (error) return { ok: false, error: toClientError(error) }
 
-  revalidatePath('/schedule')
+  // Без revalidatePath: вид применяется на клиенте оптимистично, а каждый
+  // debounced-save с ревалидацией перерендеривал бы страницу и перечитывал
+  // месяц целиком. Свежая загрузка /schedule всегда читает grid_view_settings
+  // из БД (роут динамический из-за auth-кук).
   return { ok: true }
 }

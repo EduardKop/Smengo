@@ -9,6 +9,9 @@
 import { memo } from 'react'
 import { Sun, Sunset, Moon, TreePalm, Thermometer, CalendarDays, AlertCircle } from 'lucide-react'
 import type { ScheduleEntryRow, StatusTypeRow, GridMode } from '@/lib/schedule/types'
+import type { CardVisual } from '@/lib/validation/grid-view'
+import type { SiteTone } from '@/lib/schedule/card-visual'
+import { CardVisualChip } from './card-visual-chip'
 import { shiftDurationHours } from '@/lib/schedule/month'
 import {
   type DemoStatusCode,
@@ -568,6 +571,10 @@ export interface StatusChipProps {
   showTimes: boolean
   locale: string
   labels: ChipLabels
+  /** Сохранённый «Визуал» карточки этого статуса (грид-вид организации) */
+  cardVisual?: CardVisual
+  /** Текущая тема сайта — для рендера cardVisual */
+  tone: SiteTone
 }
 
 export const StatusChip = memo(function StatusChip({
@@ -580,9 +587,24 @@ export const StatusChip = memo(function StatusChip({
   showTimes,
   locale,
   labels,
+  cardVisual,
+  tone,
 }: StatusChipProps) {
   const full = statusLabel(status, locale)
   const short = code === 'V' ? labels.vacShort : code === 'S' ? labels.sickShort : full
+
+  // Кастомизированный вид статуса перекрывает любой дефолтный рендер;
+  // minHeight по режимам — как у существующих кастомных чипов (46/36/34)
+  if (cardVisual) {
+    return (
+      <CardVisualChip
+        config={cardVisual}
+        tone={tone}
+        compact={mode !== 'extended'}
+        minHeight={mode === 'extended' ? 46 : mode === 'detail' ? 36 : 34}
+      />
+    )
+  }
 
   if (code === 'CUSTOM') {
     return (

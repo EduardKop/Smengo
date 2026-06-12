@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useRef, useState } from 'react'
-import { Palette, Pencil, Trash2 } from 'lucide-react'
+import { Tags, Pencil, Trash2 } from 'lucide-react'
 import { useTranslations, useLocale } from 'next-intl'
 import { useQueryClient } from '@tanstack/react-query'
 import type { UserRole } from '@/supabase/types'
@@ -204,7 +204,8 @@ export function StatusManager({ orgId, year, month, role, statusTypes }: StatusM
         }}
         className="smengo-tool smengo-tool--icon"
       >
-        <Palette size={15} />
+        {/* Палитра ушла кнопке «Визуал» (visual-editor) — статусы теперь Tags */}
+        <Tags size={15} />
       </button>
 
       {open && (

@@ -15,6 +15,8 @@ import { CSS } from '@dnd-kit/utilities'
 import type { MonthDay } from '@/lib/schedule/month'
 import { shiftDurationHours } from '@/lib/schedule/month'
 import type { EmployeeRow, StatusTypeRow, ScheduleEntryRow, GridMode } from '@/lib/schedule/types'
+import type { CardVisual } from '@/lib/validation/grid-view'
+import type { SiteTone } from '@/lib/schedule/card-visual'
 import {
   type DemoStatusCode,
   demoCode,
@@ -249,6 +251,10 @@ interface EmployeeRowProps {
   showEmployeeDepartment: boolean
   showEmployeeRole: boolean
   showEmployeeDot: boolean
+  /** Сохранённые визуалы карточек организации: status_type_id → CardVisual */
+  cardVisuals: Record<string, CardVisual>
+  /** Текущая тема сайта (класс dark на html) — для cardVisuals */
+  tone: SiteTone
   /** status_id → StatusTypeRow; built from data.statusTypes */
   statusById: Map<string, StatusTypeRow>
   /** Entries for this employee (resolved from scheduleMap by parent) */
@@ -284,6 +290,8 @@ export function EmployeeGridRow({
   showEmployeeDepartment,
   showEmployeeRole,
   showEmployeeDot,
+  cardVisuals,
+  tone,
   statusById,
   entriesForEmployee,
   onCellClick,
@@ -664,6 +672,8 @@ export function EmployeeGridRow({
                 showTimes={showTimes}
                 locale={locale}
                 labels={labels}
+                cardVisual={cardVisuals[firstCell.entry!.status_id]}
+                tone={tone}
               />
             )}
           </div>

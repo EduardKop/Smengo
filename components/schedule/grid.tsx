@@ -18,6 +18,7 @@ import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-ki
 
 import type { UserRole } from '@/supabase/types'
 import type { MonthData, GridMode, ScheduleEntryRow, StatusTypeRow } from '@/lib/schedule/types'
+import type { GridViewSettings } from '@/lib/validation/grid-view'
 import { monthDays } from '@/lib/schedule/month'
 import { buildScheduleMap, coverageByDay, aggregateMinPresent, shortageByDay } from '@/lib/schedule/map'
 import { nameColumnWidth, useViewportWidth, deptColor, AppleHScrollbar } from './grid-visual'
@@ -31,8 +32,11 @@ import { GroupRow, EmployeeGridRow } from './grid-row'
 import type { GridRowLabels, CellRect } from './grid-row'
 import { OnShiftRow } from './on-shift-row'
 import { DisplaySettingsButton, type DisplayToggle } from './display-settings'
+import { useGridView, type GridViewToggles } from './use-grid-view'
+import { useSiteTone } from './card-visual-chip'
 import { AlertsForm } from './settings/alerts-form'
 import { StatusManager } from './settings/status-manager'
+import { VisualEditor } from './settings/visual-editor'
 import { CellEditor } from './cell-editor'
 import type { CellEditorAnchor } from './cell-editor'
 import { ToastViewport, useToasts } from './toast'
@@ -80,38 +84,12 @@ const NO_DEPT_FILTER = 'null'
  */
 const NO_PROBLEM_DAYS: ReadonlySet<string> = new Set()
 
-// ── Display settings (тумблеры «Отображение» из демо; дефолты = демо) ──
-
-interface DisplaySettings {
-  showTimes: boolean
-  strongWeekend: boolean
-  showGrid: boolean
-  merged: boolean
-  showEmployeeDepartment: boolean
-  showEmployeeRole: boolean
-  showEmployeeDot: boolean
-}
-
-const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
-  showTimes: true,
-  strongWeekend: false,
-  showGrid: false,
-  merged: false,
-  showEmployeeDepartment: true,
-  showEmployeeRole: true,
-  showEmployeeDot: true,
-}
+// ── Display settings ────────────────────────────────────────────────
+// Шесть тумблеров «Отображения» живут в сохраняемом «Виде» организации
+// (use-grid-view.ts, таблица grid_view_settings). strongWeekend остаётся
+// личной настройкой в localStorage — его нет в схеме вида.
 
 const DISPLAY_SETTINGS_KEY = 'smengo:app:gridDisplay'
-
-function normalizeDisplaySettings(value: unknown): DisplaySettings {
-  const parsed = (value ?? {}) as Partial<Record<keyof DisplaySettings, unknown>>
-  const out = { ...DEFAULT_DISPLAY_SETTINGS }
-  for (const key of Object.keys(out) as (keyof DisplaySettings)[]) {
-    if (typeof parsed[key] === 'boolean') out[key] = parsed[key] as boolean
-  }
-  return out
-}
 
 // ── Virtual row types ───────────────────────────────────────────────
 
@@ -119,7 +97,7 @@ type VirtualRow =
   | { kind: 'group'; deptId: string | null; deptName: string; count: number }
   | { kind: 'employee'; employeeId: string }
 
-// ── Props (signature is frozen — do NOT change) ─────────────────────
+// ── Props ───────────────────────────────────────────────────────────
 
 export interface ScheduleGridProps {
   orgId: string
@@ -130,11 +108,13 @@ export interface ScheduleGridProps {
   /** YYYY-MM-DD in organization timezone */
   today: string
   initialData: MonthData
+  /** Сохранённый «Вид» грида организации (grid_view_settings, может быть пустым) */
+  initialView: GridViewSettings
 }
 
 // ── Main component ──────────────────────────────────────────────────
 
-export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, initialData }: ScheduleGridProps) {
+export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, initialData, initialView }: ScheduleGridProps) {
   const t = useTranslations('app.schedule')
   const locale = useLocale()
 
@@ -199,32 +179,32 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchInput])
 
-  // ── Display settings + edit mode (демо-тумблеры) ────────────────
-  const [display, setDisplay] = useState<DisplaySettings>(DEFAULT_DISPLAY_SETTINGS)
-  const [displayLoaded, setDisplayLoaded] = useState(false)
+  // ── Display: личный strongWeekend (localStorage) + edit mode ─────
+  const [strongWeekend, setStrongWeekendState] = useState(false)
   const [showTelegram, setShowTelegram] = useState(false)
   const [editMode, setEditMode] = useState(false)
 
   useEffect(() => {
     try {
       const raw = localStorage.getItem(DISPLAY_SETTINGS_KEY)
-      if (raw) setDisplay(normalizeDisplaySettings(JSON.parse(raw)))
+      if (!raw) return
+      const parsed = JSON.parse(raw) as Record<string, unknown>
+      // Старый формат хранил все тумблеры — берём только strongWeekend
+      if (typeof parsed.strongWeekend === 'boolean') setStrongWeekendState(parsed.strongWeekend)
     } catch { /* ignore */ }
-    setDisplayLoaded(true)
   }, [])
 
-  useEffect(() => {
-    if (!displayLoaded) return
+  const setStrongWeekend = useCallback((value: boolean) => {
+    setStrongWeekendState(value)
     try {
-      localStorage.setItem(DISPLAY_SETTINGS_KEY, JSON.stringify(display))
+      localStorage.setItem(DISPLAY_SETTINGS_KEY, JSON.stringify({ strongWeekend: value }))
     } catch { /* ignore */ }
-  }, [display, displayLoaded])
-
-  const setDisplayKey = useCallback(<K extends keyof DisplaySettings>(key: K, value: boolean) => {
-    setDisplay((prev) => ({ ...prev, [key]: value }))
   }, [])
 
-  const weekendBg = display.strongWeekend ? 'var(--accent-soft)' : 'var(--grid-weekend)'
+  const weekendBg = strongWeekend ? 'var(--accent-soft)' : 'var(--grid-weekend)'
+
+  // Тема сайта (класс dark на <html>) — для рендера cardVisuals
+  const tone = useSiteTone()
 
   // ── Data ────────────────────────────────────────────────────────
   const { data } = useScheduleData(orgId, year, month, initialData)
@@ -266,6 +246,16 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
 
   const upsertMutation = useUpsertEntry(orgId, year, month)
   const clearMutation = useClearEntry(orgId, year, month)
+
+  // ── Сохраняемый «Вид» грида (тумблеры + визуалы карточек) ────────
+  const canCustomize = !isReadOnly && can(role, 'customize_view')
+
+  const handleViewSaveError = useCallback(
+    (code: string) => pushToast(resolveErrorMessage(code)),
+    [pushToast, resolveErrorMessage],
+  )
+
+  const { view, setToggle, setCardVisual } = useGridView(initialView, canCustomize, handleViewSaveError)
 
   // ── Editor state ────────────────────────────────────────────────
   /**
@@ -362,9 +352,9 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
   const cellW = CELL_WIDTH[mode]
   const viewportW = useViewportWidth()
   const nameColW = nameColumnWidth(mode, {
-    showEmployeeRole: display.showEmployeeRole,
-    showEmployeeDepartment: display.showEmployeeDepartment,
-    showEmployeeDot: display.showEmployeeDot,
+    showEmployeeRole: view.showEmployeeRole,
+    showEmployeeDepartment: view.showEmployeeDepartment,
+    showEmployeeDot: view.showEmployeeDot,
     showTelegram,
   }, viewportW)
   const totalsW = mode === 'compact' ? 0 : TOTALS_OFF_W + TOTALS_HRS_W
@@ -619,15 +609,25 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
   const hasDeptsNoEmployees = data.departments.length > 0 && data.employees.length === 0
 
   // ── Тумблеры поповера «Отображение» (порядок и disabled — как в демо) ──
+  // strongWeekend — личный (localStorage); остальные — общий «Вид» организации:
+  // без права customize_view они задизейблены, сервер всё равно fail-closed.
   const displayToggles: DisplayToggle[] = [
-    { key: 'strongWeekend', label: t('highlightWeekendsLabel'), value: display.strongWeekend },
-    { key: 'showTimes', label: t('showTimesLabel'), value: display.showTimes },
-    { key: 'merged', label: t('mergedLabel'), value: display.merged },
-    { key: 'showGrid', label: t('gridLabel'), value: display.showGrid },
-    { key: 'showEmployeeDepartment', label: t('showEmployeeDepartmentLabel'), value: display.showEmployeeDepartment, disabled: mode === 'compact' },
-    { key: 'showEmployeeRole', label: t('showEmployeeRoleLabel'), value: display.showEmployeeRole, disabled: mode === 'compact' },
-    { key: 'showEmployeeDot', label: t('showEmployeeDotLabel'), value: display.showEmployeeDot },
+    { key: 'strongWeekend', label: t('highlightWeekendsLabel'), value: strongWeekend },
+    { key: 'showTimes', label: t('showTimesLabel'), value: view.showTimes, disabled: !canCustomize },
+    { key: 'merged', label: t('mergedLabel'), value: view.merged, disabled: !canCustomize },
+    { key: 'showGrid', label: t('gridLabel'), value: view.showGrid, disabled: !canCustomize },
+    { key: 'showEmployeeDepartment', label: t('showEmployeeDepartmentLabel'), value: view.showEmployeeDepartment, disabled: !canCustomize || mode === 'compact' },
+    { key: 'showEmployeeRole', label: t('showEmployeeRoleLabel'), value: view.showEmployeeRole, disabled: !canCustomize || mode === 'compact' },
+    { key: 'showEmployeeDot', label: t('showEmployeeDotLabel'), value: view.showEmployeeDot, disabled: !canCustomize },
   ]
+
+  const handleDisplayToggle = useCallback((key: string, value: boolean) => {
+    if (key === 'strongWeekend') {
+      setStrongWeekend(value)
+      return
+    }
+    setToggle(key as keyof GridViewToggles, value)
+  }, [setStrongWeekend, setToggle])
 
   // ── Render ───────────────────────────────────────────────────────
   return (
@@ -744,7 +744,7 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
               {t('exportBtn')}
             </button>
 
-            {/* Пороги покрытия / статусы / отображение */}
+            {/* Пороги покрытия (⚙) / статусы / визуал (палитра) / отображение */}
             <AlertsForm
               orgId={orgId}
               year={year}
@@ -760,9 +760,16 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
               role={role}
               statusTypes={data.statusTypes}
             />
+            <VisualEditor
+              role={role}
+              statusTypes={data.statusTypes}
+              cardVisuals={view.cardVisuals}
+              tone={tone}
+              onChange={setCardVisual}
+            />
             <DisplaySettingsButton
               toggles={displayToggles}
-              onToggle={(key, v) => setDisplayKey(key as keyof DisplaySettings, v)}
+              onToggle={handleDisplayToggle}
             />
 
             {/* Add employee */}
@@ -884,13 +891,15 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
                           labels={rowLabels}
                           weekendBg={weekendBg}
                           problemDays={problemDaysVisual}
-                          showGrid={display.showGrid}
-                          showTimes={display.showTimes}
-                          merged={display.merged}
+                          showGrid={view.showGrid}
+                          showTimes={view.showTimes}
+                          merged={view.merged}
                           showTelegram={showTelegram}
-                          showEmployeeDepartment={display.showEmployeeDepartment}
-                          showEmployeeRole={display.showEmployeeRole}
-                          showEmployeeDot={display.showEmployeeDot}
+                          showEmployeeDepartment={view.showEmployeeDepartment}
+                          showEmployeeRole={view.showEmployeeRole}
+                          showEmployeeDot={view.showEmployeeDot}
+                          cardVisuals={view.cardVisuals}
+                          tone={tone}
                           statusById={statusById}
                           entriesForEmployee={scheduleMap.get(emp.id)}
                           onCellClick={canEdit && editMode ? handleCellClick : undefined}
@@ -938,7 +947,7 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
                 cellW={cellW}
                 weekendBg={weekendBg}
                 problemDays={problemDaysVisual}
-                showGrid={display.showGrid}
+                showGrid={view.showGrid}
                 counts={onShiftCounts}
                 total={onShiftEmployees.length}
                 scope={onShiftScope}
