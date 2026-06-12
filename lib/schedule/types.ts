@@ -4,6 +4,7 @@ export type EmployeeRow = Database['public']['Tables']['employees']['Row']
 export type DepartmentRow = Database['public']['Tables']['departments']['Row']
 export type StatusTypeRow = Database['public']['Tables']['status_types']['Row']
 export type ScheduleEntryRow = Database['public']['Tables']['schedule_entries']['Row']
+export type AlertConfigRow = Database['public']['Tables']['alert_configs']['Row']
 
 export type GridMode = 'compact' | 'detail' | 'extended'
 
@@ -16,4 +17,5 @@ export interface MonthData {
   departments: DepartmentRow[]
   statusTypes: StatusTypeRow[]
   entries: ScheduleEntryRow[]
+  alertConfigs: AlertConfigRow[]
 }

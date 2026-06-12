@@ -1,4 +1,4 @@
-import type { EmployeeRow, ScheduleEntryRow, ScheduleMap, StatusTypeRow } from './types'
+import type { AlertConfigRow, EmployeeRow, ScheduleEntryRow, ScheduleMap, StatusTypeRow } from './types'
 
 /**
  * Строит двумерную Map: employee_id → (entry_date → entry).
@@ -42,6 +42,21 @@ export function coverageByDay(
     out.set(e.entry_date, (out.get(e.entry_date) ?? 0) + 1)
   }
   return out
+}
+
+/**
+ * Вычисляет применимый порог min_present для текущего фильтра:
+ * - deptId задан → возвращает min_present конкретного отдела (или 0 если не настроен)
+ * - deptId === null (все отделы) → возвращает сумму min_present всех отделов
+ *   (0 если ни одного порога нет)
+ *
+ * Чистая функция, не зависит от глобального состояния.
+ */
+export function aggregateMinPresent(alertConfigs: AlertConfigRow[], deptId: string | null): number {
+  if (deptId !== null) {
+    return alertConfigs.find((c) => c.department_id === deptId)?.min_present ?? 0
+  }
+  return alertConfigs.reduce((sum, c) => sum + c.min_present, 0)
 }
 
 /** dateISO -> дефицит (minPresent - present), только положительные значения. */

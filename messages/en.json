@@ -1864,6 +1864,13 @@
       "cellEditorAriaLabel": "Cell editor",
       "startTimeAriaLabel": "Shift start",
       "endTimeAriaLabel": "Shift end",
+      "coverageLabel": "Coverage",
+      "minShort": "min {n}",
+      "shortageBadge": "−{n}",
+      "alertsSettingsLabel": "Coverage thresholds",
+      "alertsSettingsHint": "Minimum people present per department. 0 = no threshold.",
+      "alertsNoDepts": "Add departments first.",
+      "alertsZeroHint": "0 — remove threshold for this department.",
       "errors": {
         "server_error": "Could not save. Please try again.",
         "forbidden": "Insufficient permissions",

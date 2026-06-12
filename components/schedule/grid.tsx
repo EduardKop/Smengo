@@ -14,6 +14,8 @@ import { useScheduleData, useUpsertEntry, useClearEntry } from './use-schedule'
 import type { UpsertInput } from './use-schedule'
 import { GridHeader } from './grid-header'
 import { GroupRow, EmployeeGridRow, NAME_COL_WIDTH } from './grid-row'
+import { CoverageRow } from './coverage-row'
+import { AlertsForm } from './settings/alerts-form'
 import { CellEditor } from './cell-editor'
 import type { CellEditorAnchor } from './cell-editor'
 import { ToastViewport, useToasts } from './toast'
@@ -321,8 +323,18 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
   // ── Render ───────────────────────────────────────────────────────
   return (
     <div className="flex flex-col">
-      {/* Toolbar placeholder — Task 15 will populate */}
-      <div className="mb-3 flex items-center gap-2" data-slot="toolbar" />
+      {/* Toolbar — Task 15 will add filters/mode switcher; gear button lives here now */}
+      <div className="mb-3 flex items-center gap-2" data-slot="toolbar">
+        <div className="flex-1" />
+        <AlertsForm
+          orgId={orgId}
+          year={year}
+          month={month}
+          role={role}
+          departments={data.departments}
+          alertConfigs={data.alertConfigs}
+        />
+      </div>
 
       {/* Scroll container */}
       <div
@@ -335,6 +347,17 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
           days={days}
           today={today}
           nameColWidth={NAME_COL_WIDTH}
+          cellW={cellW}
+        />
+
+        {/* Coverage row — sticky below header */}
+        <CoverageRow
+          days={days}
+          entries={data.entries}
+          employees={data.employees}
+          statusTypes={data.statusTypes}
+          alertConfigs={data.alertConfigs}
+          deptId={deptFilter !== NO_DEPT_FILTER ? deptFilter : null}
           cellW={cellW}
         />
 

@@ -1863,6 +1863,13 @@
       "cellEditorAriaLabel": "Редактор ячейки",
       "startTimeAriaLabel": "Начало смены",
       "endTimeAriaLabel": "Конец смены",
+      "coverageLabel": "Покрытие",
+      "minShort": "мин {n}",
+      "shortageBadge": "−{n}",
+      "alertsSettingsLabel": "Пороги покрытия",
+      "alertsSettingsHint": "Минимум присутствующих по отделу. 0 = без порога.",
+      "alertsNoDepts": "Сначала добавьте отделы.",
+      "alertsZeroHint": "0 — отключить порог для отдела.",
       "errors": {
         "server_error": "Не удалось сохранить. Попробуйте ещё раз.",
         "forbidden": "Недостаточно прав",

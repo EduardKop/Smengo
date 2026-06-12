@@ -1863,6 +1863,13 @@
       "cellEditorAriaLabel": "Редактор комірки",
       "startTimeAriaLabel": "Початок зміни",
       "endTimeAriaLabel": "Кінець зміни",
+      "coverageLabel": "Покриття",
+      "minShort": "мін {n}",
+      "shortageBadge": "−{n}",
+      "alertsSettingsLabel": "Пороги покриття",
+      "alertsSettingsHint": "Мінімум присутніх по відділу. 0 = без порогу.",
+      "alertsNoDepts": "Спершу додайте відділи.",
+      "alertsZeroHint": "0 — вимкнути поріг для відділу.",
       "errors": {
         "server_error": "Не вдалося зберегти. Спробуйте ще раз.",
         "forbidden": "Недостатньо прав",

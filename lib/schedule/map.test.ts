@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { buildScheduleMap, coverageByDay, shortageByDay } from './map'
-import type { ScheduleEntryRow, EmployeeRow, StatusTypeRow } from './types'
+import { aggregateMinPresent, buildScheduleMap, coverageByDay, shortageByDay } from './map'
+import type { AlertConfigRow, ScheduleEntryRow, EmployeeRow, StatusTypeRow } from './types'
+
+const alertConfig = (department_id: string, min_present: number): AlertConfigRow =>
+  ({ id: 'ac1', org_id: 'org1', department_id, min_present, notify_user_ids: [], is_active: true, created_at: '' }) as AlertConfigRow
 
 const entry = (over: Partial<ScheduleEntryRow>): ScheduleEntryRow =>
   ({
@@ -59,6 +62,33 @@ describe('coverageByDay', () => {
     ]
     const all = coverageByDay(withGhost, employees, statuses, null)
     expect(all.get('2026-06-01')).toBe(2) // призрак не посчитан
+  })
+})
+
+describe('aggregateMinPresent', () => {
+  const configs = [
+    alertConfig('d1', 3),
+    alertConfig('d2', 2),
+    alertConfig('d3', 0),
+  ]
+
+  it('returns min_present for a specific dept', () => {
+    expect(aggregateMinPresent(configs, 'd1')).toBe(3)
+    expect(aggregateMinPresent(configs, 'd2')).toBe(2)
+    expect(aggregateMinPresent(configs, 'd3')).toBe(0)
+  })
+
+  it('returns 0 for a dept with no config', () => {
+    expect(aggregateMinPresent(configs, 'd-missing')).toBe(0)
+  })
+
+  it('returns sum of all min_present when deptId is null', () => {
+    // 3 + 2 + 0 = 5
+    expect(aggregateMinPresent(configs, null)).toBe(5)
+  })
+
+  it('returns 0 for all-depts when no configs', () => {
+    expect(aggregateMinPresent([], null)).toBe(0)
   })
 })
 
