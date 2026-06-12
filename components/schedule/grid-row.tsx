@@ -20,18 +20,21 @@ export function GroupRow({ deptName, count, collapsed, onToggle, employeesCountL
   return (
     <div
       role="row"
-      className="flex h-9 items-center border-b border-border bg-muted/60 px-3 hover:bg-muted transition-colors cursor-pointer select-none"
-      onClick={onToggle}
-      aria-expanded={!collapsed}
+      className="flex h-9 items-center border-b border-border bg-muted/60 hover:bg-muted transition-colors"
     >
-      <div className="flex flex-1 items-center gap-2 min-w-0">
+      <button
+        type="button"
+        aria-expanded={!collapsed}
+        onClick={onToggle}
+        className="flex flex-1 items-center gap-2 min-w-0 h-full px-3 cursor-pointer select-none w-full text-left"
+      >
         {collapsed
           ? <ChevronRight size={14} className="shrink-0 text-muted-foreground" />
           : <ChevronDown size={14} className="shrink-0 text-muted-foreground" />
         }
         <span className="truncate text-[13px] font-semibold text-foreground">{deptName}</span>
         <span className="shrink-0 text-[11px] text-muted-foreground">{employeesCountLabel}</span>
-      </div>
+      </button>
     </div>
   )
 }
@@ -43,9 +46,11 @@ interface EmployeeRowProps {
   days: MonthDay[]
   today: string
   rowHeight: number
+  /** Deterministic cell width in px (from CELL_WIDTH[mode]) */
+  cellW: number
 }
 
-export function EmployeeGridRow({ employee, days, today, rowHeight }: EmployeeRowProps) {
+export function EmployeeGridRow({ employee, days, today, rowHeight, cellW }: EmployeeRowProps) {
   return (
     <div
       role="row"
@@ -68,7 +73,7 @@ export function EmployeeGridRow({ employee, days, today, rowHeight }: EmployeeRo
         )}
       </div>
 
-      {/* Day cells */}
+      {/* Day cells — deterministic width, no flex-1 */}
       {days.map((d) => {
         const isToday = d.dateISO === today
         return (
@@ -76,8 +81,10 @@ export function EmployeeGridRow({ employee, days, today, rowHeight }: EmployeeRo
             key={d.dateISO}
             role="gridcell"
             data-cell={`${employee.id}-${d.dateISO}`}
-            className="min-w-[40px] flex-1 border-r border-border/50 last:border-r-0 transition-colors"
+            className="border-r border-border/50 last:border-r-0 transition-colors"
             style={{
+              width: cellW,
+              flex: 'none',
               background: isToday
                 ? 'color-mix(in oklab, var(--primary) 6%, var(--grid-cell))'
                 : d.isWeekend
@@ -90,4 +97,3 @@ export function EmployeeGridRow({ employee, days, today, rowHeight }: EmployeeRo
     </div>
   )
 }
-

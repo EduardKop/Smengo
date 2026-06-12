@@ -10,9 +10,11 @@ interface GridHeaderProps {
   today: string
   /** Width in px for the sticky employee name column */
   nameColWidth: number
+  /** Deterministic cell width in px (from CELL_WIDTH[mode]) */
+  cellW: number
 }
 
-export function GridHeader({ days, today, nameColWidth }: GridHeaderProps) {
+export function GridHeader({ days, today, nameColWidth, cellW }: GridHeaderProps) {
   const t = useTranslations('app.schedule.days')
 
   return (
@@ -27,7 +29,7 @@ export function GridHeader({ days, today, nameColWidth }: GridHeaderProps) {
         style={{ width: nameColWidth }}
       />
 
-      {/* Day columns */}
+      {/* Day columns — deterministic width, no flex-1 */}
       {days.map((d) => {
         const isToday = d.dateISO === today
         const weekdayKey = WEEKDAY_KEYS[d.weekday]
@@ -37,8 +39,11 @@ export function GridHeader({ days, today, nameColWidth }: GridHeaderProps) {
             key={d.dateISO}
             role="columnheader"
             aria-label={d.dateISO}
-            className="flex min-w-[40px] flex-1 flex-col items-center justify-center gap-0.5 py-1.5"
+            aria-current={isToday ? 'date' : undefined}
+            className="flex flex-col items-center justify-center gap-0.5 py-1.5"
             style={{
+              width: cellW,
+              flex: 'none',
               background: d.isWeekend ? 'var(--grid-weekend)' : 'var(--background)',
             }}
           >

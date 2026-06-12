@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useTranslations } from 'next-intl'
@@ -21,11 +21,21 @@ const ROW_HEIGHT: Record<GridMode, number> = {
   extended: 84,
 }
 
+// ── Cell width by mode (deterministic — header and rows must use the same value) ──
+
+export const CELL_WIDTH: Record<GridMode, number> = {
+  compact: 36,
+  detail: 48,
+  extended: 72,
+}
+
 const GROUP_ROW_HEIGHT = 36
 
 // ── Constants ───────────────────────────────────────────────────────
 
 const NO_DEPT_KEY = '__no_dept__'
+/** Sentinel value used in URL ?dept= param to mean "no department" group */
+const NO_DEPT_FILTER = 'null'
 
 // ── Virtual row types ───────────────────────────────────────────────
 
@@ -62,15 +72,14 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
     ? (searchParams.get('mode') as GridMode)
     : 'detail')
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const setParam = useCallback((key: string, value: string | null) => {
     const next = new URLSearchParams(searchParams.toString())
     if (value === null) next.delete(key)
     else next.set(key, value)
     router.replace(`${pathname}?${next.toString()}`, { scroll: false })
   }, [searchParams, router, pathname])
-
-  // Expose setParam for toolbar (Task 15) via data attributes; kept minimal.
-  void setParam // will be used by toolbar in T15
+  // TODO(T15): setParam used by toolbar filters/mode switcher
 
   // ── Data ────────────────────────────────────────────────────────
   const { data } = useScheduleData(orgId, year, month, initialData)
@@ -79,22 +88,23 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
 
   // Build schedule map for future cell rendering (Task 12)
   const scheduleMap = useMemo(() => buildScheduleMap(data.entries), [data.entries])
-  void scheduleMap // Task 12 will consume this
+  // TODO(T12): scheduleMap passed into cell renderer once EmployeeGridRow supports entries
+  void scheduleMap
+
+  // ── Computed widths ──────────────────────────────────────────────
+
+  const cellW = CELL_WIDTH[mode]
+  const totalWidth = NAME_COL_WIDTH + days.length * cellW
 
   // ── Grouping ─────────────────────────────────────────────────────
 
-  // Map dept id → dept name, sorted by sort_order then name
-  const deptMap = useMemo(() => {
-    const m = new Map<string, string>()
+  // Map dept id → dept name AND sorted dept ids in a single pass
+  const { deptMap, sortedDeptIds } = useMemo(() => {
     const sorted = [...data.departments].sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name))
-    for (const d of sorted) m.set(d.id, d.name)
-    return m
-  }, [data.departments])
-
-  // Sorted dept ids list (preserving sort_order)
-  const sortedDeptIds = useMemo(() => {
-    const sorted = [...data.departments].sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name))
-    return sorted.map((d) => d.id)
+    const deptMap = new Map<string, string>()
+    for (const d of sorted) deptMap.set(d.id, d.name)
+    const sortedDeptIds = sorted.map((d) => d.id)
+    return { deptMap, sortedDeptIds }
   }, [data.departments])
 
   // Filter employees by search query and dept filter
@@ -135,7 +145,7 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
 
     // "No department" group — only when employees exist without dept_id
     const noDeptEmployees = byDept.get(null)
-    if (noDeptEmployees && noDeptEmployees.length > 0 && (!deptFilter || deptFilter === 'null')) {
+    if (noDeptEmployees && noDeptEmployees.length > 0 && (!deptFilter || deptFilter === NO_DEPT_FILTER)) {
       result.push({ deptId: null, deptName: t('deptNoDept'), employees: noDeptEmployees })
     }
 
@@ -195,6 +205,9 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
     overscan: 10,
   })
 
+  // Re-measure when mode changes (row heights change with mode)
+  useEffect(() => { virtualizer.measure() }, [mode, virtualizer])
+
   const totalHeight = virtualizer.getTotalSize()
   const items = virtualizer.getVirtualItems()
 
@@ -210,11 +223,16 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
         className="overflow-auto rounded-lg border border-border"
         style={{ height: 'max(calc(100vh - 220px), 400px)' }}
       >
-        {/* Sticky header */}
-        <GridHeader days={days} today={today} nameColWidth={NAME_COL_WIDTH} />
+        {/* Sticky header — same totalWidth as spacer guarantees alignment */}
+        <GridHeader
+          days={days}
+          today={today}
+          nameColWidth={NAME_COL_WIDTH}
+          cellW={cellW}
+        />
 
-        {/* Virtual rows container */}
-        <div style={{ height: totalHeight, position: 'relative' }}>
+        {/* Virtual rows spacer — explicit width drives horizontal scroll */}
+        <div style={{ height: totalHeight, width: totalWidth, position: 'relative' }}>
           {items.map((virtualItem) => {
             const row = virtualRows[virtualItem.index]
             if (!row) return null
@@ -262,6 +280,7 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
                   days={days}
                   today={today}
                   rowHeight={virtualItem.size}
+                  cellW={cellW}
                 />
               </div>
             )
