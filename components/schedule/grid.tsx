@@ -19,15 +19,15 @@ import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-ki
 import type { UserRole } from '@/supabase/types'
 import type { MonthData, GridMode, ScheduleEntryRow, StatusTypeRow } from '@/lib/schedule/types'
 import { monthDays } from '@/lib/schedule/month'
-import { buildScheduleMap } from '@/lib/schedule/map'
+import { buildScheduleMap, coverageByDay, aggregateMinPresent, shortageByDay } from '@/lib/schedule/map'
+import { nameColumnWidth, useViewportWidth } from './grid-visual'
 import { can } from '@/lib/permissions'
 import { useScheduleData, useUpsertEntry, useClearEntry } from './use-schedule'
 import type { UpsertInput } from './use-schedule'
 import { scheduleKey } from './use-schedule'
 import { useQueryClient } from '@tanstack/react-query'
-import { GridHeader } from './grid-header'
-import { GroupRow, EmployeeGridRow, NAME_COL_WIDTH } from './grid-row'
-import { CoverageRow } from './coverage-row'
+import { GridHeader, TOTALS_OFF_W, TOTALS_HRS_W } from './grid-header'
+import { GroupRow, EmployeeGridRow } from './grid-row'
 import { AlertsForm } from './settings/alerts-form'
 import { StatusManager } from './settings/status-manager'
 import { CellEditor } from './cell-editor'
@@ -48,29 +48,62 @@ import { EmployeesTab } from './employees-tab'
 import type { EmployeeView } from './employees-tab'
 import { EmployeeOverlay } from './employees-tab/employee-overlay'
 
-// ── Row height by mode ──────────────────────────────────────────────
+// ── Row height by mode (сняты с живого демо: compact 43.5, detail 56.6, ext 79.8) ──
 
 const ROW_HEIGHT: Record<GridMode, number> = {
-  compact: 36,
-  detail: 52,
-  extended: 84,
+  compact: 44,
+  detail: 57,
+  extended: 80,
 }
 
-// ── Cell width by mode (deterministic — header and rows must use the same value) ──
+// ── Cell width by mode (демо: compact dayMinW 44, detail colW 56, extended colW 86) ──
 
 export const CELL_WIDTH: Record<GridMode, number> = {
-  compact: 36,
-  detail: 48,
-  extended: 84,
+  compact: 44,
+  detail: 56,
+  extended: 86,
 }
 
-const GROUP_ROW_HEIGHT = 36
+const GROUP_ROW_HEIGHT = 28
 
 // ── Constants ───────────────────────────────────────────────────────
 
 const NO_DEPT_KEY = '__no_dept__'
 /** Sentinel value used in URL ?dept= param to mean "no department" group */
 const NO_DEPT_FILTER = 'null'
+
+// ── Display settings (тумблеры «Отображение» из демо; дефолты = демо) ──
+
+interface DisplaySettings {
+  showTimes: boolean
+  strongWeekend: boolean
+  showGrid: boolean
+  merged: boolean
+  showEmployeeDepartment: boolean
+  showEmployeeRole: boolean
+  showEmployeeDot: boolean
+}
+
+const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
+  showTimes: true,
+  strongWeekend: false,
+  showGrid: false,
+  merged: false,
+  showEmployeeDepartment: true,
+  showEmployeeRole: true,
+  showEmployeeDot: true,
+}
+
+const DISPLAY_SETTINGS_KEY = 'smengo:app:gridDisplay'
+
+function normalizeDisplaySettings(value: unknown): DisplaySettings {
+  const parsed = (value ?? {}) as Partial<Record<keyof DisplaySettings, unknown>>
+  const out = { ...DEFAULT_DISPLAY_SETTINGS }
+  for (const key of Object.keys(out) as (keyof DisplaySettings)[]) {
+    if (typeof parsed[key] === 'boolean') out[key] = parsed[key] as boolean
+  }
+  return out
+}
 
 // ── Virtual row types ───────────────────────────────────────────────
 
@@ -147,6 +180,33 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
     return () => clearTimeout(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchInput])
+
+  // ── Display settings + edit mode (демо-тумблеры) ────────────────
+  const [display, setDisplay] = useState<DisplaySettings>(DEFAULT_DISPLAY_SETTINGS)
+  const [displayLoaded, setDisplayLoaded] = useState(false)
+  const [showTelegram, setShowTelegram] = useState(false)
+  const [editMode, setEditMode] = useState(false)
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DISPLAY_SETTINGS_KEY)
+      if (raw) setDisplay(normalizeDisplaySettings(JSON.parse(raw)))
+    } catch { /* ignore */ }
+    setDisplayLoaded(true)
+  }, [])
+
+  useEffect(() => {
+    if (!displayLoaded) return
+    try {
+      localStorage.setItem(DISPLAY_SETTINGS_KEY, JSON.stringify(display))
+    } catch { /* ignore */ }
+  }, [display, displayLoaded])
+
+  const setDisplayKey = useCallback(<K extends keyof DisplaySettings>(key: K, value: boolean) => {
+    setDisplay((prev) => ({ ...prev, [key]: value }))
+  }, [])
+
+  const weekendBg = display.strongWeekend ? 'var(--accent-soft)' : 'var(--grid-weekend)'
 
   // ── Data ────────────────────────────────────────────────────────
   const { data } = useScheduleData(orgId, year, month, initialData)
@@ -283,7 +343,29 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
   // ── Computed widths ──────────────────────────────────────────────
 
   const cellW = CELL_WIDTH[mode]
-  const totalWidth = NAME_COL_WIDTH + days.length * cellW
+  const viewportW = useViewportWidth()
+  const nameColW = nameColumnWidth(mode, {
+    showEmployeeRole: display.showEmployeeRole,
+    showEmployeeDepartment: display.showEmployeeDepartment,
+    showEmployeeDot: display.showEmployeeDot,
+    showTelegram,
+  }, viewportW)
+  const totalsW = mode === 'compact' ? 0 : TOTALS_OFF_W + TOTALS_HRS_W
+  const totalWidth = nameColW + days.length * cellW + totalsW
+
+  // ── Проблемные колонки: дефицит покрытия ниже порога alert_configs ──
+
+  const problemDays = useMemo((): ReadonlySet<string> => {
+    const scopeDept = deptFilter !== NO_DEPT_FILTER ? deptFilter : null
+    const coverage = coverageByDay(data.entries, data.employees, data.statusTypes, scopeDept)
+    const minPresent = aggregateMinPresent(data.alertConfigs, scopeDept)
+    const shortage = shortageByDay(coverage, minPresent, days.map((d) => d.dateISO))
+    const out = new Set<string>()
+    for (const [dateISO, deficit] of shortage) {
+      if (deficit > 0) out.add(dateISO)
+    }
+    return out
+  }, [data.entries, data.employees, data.statusTypes, data.alertConfigs, deptFilter, days])
 
   // ── Grouping ─────────────────────────────────────────────────────
 
@@ -652,19 +734,13 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
             <GridHeader
               days={days}
               today={today}
-              nameColWidth={NAME_COL_WIDTH}
+              mode={mode}
+              nameColWidth={nameColW}
               cellW={cellW}
-            />
-
-            {/* Coverage row — sticky below header */}
-            <CoverageRow
-              days={days}
-              entries={data.entries}
-              employees={data.employees}
-              statusTypes={data.statusTypes}
-              alertConfigs={data.alertConfigs}
-              deptId={deptFilter !== NO_DEPT_FILTER ? deptFilter : null}
-              cellW={cellW}
+              weekendBg={weekendBg}
+              problemDays={problemDays}
+              showTelegram={showTelegram}
+              onToggleProjects={() => setShowTelegram((v) => !v)}
             />
 
             {/* Virtual rows spacer — explicit width drives horizontal scroll */}

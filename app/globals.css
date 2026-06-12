@@ -157,6 +157,10 @@ html {
   --chip-s-bg: #fcecea; --chip-s-fg: #b84030;
   --chip-d-bg: #f3f4f6; --chip-d-fg: #7a8290;
   --chip-l-bg: #f9eff9; --chip-l-fg: #9e5a97;
+
+  /* Card icon accents (mirror demo DEFAULT_VISUAL_ICON_COLORS) */
+  --grid-icon-vacation: #ffffff;
+  --grid-icon-sick: #ffffff;
 }
 
 /* ─── Tailwind v4 Theme ─────────────────────────────────────────── */
@@ -650,6 +654,10 @@ tr[data-employee-row]:hover td {
 tr:hover > .smengo-schedule-cell::before {
   opacity: 1;
 }
+/* App grid uses flex rows ([role=row]) instead of <tr> — same crosshair. */
+[role="row"]:hover .smengo-schedule-cell::before {
+  opacity: 1;
+}
 .smengo-schedule-chip {
   position: relative;
   overflow: hidden;
@@ -721,7 +729,9 @@ tr:hover > .smengo-schedule-cell::before {
 }
 /* Wide merged runs (vacation/sick blocks) lift without the zoom. */
 .smengo-schedule-cell[colspan]:not([colspan="1"]):hover .smengo-schedule-chip,
-.smengo-schedule-cell[colspan]:not([colspan="1"]):focus-within .smengo-schedule-chip {
+.smengo-schedule-cell[colspan]:not([colspan="1"]):focus-within .smengo-schedule-chip,
+.smengo-schedule-cell[data-span]:not([data-span="1"]):hover .smengo-schedule-chip,
+.smengo-schedule-cell[data-span]:not([data-span="1"]):focus-within .smengo-schedule-chip {
   transform: translateY(-2px) scale(1.012) !important;
 }
 .smengo-schedule-cell:hover .smengo-schedule-chip::after,
@@ -1122,6 +1132,10 @@ tr:hover > .smengo-schedule-cell::before {
   --chip-s-bg: rgba(248, 113, 113, 0.10); --chip-s-fg: #fca5a5;
   --chip-d-bg: rgba(148, 163, 184, 0.13); --chip-d-fg: #a9b4c2;
   --chip-l-bg: rgba(216, 180, 254, 0.10); --chip-l-fg: #d8b4fe;
+
+  /* Card icon accents (mirror demo DEFAULT_VISUAL_ICON_COLORS, dark) */
+  --grid-icon-vacation: #ffd9a8;
+  --grid-icon-sick: #fca5a5;
 }
 
 /* ─── ScrollMorphGrid locked state ─────────────────────────────── */
