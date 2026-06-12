@@ -6,8 +6,8 @@
  * Демо — первоисточник дизайна: размеры, шрифты, цвета и тени не менять
  * без синхронного изменения демо.
  *
- * Отличие от демо (утверждено основателем): Avatar рендерит только градиент,
- * без стоковых фото — поля фото у сотрудников пока нет.
+ * Отличие от демо: вместо стоковых фото (у сотрудников нет поля фото)
+ * Avatar рендерит инициалы поверх градиента (правка 4 основателя).
  */
 
 import { useEffect, useRef, useState } from 'react'
@@ -34,6 +34,15 @@ export function stableHash(value: string): number {
   return h
 }
 
+/** Инициалы: первые буквы первых двух слов имени («Едуард Коритник» → «ЕК»). */
+export function nameInitials(name: string): string {
+  return name
+    .trim()
+    .split(/\s+/, 2)
+    .map((word) => word[0]?.toUpperCase() ?? '')
+    .join('')
+}
+
 export function Avatar({ name, size = 18 }: { name: string; size?: number }) {
   const h = stableHash(name)
   const bg = AVATAR_GRADIENTS[h % AVATAR_GRADIENTS.length]
@@ -50,8 +59,18 @@ export function Avatar({ name, size = 18 }: { name: string; size?: number }) {
         flexShrink: 0,
         overflow: 'hidden',
         boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.22), 0 1px 2px rgba(0,0,0,0.10)',
+        // Инициалы читаются на любом градиенте палитры за счёт тени
+        color: '#fff',
+        textShadow: '0 1px 2px rgba(0,0,0,0.45)',
+        fontSize: Math.max(Math.round(size * 0.38), 7),
+        fontWeight: 800,
+        lineHeight: 1,
+        letterSpacing: '0.02em',
+        userSelect: 'none',
       }}
-    />
+    >
+      {nameInitials(name)}
+    </span>
   )
 }
 

@@ -62,10 +62,13 @@ const ROW_HEIGHT: Record<GridMode, number> = {
 }
 
 // ── Cell width by mode (демо: compact dayMinW 44, detail colW 56, extended colW 86) ──
+// detail расширен 56 → 72 (правка 4 основателя): в продукте, в отличие от демо,
+// в detail-ячейки попадают длинные лейблы (кастомные «Визуалы», названия статусов)
+// — на 56px они обрезались.
 
 export const CELL_WIDTH: Record<GridMode, number> = {
   compact: 44,
-  detail: 56,
+  detail: 72,
   extended: 86,
 }
 

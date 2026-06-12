@@ -108,6 +108,42 @@ function LateCornerBadge({ full }: { full: string }) {
   )
 }
 
+/**
+ * Опоздание без времени смены: отдельная плашка-пилюля по центру ячейки,
+ * а не полноразмерный блок (правка 4 основателя). Тот же визуальный язык,
+ * что у прикреплённого бейджа LateBadgePill, чуть крупнее.
+ */
+function LateStandalonePill({ label, full, compact }: { label: string; full: string; compact?: boolean }) {
+  return (
+    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 0, maxWidth: '100%' }}>
+      <span
+        title={full}
+        aria-label={full}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          minWidth: 0,
+          maxWidth: '100%',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          padding: compact ? '2.5px 7px' : '3px 9px',
+          borderRadius: 999,
+          background: 'var(--chip-l-fg)',
+          color: 'var(--grid-cell)',
+          fontSize: compact ? 8.2 : 9.5,
+          fontWeight: 750,
+          lineHeight: 1.2,
+          letterSpacing: '0.02em',
+          boxShadow: LATE_BADGE_SHADOW,
+        }}
+      >
+        {label}
+      </span>
+    </span>
+  )
+}
+
 /** Compact: минимальный маркер-точка в углу (тултип — на чипе целиком). */
 function LateDotBadge() {
   return (
@@ -471,37 +507,6 @@ function ExtDayoffCard({ label }: { label: string }) {
   )
 }
 
-/** Late ('L'): в демо нет — карточка по структуре dayoff, палитра --chip-l-*. */
-function ExtLateCard({ label }: { label: string }) {
-  return (
-    <div
-      className="smengo-schedule-chip"
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 3,
-        width: '100%',
-        minHeight: 46,
-        background: chipBg('L'),
-        color: chipFg('L'),
-        padding: '5px 7px',
-        borderRadius: 8,
-        fontSize: 12,
-        fontWeight: 750,
-        lineHeight: 1.05,
-        boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
-        textAlign: 'center',
-      }}
-    >
-      <span style={{ minWidth: 0, maxWidth: '100%', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-        {label}
-      </span>
-    </div>
-  )
-}
-
 // ── Detail-режим ────────────────────────────────────────────────────
 
 function DetailWorkChip({ entry, status, showTimes, labels, lateFull }: { entry: ScheduleEntryRow; status: StatusTypeRow; showTimes: boolean; labels: ChipLabels; lateFull?: string }) {
@@ -727,7 +732,7 @@ export const StatusChip = memo(function StatusChip({
     if (code === 'L') {
       return lateFull
         ? <ExtWorkCard entry={entry} status={status} showTimes={showTimes} labels={labels} lateFull={lateFull} />
-        : <ExtLateCard label={full} />
+        : <LateStandalonePill label={full} full={full} />
     }
     if (code === 'V' || code === 'S') return <ExtLeaveCard code={code} span={span} full={full} short={short} />
     return null
@@ -735,8 +740,10 @@ export const StatusChip = memo(function StatusChip({
 
   if (mode === 'detail') {
     if (code === 'W') return <DetailWorkChip entry={entry} status={status} showTimes={showTimes} labels={labels} />
-    if (code === 'L' && lateFull) {
-      return <DetailWorkChip entry={entry} status={status} showTimes={showTimes} labels={labels} lateFull={lateFull} />
+    if (code === 'L') {
+      return lateFull
+        ? <DetailWorkChip entry={entry} status={status} showTimes={showTimes} labels={labels} lateFull={lateFull} />
+        : <LateStandalonePill label={labels.lateShort} full={full} compact />
     }
     if (code === 'V' || code === 'S') {
       const StIcon = code === 'V' ? TreePalm : Thermometer
@@ -753,12 +760,17 @@ export const StatusChip = memo(function StatusChip({
         </DetailFlatChip>
       )
     }
-    // D — короткая метка как в демо (chipLbl), L — полный лейбл статуса
+    // D — короткая метка как в демо (chipLbl)
     return (
       <DetailFlatChip code={code} isRun={isRun} showTimes={showTimes}>
         {code === 'D' ? labels.offShort : full}
       </DetailFlatChip>
     )
+  }
+
+  // Compact: опоздание без времени — та же плашка, что в detail/extended
+  if (code === 'L' && !lateFull) {
+    return <LateStandalonePill label={labels.lateShort} full={full} compact />
   }
 
   return (
