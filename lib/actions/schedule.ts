@@ -3,11 +3,13 @@
 import { getActionContext } from '@/lib/actions/context'
 import { assertCan } from '@/lib/permissions'
 import { UpsertEntrySchema, ClearEntrySchema } from '@/lib/validation/schedule'
+import { toClientError } from '@/lib/actions/db-error'
 
 export type EntryActionResult = { ok: true } | { ok: false; error: string }
 
 // NOTE: revalidatePath не вызываем — клиент работает через TanStack Query
 // (optimistic update + invalidate). Серверный рефетч страницы на каждый клик не нужен.
+// NOTE: upsert шлёт ПОЛНУЮ запись — вызывающий (редактор ячейки) обязан передавать текущий note, иначе он затрётся в null.
 export async function upsertEntryAction(input: {
   employee_id: string
   entry_date: string
@@ -44,7 +46,7 @@ export async function upsertEntryAction(input: {
       },
       { onConflict: 'employee_id,entry_date' },
     )
-  if (error) return { ok: false, error: error.message }
+  if (error) return { ok: false, error: toClientError(error) }
   return { ok: true }
 }
 
@@ -67,6 +69,6 @@ export async function clearEntryAction(input: { employee_id: string; entry_date:
     .eq('org_id', ctx.orgId)
     .eq('employee_id', parsed.data.employee_id)
     .eq('entry_date', parsed.data.entry_date)
-  if (error) return { ok: false, error: error.message }
+  if (error) return { ok: false, error: toClientError(error) }
   return { ok: true }
 }

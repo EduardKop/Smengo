@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { getActionContext } from '@/lib/actions/context'
 import { assertCan } from '@/lib/permissions'
 import { DepartmentSchema } from '@/lib/validation/schedule'
+import { toClientError } from '@/lib/actions/db-error'
 
 export type DeptActionResult = { ok: true; id?: string } | { ok: false; error: string }
 
@@ -28,7 +29,7 @@ export async function createDepartmentAction(formData: FormData): Promise<DeptAc
     .insert({ org_id: ctx.orgId, name: parsed.data.name })
     .select('id')
     .single()
-  if (error) return { ok: false, error: error.message }
+  if (error) return { ok: false, error: toClientError(error) }
 
   revalidatePath('/schedule')
   return { ok: true, id: data.id }
@@ -55,7 +56,7 @@ export async function renameDepartmentAction(deptId: string, formData: FormData)
     .update({ name: parsed.data.name })
     .eq('id', deptId)
     .eq('org_id', ctx.orgId)
-  if (error) return { ok: false, error: error.message }
+  if (error) return { ok: false, error: toClientError(error) }
 
   revalidatePath('/schedule')
   return { ok: true }
@@ -80,7 +81,7 @@ export async function deleteDepartmentAction(deptId: string): Promise<DeptAction
     .delete()
     .eq('id', deptId)
     .eq('org_id', ctx.orgId)
-  if (error) return { ok: false, error: error.message }
+  if (error) return { ok: false, error: toClientError(error) }
 
   revalidatePath('/schedule')
   return { ok: true }

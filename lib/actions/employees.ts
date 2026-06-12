@@ -6,6 +6,7 @@ import { getActionContext } from '@/lib/actions/context'
 import { assertCan } from '@/lib/permissions'
 import { checkPlanLimit } from '@/lib/billing/limits'
 import { EmployeeSchema, ReorderSchema } from '@/lib/validation/schedule'
+import { toClientError } from '@/lib/actions/db-error'
 
 export type EmpActionResult = { ok: true; id?: string } | { ok: false; error: string }
 
@@ -71,7 +72,7 @@ export async function createEmployeeAction(formData: FormData): Promise<EmpActio
     })
     .select('id')
     .single()
-  if (error) return { ok: false, error: error.message }
+  if (error) return { ok: false, error: toClientError(error) }
 
   revalidatePath('/schedule')
   return { ok: true, id: data.id }
@@ -107,7 +108,7 @@ export async function updateEmployeeAction(employeeId: string, formData: FormDat
     })
     .eq('id', employeeId)
     .eq('org_id', ctx.orgId)
-  if (error) return { ok: false, error: error.message }
+  if (error) return { ok: false, error: toClientError(error) }
 
   revalidatePath('/schedule')
   return { ok: true }
@@ -129,7 +130,7 @@ export async function softDeleteEmployeeAction(employeeId: string): Promise<EmpA
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', employeeId)
     .eq('org_id', ctx.orgId)
-  if (error) return { ok: false, error: error.message }
+  if (error) return { ok: false, error: toClientError(error) }
 
   revalidatePath('/schedule')
   return { ok: true }
@@ -152,7 +153,7 @@ export async function reorderEmployeesAction(input: { dept_id: string | null; or
     p_ordered_ids: parsed.data.ordered_ids,
     ...(parsed.data.dept_id !== null ? { p_dept_id: parsed.data.dept_id } : {}),
   })
-  if (error) return { ok: false, error: error.message.includes('ids_outside_scope') ? 'ids_outside_scope' : error.message }
+  if (error) return { ok: false, error: toClientError(error) }
 
   revalidatePath('/schedule')
   return { ok: true }
