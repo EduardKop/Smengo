@@ -51,6 +51,10 @@ interface EmployeeRowProps {
   cellW: number
   mode: GridMode
   locale: string
+  /** lifted from grid.tsx to avoid per-cell hook call */
+  hourSuffix: string
+  /** lifted from grid.tsx to avoid per-cell hook call */
+  nightBadge: string
   scheduleMap: ScheduleMap
   /** status_id → StatusTypeRow; built from data.statusTypes */
   statusById: Map<string, StatusTypeRow>
@@ -66,6 +70,8 @@ export function EmployeeGridRow({
   cellW,
   mode,
   locale,
+  hourSuffix,
+  nightBadge,
   statusById,
   entriesForEmployee,
 }: EmployeeRowProps) {
@@ -122,6 +128,8 @@ export function EmployeeGridRow({
               isToday={isToday}
               cellW={cellW}
               locale={locale}
+              hourSuffix={hourSuffix}
+              nightBadge={nightBadge}
             />
           </div>
         )

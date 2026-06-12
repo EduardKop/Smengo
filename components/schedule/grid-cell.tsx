@@ -1,6 +1,6 @@
 'use client'
 
-import { useTranslations } from 'next-intl'
+import { memo } from 'react'
 import type { ScheduleEntryRow, StatusTypeRow, GridMode } from '@/lib/schedule/types'
 import { statusStyle, statusLabel } from './status-style'
 import { shiftDurationHours } from '@/lib/schedule/month'
@@ -16,6 +16,10 @@ export interface GridCellProps {
   isToday: boolean
   cellW: number
   locale: string
+  /** lifted from parent to avoid per-cell hook call */
+  hourSuffix: string
+  /** lifted from parent to avoid per-cell hook call */
+  nightBadge: string
   onClick?: () => void
 }
 
@@ -35,7 +39,7 @@ function isNightShift(start: string, end: string): boolean {
 
 // ── Component ───────────────────────────────────────────────────────
 
-export function GridCell({
+export const GridCell = memo(function GridCell({
   entry,
   status,
   mode,
@@ -43,12 +47,13 @@ export function GridCell({
   isToday: _isToday, // background handled by parent; kept for aria-label
   cellW,
   locale,
+  hourSuffix,
+  nightBadge,
   onClick,
 }: GridCellProps) {
-  const t = useTranslations('app.schedule')
-
   // ── Empty cell ─────────────────────────────────────────────────
   if (!entry || !status) {
+    // TODO(a11y): локализовать aria-label empty/entry-no-status (T15)
     const label = entry ? `entry-no-status` : 'empty'
     return (
       <div
@@ -201,7 +206,7 @@ export function GridCell({
           padding: '5px 6px 6px',
           borderRadius: 8,
           minHeight: 46,
-          boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
+          boxShadow: 'var(--shadow-sm)',
           textAlign: 'center',
           overflow: 'hidden',
         }}
@@ -221,16 +226,16 @@ export function GridCell({
               style={{
                 padding: '2.5px 6px',
                 borderRadius: 999,
-                background: 'rgba(255,255,255,0.18)',
+                background: 'var(--grid-badge-bg)',
                 fontSize: 8,
-                fontWeight: 750,
+                fontWeight: 700,
                 lineHeight: 1,
                 letterSpacing: '0.02em',
                 fontVariantNumeric: 'tabular-nums',
                 whiteSpace: 'nowrap',
               }}
             >
-              {durationH}{t('hourSuffix')}
+              {durationH}{hourSuffix}
             </span>
           </span>
         )}
@@ -273,7 +278,7 @@ export function GridCell({
               alignItems: 'center',
               padding: '1.5px 5px',
               borderRadius: 999,
-              background: 'rgba(0,0,0,0.18)',
+              background: 'var(--grid-night-badge-bg)',
               fontSize: 7.5,
               fontWeight: 700,
               lineHeight: 1,
@@ -281,10 +286,10 @@ export function GridCell({
               whiteSpace: 'nowrap',
             }}
           >
-            {t('nightBadge')}
+            {nightBadge}
           </span>
         )}
       </div>
     </div>
   )
-}
+})

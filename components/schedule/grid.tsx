@@ -61,6 +61,8 @@ export interface ScheduleGridProps {
 export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, initialData }: ScheduleGridProps) {
   const t = useTranslations('app.schedule')
   const locale = useLocale()
+  const hourSuffix = t('hourSuffix')
+  const nightBadge = t('nightBadge')
 
   // ── URL state (dept, q, mode) ───────────────────────────────────
   const searchParams = useSearchParams()
@@ -289,6 +291,8 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
                   cellW={cellW}
                   mode={mode}
                   locale={locale}
+                  hourSuffix={hourSuffix}
+                  nightBadge={nightBadge}
                   scheduleMap={scheduleMap}
                   statusById={statusById}
                   entriesForEmployee={scheduleMap.get(emp.id)}
