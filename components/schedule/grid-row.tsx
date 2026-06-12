@@ -60,6 +60,11 @@ interface EmployeeRowProps {
   statusById: Map<string, StatusTypeRow>
   /** Entry for a specific date (resolved from scheduleMap by parent for this employee) */
   entriesForEmployee: Map<string, ScheduleEntryRow> | undefined
+  /**
+   * Called when a cell is clicked. Passes the cell element (for popover positioning)
+   * and the date ISO string. undefined = read-only (no click handler attached).
+   */
+  onCellClick?: (employeeId: string, dateISO: string, cellEl: HTMLElement) => void
 }
 
 export function EmployeeGridRow({
@@ -74,6 +79,7 @@ export function EmployeeGridRow({
   nightBadge,
   statusById,
   entriesForEmployee,
+  onCellClick,
 }: EmployeeRowProps) {
   return (
     <div
@@ -130,6 +136,12 @@ export function EmployeeGridRow({
               locale={locale}
               hourSuffix={hourSuffix}
               nightBadge={nightBadge}
+              onClick={onCellClick
+                ? () => {
+                    const el = document.querySelector(`[data-cell="${employee.id}-${d.dateISO}"]`) as HTMLElement | null
+                    if (el) onCellClick(employee.id, d.dateISO, el)
+                  }
+                : undefined}
             />
           </div>
         )

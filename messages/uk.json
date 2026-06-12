@@ -1854,7 +1854,22 @@
       "deptNoDept": "Без відділу",
       "employeesCount": "{count} осіб",
       "hourSuffix": "год",
-      "nightBadge": "ніч"
+      "nightBadge": "ніч",
+      "presetMorning": "Ранок",
+      "presetEvening": "Вечір",
+      "presetNight": "Ніч",
+      "clearCell": "Очистити",
+      "applyTime": "OK",
+      "cellEditorAriaLabel": "Редактор комірки",
+      "startTimeAriaLabel": "Початок зміни",
+      "endTimeAriaLabel": "Кінець зміни",
+      "errors": {
+        "server_error": "Не вдалося зберегти. Спробуйте ще раз.",
+        "forbidden": "Недостатньо прав",
+        "invalid_reference": "Посилання на неіснуючий об'єкт",
+        "duplicate": "Запис вже існує",
+        "status_wrong_org": "Статус не належить вашій організації"
+      }
     },
     "employees": {
       "title": "Співробітники",

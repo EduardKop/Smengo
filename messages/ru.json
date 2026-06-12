@@ -1854,7 +1854,22 @@
       "deptNoDept": "Без отдела",
       "employeesCount": "{count} чел.",
       "hourSuffix": "ч",
-      "nightBadge": "ночь"
+      "nightBadge": "ночь",
+      "presetMorning": "Утро",
+      "presetEvening": "Вечер",
+      "presetNight": "Ночь",
+      "clearCell": "Очистить",
+      "applyTime": "OK",
+      "cellEditorAriaLabel": "Редактор ячейки",
+      "startTimeAriaLabel": "Начало смены",
+      "endTimeAriaLabel": "Конец смены",
+      "errors": {
+        "server_error": "Не удалось сохранить. Попробуйте ещё раз.",
+        "forbidden": "Недостаточно прав",
+        "invalid_reference": "Ссылка на несуществующий объект",
+        "duplicate": "Запись уже существует",
+        "status_wrong_org": "Статус не принадлежит вашей организации"
+      }
     },
     "employees": {
       "title": "Сотрудники",

@@ -6,12 +6,17 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { useTranslations, useLocale } from 'next-intl'
 
 import type { UserRole } from '@/supabase/types'
-import type { MonthData, GridMode } from '@/lib/schedule/types'
+import type { MonthData, GridMode, ScheduleEntryRow, StatusTypeRow } from '@/lib/schedule/types'
 import { monthDays } from '@/lib/schedule/month'
 import { buildScheduleMap } from '@/lib/schedule/map'
-import { useScheduleData } from './use-schedule'
+import { can } from '@/lib/permissions'
+import { useScheduleData, useUpsertEntry, useClearEntry } from './use-schedule'
+import type { UpsertInput } from './use-schedule'
 import { GridHeader } from './grid-header'
 import { GroupRow, EmployeeGridRow, NAME_COL_WIDTH } from './grid-row'
+import { CellEditor } from './cell-editor'
+import type { CellEditorAnchor } from './cell-editor'
+import { ToastViewport, useToasts } from './toast'
 
 // ── Row height by mode ──────────────────────────────────────────────
 
@@ -94,10 +99,93 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
 
   // Build status lookup map: status_id → StatusTypeRow
   const statusById = useMemo(() => {
-    const m = new Map<string, (typeof data.statusTypes)[number]>()
+    const m = new Map<string, StatusTypeRow>()
     for (const s of data.statusTypes) m.set(s.id, s)
     return m
   }, [data.statusTypes])
+
+  // ── Toasts ──────────────────────────────────────────────────────
+  const { toasts, push: pushToast, dismiss: dismissToast } = useToasts()
+
+  // ── Mutations ───────────────────────────────────────────────────
+
+  const resolveErrorMessage = useCallback(
+    (errorCode: string): string => {
+      const knownCodes = ['server_error', 'forbidden', 'invalid_reference', 'duplicate', 'status_wrong_org'] as const
+      type KnownCode = typeof knownCodes[number]
+      const isKnown = (knownCodes as readonly string[]).includes(errorCode)
+      return isKnown
+        ? t(`errors.${errorCode as KnownCode}`)
+        : t('errors.server_error')
+    },
+    [t],
+  )
+
+  const upsertMutation = useUpsertEntry(orgId, year, month)
+  const clearMutation = useClearEntry(orgId, year, month)
+
+  // ── Editor state ────────────────────────────────────────────────
+  /**
+   * Tracks which cell has the editor open.
+   * We store anchor data computed from the cell element rect vs scroll container.
+   */
+  const [editorAnchor, setEditorAnchor] = useState<CellEditorAnchor | null>(null)
+
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+
+  const canEdit = !isReadOnly && can(role, 'edit_schedule')
+
+  const handleCellClick = useCallback(
+    (employeeId: string, dateISO: string, cellEl: HTMLElement) => {
+      if (!canEdit) return
+      const container = scrollContainerRef.current
+      if (!container) return
+
+      const cellRect = cellEl.getBoundingClientRect()
+      const containerRect = container.getBoundingClientRect()
+
+      // Convert to coordinates relative to the scroll container content area
+      const relTop = cellRect.top - containerRect.top + container.scrollTop
+      const relLeft = cellRect.left - containerRect.left + container.scrollLeft
+
+      setEditorAnchor({
+        employeeId,
+        dateISO,
+        rect: {
+          top: relTop,
+          left: relLeft,
+          width: cellRect.width,
+          height: cellRect.height,
+        },
+      })
+    },
+    [canEdit],
+  )
+
+  const handleEditorClose = useCallback(() => setEditorAnchor(null), [])
+
+  const handleUpsert = useCallback(
+    (input: UpsertInput) => {
+      upsertMutation.mutate(input, {
+        onError: (err) => {
+          pushToast(resolveErrorMessage(err.message))
+        },
+      })
+    },
+    [upsertMutation, pushToast, resolveErrorMessage],
+  )
+
+  const handleClear = useCallback(() => {
+    if (!editorAnchor) return
+    clearMutation.mutate(
+      { employee_id: editorAnchor.employeeId, entry_date: editorAnchor.dateISO },
+      {
+        onError: (err) => {
+          pushToast(resolveErrorMessage(err.message))
+        },
+      },
+    )
+  }, [editorAnchor, clearMutation, pushToast, resolveErrorMessage])
 
   // ── Computed widths ──────────────────────────────────────────────
 
@@ -199,7 +287,6 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
   }, [data.employees])
 
   // ── Virtualizer ──────────────────────────────────────────────────
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   const rowHeight = ROW_HEIGHT[mode]
 
@@ -218,6 +305,18 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
 
   const totalHeight = virtualizer.getTotalSize()
   const items = virtualizer.getVirtualItems()
+
+  // ── Editor entry/status resolution ─────────────────────────────
+
+  const editorEntry: ScheduleEntryRow | undefined = editorAnchor
+    ? scheduleMap.get(editorAnchor.employeeId)?.get(editorAnchor.dateISO)
+    : undefined
+
+  // System "work" status: org_id IS NULL and counts_as_present = true, code starts with 'W'
+  const workStatus: StatusTypeRow | undefined = useMemo(
+    () => data.statusTypes.find((s) => s.org_id === null && s.counts_as_present && s.code.startsWith('W')),
+    [data.statusTypes],
+  )
 
   // ── Render ───────────────────────────────────────────────────────
   return (
@@ -296,6 +395,7 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
                   scheduleMap={scheduleMap}
                   statusById={statusById}
                   entriesForEmployee={scheduleMap.get(emp.id)}
+                  onCellClick={canEdit ? handleCellClick : undefined}
                 />
               </div>
             )
@@ -311,6 +411,23 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
           </div>
         )}
       </div>
+
+      {/* Cell editor popover */}
+      {editorAnchor && (
+        <CellEditor
+          anchor={editorAnchor}
+          entry={editorEntry}
+          statusTypes={data.statusTypes}
+          workStatus={workStatus}
+          onUpsert={handleUpsert}
+          onClear={handleClear}
+          onClose={handleEditorClose}
+          containerRef={scrollContainerRef}
+        />
+      )}
+
+      {/* Toast notifications */}
+      <ToastViewport toasts={toasts} onDismiss={dismissToast} />
     </div>
   )
 }

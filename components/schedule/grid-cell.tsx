@@ -37,6 +37,15 @@ function isNightShift(start: string, end: string): boolean {
   return eh * 60 + em < sh * 60 + sm
 }
 
+// ── Keyboard handler ─────────────────────────────────────────────────
+
+function handleCellKeyDown(e: React.KeyboardEvent, onClick?: () => void) {
+  if (onClick && (e.key === 'Enter' || e.key === ' ')) {
+    e.preventDefault()
+    onClick()
+  }
+}
+
 // ── Component ───────────────────────────────────────────────────────
 
 export const GridCell = memo(function GridCell({
@@ -59,11 +68,13 @@ export const GridCell = memo(function GridCell({
       <div
         role="gridcell"
         aria-label={label}
+        tabIndex={onClick ? 0 : undefined}
         onClick={onClick}
+        onKeyDown={(e) => handleCellKeyDown(e, onClick)}
         style={{ width: cellW, flex: 'none', height: '100%' }}
         className={[
           'flex items-center justify-center',
-          onClick ? 'cursor-pointer' : '',
+          onClick ? 'cursor-pointer focus:outline-none focus:ring-1 focus:ring-ring focus:ring-inset' : '',
           'hover:bg-muted/30 transition-colors',
         ].join(' ')}
       >
@@ -89,11 +100,13 @@ export const GridCell = memo(function GridCell({
       <div
         role="gridcell"
         aria-label={ariaLabel}
+        tabIndex={onClick ? 0 : undefined}
         onClick={onClick}
+        onKeyDown={(e) => handleCellKeyDown(e, onClick)}
         style={{ width: cellW, flex: 'none', height: '100%' }}
         className={[
           'flex items-center justify-center',
-          onClick ? 'cursor-pointer' : '',
+          onClick ? 'cursor-pointer focus:outline-none focus:ring-1 focus:ring-ring focus:ring-inset' : '',
           'hover:bg-muted/10 transition-colors',
         ].join(' ')}
       >
@@ -128,11 +141,13 @@ export const GridCell = memo(function GridCell({
       <div
         role="gridcell"
         aria-label={ariaLabel}
+        tabIndex={onClick ? 0 : undefined}
         onClick={onClick}
+        onKeyDown={(e) => handleCellKeyDown(e, onClick)}
         style={{ width: cellW, flex: 'none', height: '100%' }}
         className={[
           'flex items-center justify-center px-[2px]',
-          onClick ? 'cursor-pointer' : '',
+          onClick ? 'cursor-pointer focus:outline-none focus:ring-1 focus:ring-ring focus:ring-inset' : '',
           'hover:bg-muted/10 transition-colors',
         ].join(' ')}
       >
@@ -183,11 +198,13 @@ export const GridCell = memo(function GridCell({
     <div
       role="gridcell"
       aria-label={ariaLabel}
+      tabIndex={onClick ? 0 : undefined}
       onClick={onClick}
+      onKeyDown={(e) => handleCellKeyDown(e, onClick)}
       style={{ width: cellW, flex: 'none', height: '100%' }}
       className={[
         'flex items-center justify-center px-[2px]',
-        onClick ? 'cursor-pointer' : '',
+        onClick ? 'cursor-pointer focus:outline-none focus:ring-1 focus:ring-ring focus:ring-inset' : '',
         'hover:bg-muted/10 transition-colors',
       ].join(' ')}
     >

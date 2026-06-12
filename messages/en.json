@@ -1855,7 +1855,22 @@
       "deptNoDept": "No department",
       "employeesCount": "{count} ppl",
       "hourSuffix": "h",
-      "nightBadge": "night"
+      "nightBadge": "night",
+      "presetMorning": "Morning",
+      "presetEvening": "Evening",
+      "presetNight": "Night",
+      "clearCell": "Clear",
+      "applyTime": "OK",
+      "cellEditorAriaLabel": "Cell editor",
+      "startTimeAriaLabel": "Shift start",
+      "endTimeAriaLabel": "Shift end",
+      "errors": {
+        "server_error": "Could not save. Please try again.",
+        "forbidden": "Insufficient permissions",
+        "invalid_reference": "Reference to a non-existent object",
+        "duplicate": "Entry already exists",
+        "status_wrong_org": "Status does not belong to your organisation"
+      }
     },
     "employees": {
       "title": "Employees",
