@@ -18,7 +18,7 @@ export default async function EmployeesPage() {
 
   return (
     <>
-      <h1 className="mb-4 text-2xl font-semibold text-foreground">{t('title')}</h1>
+      <h1 className="mb-4 text-2xl font-bold tracking-tight text-foreground">{t('title')}</h1>
       <EmployeesView
         orgId={ctx.org.id}
         role={ctx.role}

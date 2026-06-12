@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
 import { getAppContext } from '@/lib/auth/context'
 import { AppSidebar, type NavItem } from '@/components/app/sidebar'
+import { OrgChip } from '@/components/app/org-chip'
 import { QueryProvider } from '@/components/providers/query-provider'
 
 export default async function ShellLayout({ children }: { children: ReactNode }) {
@@ -17,16 +18,12 @@ export default async function ShellLayout({ children }: { children: ReactNode })
   ]
 
   return (
-    <div className="flex min-h-screen bg-muted/40">
+    <div className="flex min-h-screen bg-muted/40 font-app">
       <AppSidebar
         items={navItems}
-        orgName={ctx.org.name}
         roleLabel={t(`roles.${ctx.role}`)}
         userEmail={ctx.userEmail}
-        memberships={ctx.memberships.map((m) => ({ orgId: m.orgId, orgName: m.orgName }))}
-        activeOrgId={ctx.org.id}
         logoutLabel={t('sidebar.logout')}
-        orgSwitcherLabel={t('sidebar.orgSwitcher')}
       />
       <div className="flex min-w-0 flex-1 flex-col pt-12 md:pt-0">
         {ctx.isReadOnly && (
@@ -37,7 +34,17 @@ export default async function ShellLayout({ children }: { children: ReactNode })
             </Link>
           </div>
         )}
-        <main className="flex-1 px-4 py-6 sm:px-8">
+        {/* Чип организации — левый верх контента (как в 7shifts); выезжающая
+            панель сайдбара накрывает его, не сдвигая */}
+        <header className="hidden items-center px-6 pt-4 md:flex">
+          <OrgChip
+            orgName={ctx.org.name}
+            memberships={ctx.memberships.map((m) => ({ orgId: m.orgId, orgName: m.orgName }))}
+            activeOrgId={ctx.org.id}
+            switcherLabel={t('sidebar.orgSwitcher')}
+          />
+        </header>
+        <main className="flex-1 px-4 py-6 sm:px-8 md:pt-5">
           <QueryProvider>{children}</QueryProvider>
         </main>
       </div>

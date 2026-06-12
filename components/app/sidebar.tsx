@@ -1,11 +1,17 @@
 'use client'
 
-import { useTransition } from 'react'
+/**
+ * Сайдбар продукт-зоны (правка 4, референс — 7shifts + минимализм sona.ai):
+ * рейка 64px со значками в потоке (контент — во всю ширину), при hover или
+ * клавиатурном фокусе панель 240px плавно выезжает ПОВЕРХ контента.
+ * Свёрнуто — только логотип-знак; раскрыто — знак + «Smengo».
+ * Название организации живёт не здесь, а в OrgChip (левый верх контента).
+ */
+
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { CalendarDays, LayoutDashboard, LogOut, Users, type LucideIcon } from 'lucide-react'
 import { logoutAction } from '@/lib/actions/auth'
-import { switchOrgAction } from '@/lib/actions/org'
 import { LocaleSwitcher } from '@/components/locale-switcher'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { cn } from '@/lib/utils'
@@ -24,39 +30,17 @@ const ICONS: Record<NavItem['key'], LucideIcon> = {
 
 interface AppSidebarProps {
   items: NavItem[]
-  orgName: string
   roleLabel: string
   userEmail: string
-  memberships: { orgId: string; orgName: string }[]
-  activeOrgId: string
   logoutLabel: string
-  orgSwitcherLabel: string
 }
 
-export function AppSidebar({
-  items,
-  orgName,
-  roleLabel,
-  userEmail,
-  memberships,
-  activeOrgId,
-  logoutLabel,
-  orgSwitcherLabel,
-}: AppSidebarProps) {
+export function AppSidebar({ items, roleLabel, userEmail, logoutLabel }: AppSidebarProps) {
   const pathname = usePathname()
-  const [, startTransition] = useTransition()
-
-  function handleOrgChange(orgId: string) {
-    if (orgId === activeOrgId) return
-    const formData = new FormData()
-    formData.set('org_id', orgId)
-    startTransition(() => switchOrgAction(formData))
-  }
 
   // Подпись, которая плавно проявляется при выезде панели (collapsed → текст
-  // скрыт, панель 64px показывает только иконки).
-  // has-[:focus-visible] вместо focus-within: панель раскрывается для
-  // клавиатурной навигации, но не залипает открытой после клика мышью.
+  // скрыт, панель 64px показывает только иконки). has-[:focus-visible] вместо
+  // focus-within: раскрытие для клавиатуры, без залипания после клика мышью.
   const expandedText = 'min-w-0 whitespace-nowrap opacity-0 transition-opacity duration-200 group-hover/sb:opacity-100 group-has-[:focus-visible]/sb:opacity-100'
 
   const nav = (
@@ -70,13 +54,13 @@ export function AppSidebar({
             href={item.href}
             title={item.label}
             className={cn(
-              'flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium transition-colors',
+              'flex items-center gap-3 rounded-lg px-2.5 py-2.5 text-sm transition-colors duration-150',
               isActive
-                ? 'bg-accent text-accent-foreground'
-                : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
+                ? 'bg-muted font-semibold text-foreground'
+                : 'font-medium text-muted-foreground hover:bg-muted/60 hover:text-foreground',
             )}
           >
-            <Icon className="h-5 w-5 shrink-0" />
+            <Icon className="h-5 w-5 shrink-0" strokeWidth={1.75} />
             <span className={cn(expandedText, 'truncate')}>{item.label}</span>
           </Link>
         )
@@ -86,40 +70,20 @@ export function AppSidebar({
 
   return (
     <>
-      {/* Desktop sidebar: рейка 64px в потоке (контент — во всю ширину);
-          панель выезжает поверх контента при hover/фокусе */}
+      {/* Desktop sidebar: рейка 64px в потоке, панель — оверлей при hover/фокусе */}
       <aside className="sticky top-0 z-40 hidden h-screen w-16 shrink-0 md:block">
         {/* transition-all вместо transition-[width,box-shadow]: arbitrary-значение
             с запятой не генерируется Tailwind v4 (проверено в живом превью) */}
-        <div className="group/sb absolute inset-y-0 left-0 flex w-16 flex-col overflow-hidden border-r border-border bg-background px-3 py-4 transition-all duration-300 ease-out hover:w-60 hover:shadow-xl has-[:focus-visible]:w-60 has-[:focus-visible]:shadow-xl">
-          <div className="mb-6">
-            <div className="flex items-center gap-2.5 px-0.5">
-              <span
-                aria-hidden="true"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-base font-bold text-accent-foreground"
-              >
-                S
-              </span>
-              <p className={cn(expandedText, 'text-lg font-semibold tracking-tight text-foreground')}>Smengo</p>
-            </div>
-            {memberships.length > 1 ? (
-              <label className={cn(expandedText, 'mt-2 block')}>
-                <span className="sr-only">{orgSwitcherLabel}</span>
-                <select
-                  value={activeOrgId}
-                  onChange={(e) => handleOrgChange(e.target.value)}
-                  className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
-                >
-                  {memberships.map((m) => (
-                    <option key={m.orgId} value={m.orgId}>
-                      {m.orgName}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : (
-              <p className={cn(expandedText, 'mt-1 truncate text-sm text-muted-foreground')}>{orgName}</p>
-            )}
+        <div className="group/sb absolute inset-y-0 left-0 flex w-16 flex-col overflow-hidden border-r border-border bg-background px-3 py-5 transition-all duration-300 ease-out hover:w-60 hover:shadow-xl has-[:focus-visible]:w-60 has-[:focus-visible]:shadow-xl">
+          {/* Лого: свёрнуто — только знак; раскрыто — знак + «Smengo» */}
+          <div className="mb-8 flex items-center gap-2.5 px-0.5">
+            <span
+              aria-hidden="true"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent text-base font-bold text-accent-foreground"
+            >
+              S
+            </span>
+            <p className={cn(expandedText, 'text-[17px] font-bold tracking-tight text-foreground')}>Smengo</p>
           </div>
 
           {nav}
@@ -137,9 +101,9 @@ export function AppSidebar({
               <button
                 type="submit"
                 title={logoutLabel}
-                className="flex w-full items-center gap-3 rounded-md px-2.5 py-1.5 text-sm text-muted-foreground transition-colors hover:text-destructive"
+                className="flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium text-muted-foreground transition-colors duration-150 hover:text-destructive"
               >
-                <LogOut className="h-5 w-5 shrink-0" />
+                <LogOut className="h-5 w-5 shrink-0" strokeWidth={1.75} />
                 <span className={cn(expandedText, 'truncate')}>{logoutLabel}</span>
               </button>
             </form>
@@ -149,7 +113,15 @@ export function AppSidebar({
 
       {/* Mobile top bar */}
       <header className="fixed inset-x-0 top-0 z-40 flex items-center justify-between gap-2 border-b border-border bg-background px-4 py-2 md:hidden">
-        <p className="text-base font-semibold text-foreground">Smengo</p>
+        <div className="flex items-center gap-2">
+          <span
+            aria-hidden="true"
+            className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-sm font-bold text-accent-foreground"
+          >
+            S
+          </span>
+          <p className="text-base font-bold tracking-tight text-foreground">Smengo</p>
+        </div>
         <div className="flex items-center gap-1 overflow-x-auto">
           {items.map((item) => {
             const Icon = ICONS[item.key]
@@ -160,13 +132,13 @@ export function AppSidebar({
                 href={item.href}
                 aria-label={item.label}
                 className={cn(
-                  'rounded-md p-2 transition-colors',
+                  'rounded-lg p-2 transition-colors',
                   isActive
-                    ? 'bg-accent text-accent-foreground'
+                    ? 'bg-muted text-foreground'
                     : 'text-muted-foreground hover:text-foreground',
                 )}
               >
-                <Icon className="h-5 w-5" />
+                <Icon className="h-5 w-5" strokeWidth={1.75} />
               </Link>
             )
           })}
@@ -174,9 +146,9 @@ export function AppSidebar({
             <button
               type="submit"
               aria-label={logoutLabel}
-              className="rounded-md p-2 text-muted-foreground transition-colors hover:text-destructive"
+              className="rounded-lg p-2 text-muted-foreground transition-colors hover:text-destructive"
             >
-              <LogOut className="h-5 w-5" />
+              <LogOut className="h-5 w-5" strokeWidth={1.75} />
             </button>
           </form>
         </div>

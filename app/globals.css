@@ -187,6 +187,7 @@ html {
   --color-destructive-foreground: var(--destructive-foreground);
   --color-success: var(--success);
   --color-warning: var(--warning);
+  --color-accent-soft: var(--accent-soft);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -224,6 +225,8 @@ html {
   /* Fonts */
   --font-sans: var(--font-inter);
   --font-serif: var(--font-lora);
+  /* Продукт-зона (app shell): Manrope — правка 4, минимализм sona.ai */
+  --font-app: var(--font-manrope), var(--font-inter), system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, "Cascadia Code", monospace;
 
   /* Animations */
