@@ -5,6 +5,16 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useTranslations, useLocale } from 'next-intl'
 import { Search, X } from 'lucide-react'
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  closestCenter,
+} from '@dnd-kit/core'
+import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core'
+import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable'
 
 import type { UserRole } from '@/supabase/types'
 import type { MonthData, GridMode, ScheduleEntryRow, StatusTypeRow } from '@/lib/schedule/types'
@@ -13,6 +23,8 @@ import { buildScheduleMap } from '@/lib/schedule/map'
 import { can } from '@/lib/permissions'
 import { useScheduleData, useUpsertEntry, useClearEntry } from './use-schedule'
 import type { UpsertInput } from './use-schedule'
+import { scheduleKey } from './use-schedule'
+import { useQueryClient } from '@tanstack/react-query'
 import { GridHeader } from './grid-header'
 import { GroupRow, EmployeeGridRow, NAME_COL_WIDTH } from './grid-row'
 import { CoverageRow } from './coverage-row'
@@ -30,6 +42,7 @@ import type { DeptModalState } from './dept-modal'
 import { EmployeeModal } from './employee-modal'
 import type { EmployeeModalState } from './employee-modal'
 import type { EmployeeRow } from '@/lib/schedule/types'
+import { reorderEmployeesAction } from '@/lib/actions/employees'
 
 // ── Row height by mode ──────────────────────────────────────────────
 
@@ -180,6 +193,18 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
   const canEdit = !isReadOnly && can(role, 'edit_schedule')
   const canCrudEmployees = !isReadOnly && can(role, 'crud_employees')
   const canManageDepts = !isReadOnly && can(role, 'manage_departments')
+
+  // ── DnD hooks (must be unconditional) ───────────────────────────
+  const qc = useQueryClient()
+  const schedKey = scheduleKey(orgId, year, month)
+  const [activeDragId, setActiveDragId] = useState<string | null>(null)
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+  )
+
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    setActiveDragId(event.active.id as string)
+  }, [])
 
   const handleCellClick = useCallback(
     (employeeId: string, dateISO: string, cellEl: HTMLElement) => {
@@ -351,6 +376,61 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
     return m
   }, [data.employees])
 
+  // ── DnD handleDragEnd — placed after empById + groups are defined ─
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      setActiveDragId(null)
+      const { active, over } = event
+      if (!over || active.id === over.id) return
+
+      const activeId = active.id as string
+      const overId = over.id as string
+
+      // Validate same department
+      const activeEmp = empById.get(activeId)
+      const overEmp = empById.get(overId)
+      if (!activeEmp || !overEmp) return
+      if (activeEmp.dept_id !== overEmp.dept_id) return
+
+      const deptId = activeEmp.dept_id ?? null
+
+      // Find the dept group and compute new order
+      const group = groups.find((g) => g.deptId === deptId)
+      if (!group) return
+
+      const oldOrder = group.employees.map((e) => e.id)
+      const oldIndex = oldOrder.indexOf(activeId)
+      const newIndex = oldOrder.indexOf(overId)
+      if (oldIndex === -1 || newIndex === -1) return
+
+      const ordered_ids = arrayMove(oldOrder, oldIndex, newIndex)
+
+      // Optimistic update: rebuild employees array with new sort_order for this dept
+      const prev = qc.getQueryData<MonthData>(schedKey)
+      if (prev) {
+        const minSort = Math.min(...group.employees.map((e) => e.sort_order))
+        const updatedEmpMap = new Map<string, EmployeeRow>()
+        ordered_ids.forEach((id, idx) => {
+          const emp = empById.get(id)
+          if (emp) updatedEmpMap.set(id, { ...emp, sort_order: minSort + idx })
+        })
+        const newEmployees = prev.employees.map((e) =>
+          updatedEmpMap.has(e.id) ? updatedEmpMap.get(e.id)! : e,
+        )
+        qc.setQueryData<MonthData>(schedKey, { ...prev, employees: newEmployees })
+      }
+
+      // Fire server action; on error roll back + toast
+      reorderEmployeesAction({ dept_id: deptId, ordered_ids }).then((res) => {
+        if (!res.ok) {
+          if (prev) qc.setQueryData<MonthData>(schedKey, prev)
+          pushToast(resolveErrorMessage(res.error))
+        }
+      })
+    },
+    [empById, groups, qc, schedKey, pushToast, resolveErrorMessage],
+  )
+
   // ── Virtualizer ──────────────────────────────────────────────────
 
   const rowHeight = ROW_HEIGHT[mode]
@@ -511,81 +591,108 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
             />
 
             {/* Virtual rows spacer — explicit width drives horizontal scroll */}
-            <div style={{ height: totalHeight, width: totalWidth, position: 'relative' }}>
-              {items.map((virtualItem) => {
-                const row = virtualRows[virtualItem.index]
-                if (!row) return null
+            {/* DndContext wraps the sortable list; SortableContext gets all employee ids */}
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={data.employees.map((e) => e.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div style={{ height: totalHeight, width: totalWidth, position: 'relative' }}>
+                  {items.map((virtualItem) => {
+                    const row = virtualRows[virtualItem.index]
+                    if (!row) return null
 
-                if (row.kind === 'group') {
-                  const collapsed = isDeptCollapsed(row.deptId)
-                  const dept = row.deptId ? deptById.get(row.deptId) : undefined
+                    if (row.kind === 'group') {
+                      const collapsed = isDeptCollapsed(row.deptId)
+                      const dept = row.deptId ? deptById.get(row.deptId) : undefined
+                      return (
+                        <div
+                          key={`group-${row.deptId ?? 'null'}`}
+                          style={{
+                            position: 'absolute',
+                            top: virtualItem.start,
+                            left: 0,
+                            right: 0,
+                            height: virtualItem.size,
+                          }}
+                        >
+                          <GroupRow
+                            deptName={row.deptName}
+                            count={row.count}
+                            collapsed={collapsed}
+                            onToggle={() => toggleDept(row.deptId)}
+                            employeesCountLabel={t('employeesCount', { count: row.count })}
+                            onAddEmployee={canCrudEmployees
+                              ? () => setEmployeeModal({ mode: 'create', deptId: row.deptId })
+                              : undefined}
+                            onRenameDept={canManageDepts && dept
+                              ? () => setDeptModal({ mode: 'rename', dept })
+                              : undefined}
+                            onDeleteDept={canManageDepts && dept
+                              ? () => setDeptModal({ mode: 'delete', dept })
+                              : undefined}
+                          />
+                        </div>
+                      )
+                    }
+
+                    const emp = empById.get(row.employeeId)
+                    if (!emp) return null
+
+                    return (
+                      <div
+                        key={`emp-${row.employeeId}`}
+                        style={{
+                          position: 'absolute',
+                          top: virtualItem.start,
+                          left: 0,
+                          right: 0,
+                          height: virtualItem.size,
+                        }}
+                      >
+                        <EmployeeGridRow
+                          employee={emp}
+                          days={days}
+                          today={today}
+                          rowHeight={virtualItem.size}
+                          cellW={cellW}
+                          mode={mode}
+                          locale={locale}
+                          hourSuffix={hourSuffix}
+                          nightBadge={nightBadge}
+                          scheduleMap={scheduleMap}
+                          statusById={statusById}
+                          entriesForEmployee={scheduleMap.get(emp.id)}
+                          onCellClick={canEdit ? handleCellClick : undefined}
+                          onEmployeeClick={canCrudEmployees
+                            ? (e) => setEmployeeModal({ mode: 'edit', employee: e })
+                            : undefined}
+                          draggable={canCrudEmployees}
+                        />
+                      </div>
+                    )
+                  })}
+                </div>
+              </SortableContext>
+
+              {/* DragOverlay — simple name pill while dragging */}
+              <DragOverlay dropAnimation={null}>
+                {activeDragId ? (() => {
+                  const emp = empById.get(activeDragId)
+                  if (!emp) return null
                   return (
-                    <div
-                      key={`group-${row.deptId ?? 'null'}`}
-                      style={{
-                        position: 'absolute',
-                        top: virtualItem.start,
-                        left: 0,
-                        right: 0,
-                        height: virtualItem.size,
-                      }}
-                    >
-                      <GroupRow
-                        deptName={row.deptName}
-                        count={row.count}
-                        collapsed={collapsed}
-                        onToggle={() => toggleDept(row.deptId)}
-                        employeesCountLabel={t('employeesCount', { count: row.count })}
-                        onAddEmployee={canCrudEmployees
-                          ? () => setEmployeeModal({ mode: 'create', deptId: row.deptId })
-                          : undefined}
-                        onRenameDept={canManageDepts && dept
-                          ? () => setDeptModal({ mode: 'rename', dept })
-                          : undefined}
-                        onDeleteDept={canManageDepts && dept
-                          ? () => setDeptModal({ mode: 'delete', dept })
-                          : undefined}
-                      />
+                    <div className="bg-card border border-border rounded px-3 py-1 shadow-md text-[13px] font-medium text-foreground select-none">
+                      {emp.full_name}
                     </div>
                   )
-                }
-
-                const emp = empById.get(row.employeeId)
-                if (!emp) return null
-
-                return (
-                  <div
-                    key={`emp-${row.employeeId}`}
-                    style={{
-                      position: 'absolute',
-                      top: virtualItem.start,
-                      left: 0,
-                      right: 0,
-                      height: virtualItem.size,
-                    }}
-                  >
-                    <EmployeeGridRow
-                      employee={emp}
-                      days={days}
-                      today={today}
-                      rowHeight={virtualItem.size}
-                      cellW={cellW}
-                      mode={mode}
-                      locale={locale}
-                      hourSuffix={hourSuffix}
-                      nightBadge={nightBadge}
-                      scheduleMap={scheduleMap}
-                      statusById={statusById}
-                      entriesForEmployee={scheduleMap.get(emp.id)}
-                      onCellClick={canEdit ? handleCellClick : undefined}
-                      onEmployeeClick={canCrudEmployees
-                        ? (e) => setEmployeeModal({ mode: 'edit', employee: e })
-                        : undefined}
-                    />
-                  </div>
-                )
-              })}
-            </div>
+                })() : null}
+              </DragOverlay>
+            </DndContext>
 
             {/* Filter empty state (search/dept returned nothing) */}
             {virtualRows.length === 0 && (

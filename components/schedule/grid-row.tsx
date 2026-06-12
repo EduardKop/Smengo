@@ -1,6 +1,8 @@
 'use client'
 
-import { ChevronDown, ChevronRight, Pencil, Plus, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronRight, GripVertical, Pencil, Plus, Trash2 } from 'lucide-react'
+import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import type { MonthDay } from '@/lib/schedule/month'
 import type { EmployeeRow, StatusTypeRow, ScheduleEntryRow, GridMode, ScheduleMap } from '@/lib/schedule/types'
 import { GridCell } from './grid-cell'
@@ -121,6 +123,8 @@ interface EmployeeRowProps {
   onCellClick?: (employeeId: string, dateISO: string, cellEl: HTMLElement) => void
   /** Called when employee name is clicked — opens edit modal */
   onEmployeeClick?: (employee: EmployeeRow) => void
+  /** If true, renders a drag handle (GripVertical) in the name column */
+  draggable?: boolean
 }
 
 export function EmployeeGridRow({
@@ -137,37 +141,78 @@ export function EmployeeGridRow({
   entriesForEmployee,
   onCellClick,
   onEmployeeClick,
+  draggable = false,
 }: EmployeeRowProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: employee.id })
+
+  // Build transform style — translate only (no scale) to avoid distortion
+  // We apply it as a CSS transform on the row. Since the row is absolute-positioned
+  // by the virtualizer, we layer the dnd translate on top of the existing top offset.
+  const transformStyle = transform
+    ? CSS.Transform.toString({ ...transform, scaleX: 1, scaleY: 1 })
+    : undefined
+
   return (
     <div
+      ref={setNodeRef}
       role="row"
       className="flex border-b border-border group"
-      style={{ height: rowHeight }}
+      style={{
+        height: rowHeight,
+        transform: transformStyle,
+        transition,
+        opacity: isDragging ? 0.4 : undefined,
+        zIndex: isDragging ? 1 : undefined,
+        position: 'relative',
+      }}
       data-employee-id={employee.id}
     >
       {/* Sticky name column */}
       <div
-        className="sticky left-0 z-10 flex shrink-0 flex-col justify-center border-r border-border bg-background px-3"
+        className="sticky left-0 z-10 flex shrink-0 items-center border-r border-border bg-background px-2 gap-1"
         style={{ width: NAME_COL_WIDTH, minWidth: NAME_COL_WIDTH }}
       >
-        {onEmployeeClick ? (
+        {/* Drag handle — only when draggable */}
+        {draggable && (
           <button
             type="button"
-            onClick={() => onEmployeeClick(employee)}
-            className="truncate text-left text-[13px] font-medium leading-tight text-foreground hover:underline focus:outline-none"
+            aria-label="Drag to reorder"
+            className="shrink-0 cursor-grab opacity-0 group-hover:opacity-100 transition-opacity touch-none text-muted-foreground p-0.5 rounded hover:bg-muted"
+            {...attributes}
+            {...listeners}
           >
-            {employee.full_name}
+            <GripVertical size={14} />
           </button>
-        ) : (
-          <span className="truncate text-[13px] font-medium leading-tight text-foreground">
-            {employee.full_name}
-          </span>
         )}
-        {employee.position && (
-          <span className="truncate text-[11px] leading-tight text-muted-foreground">
-            {employee.position}
-          </span>
-        )}
+
+        {/* Name + position */}
+        <div className="flex min-w-0 flex-1 flex-col justify-center">
+          {onEmployeeClick ? (
+            <button
+              type="button"
+              onClick={() => onEmployeeClick(employee)}
+              className="truncate text-left text-[13px] font-medium leading-tight text-foreground hover:underline focus:outline-none"
+            >
+              {employee.full_name}
+            </button>
+          ) : (
+            <span className="truncate text-[13px] font-medium leading-tight text-foreground">
+              {employee.full_name}
+            </span>
+          )}
+          {employee.position && (
+            <span className="truncate text-[11px] leading-tight text-muted-foreground">
+              {employee.position}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Day cells — deterministic width, no flex-1 */}
