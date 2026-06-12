@@ -606,7 +606,7 @@ export type Database = {
         Returns: undefined
       }
       reorder_employees: {
-        Args: { p_dept_id: string | null; p_ordered_ids: string[] }
+        Args: { p_dept_id?: string; p_ordered_ids: string[] }
         Returns: undefined
       }
       update_member_role: {

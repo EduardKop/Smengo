@@ -149,8 +149,8 @@ export async function reorderEmployeesAction(input: { dept_id: string | null; or
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message }
 
   const { error } = await ctx.supabase.rpc('reorder_employees', {
-    p_dept_id: parsed.data.dept_id as string | null,
     p_ordered_ids: parsed.data.ordered_ids,
+    ...(parsed.data.dept_id !== null ? { p_dept_id: parsed.data.dept_id } : {}),
   })
   if (error) return { ok: false, error: error.message.includes('ids_outside_scope') ? 'ids_outside_scope' : error.message }
 
