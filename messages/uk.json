@@ -1926,7 +1926,18 @@
       "fieldHiredOn": "Дата прийому",
       "noDept": "Без відділу",
       "employeeCount": "Співробітників: {count}",
-      "deptNameLabel": "Назва"
+      "deptNameLabel": "Назва",
+      "scheduleTab": "Розклад",
+      "employeesTab": "Співробітники",
+      "viewCards": "Картки",
+      "viewList": "Список",
+      "copied": "Скопійовано",
+      "editEmployee": "Редагувати",
+      "birthdayIn": "ДН через {n} дн.",
+      "birthdayToday": "День народження сьогодні",
+      "serviceYears": "{n} р. в команді",
+      "overlayClose": "Закрити",
+      "overlayMiniCalTitle": "Розклад місяця"
     },
     "employees": {
       "title": "Співробітники",

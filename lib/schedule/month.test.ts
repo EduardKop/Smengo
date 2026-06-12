@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { monthDays, monthKey, monthRange, todayISOInTz, shiftDurationHours, isNightShift } from './month'
+import { monthDays, monthKey, monthRange, todayISOInTz, shiftDurationHours, isNightShift, daysUntilBirthday, yearsOfService } from './month'
 
 describe('monthDays', () => {
   it('returns 31 days for July 2026 with correct weekdays', () => {
@@ -68,5 +68,55 @@ describe('isNightShift', () => {
 
   it('09:00–17:00 → false (regular day shift)', () => {
     expect(isNightShift('09:00', '17:00')).toBe(false)
+  })
+})
+
+describe('daysUntilBirthday', () => {
+  it('birthday tomorrow → 1', () => {
+    expect(daysUntilBirthday('1990-06-13', '2026-06-12')).toBe(1)
+  })
+
+  it('birthday today → 0', () => {
+    expect(daysUntilBirthday('1990-06-12', '2026-06-12')).toBe(0)
+  })
+
+  it('null birth date → null', () => {
+    expect(daysUntilBirthday(null, '2026-06-12')).toBeNull()
+  })
+
+  it('birthday Dec 29 with today Dec 30 → 364 (non-leap) or 365 (leap)', () => {
+    // 2026 is non-leap. Dec 29 already passed (today=Dec 30), so next birthday is 2027-12-29.
+    // From 2026-12-30 to 2027-12-29 = 364 days
+    const result = daysUntilBirthday('1990-12-29', '2026-12-30')
+    expect(result).toBe(364)
+  })
+
+  it('birthday one year away exactly wraps correctly', () => {
+    // today = 2026-06-12, birthday = 1990-06-11 (passed yesterday) → next is 2027-06-11 = 364 days
+    expect(daysUntilBirthday('1990-06-11', '2026-06-12')).toBe(364)
+  })
+})
+
+describe('yearsOfService', () => {
+  it('2024-03-01 to 2026-06-12 = 2 full years', () => {
+    expect(yearsOfService('2024-03-01', '2026-06-12')).toBe(2)
+  })
+
+  it('null hired_on → null', () => {
+    expect(yearsOfService(null, '2026-06-12')).toBeNull()
+  })
+
+  it('same-day hire = 0 years', () => {
+    expect(yearsOfService('2026-06-12', '2026-06-12')).toBe(0)
+  })
+
+  it('anniversary not yet reached this year → subtract 1', () => {
+    // hired 2024-09-01, today 2026-06-12 → anniversary 2026-09-01 not yet → 1 year
+    expect(yearsOfService('2024-09-01', '2026-06-12')).toBe(1)
+  })
+
+  it('exact anniversary → full year', () => {
+    // hired 2024-06-12, today 2026-06-12 → exactly 2 years
+    expect(yearsOfService('2024-06-12', '2026-06-12')).toBe(2)
   })
 })

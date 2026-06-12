@@ -62,6 +62,47 @@ export function isNightShift(start: string, end: string): boolean {
 }
 
 /**
+ * Дней до ближайшего дня рождения (0 = сегодня, считается UTC-чисто).
+ * null если birthDateISO не задан.
+ */
+export function daysUntilBirthday(birthDateISO: string | null, todayISO: string): number | null {
+  if (!birthDateISO) return null
+  const [ty, tm, td] = todayISO.split('-').map(Number)
+  const [, bm, bd] = birthDateISO.split('-').map(Number)
+
+  // Next birthday in current or next year
+  let nextYear = ty!
+  const nextBirthday = new Date(Date.UTC(nextYear, bm! - 1, bd!))
+  const todayDate = new Date(Date.UTC(ty!, tm! - 1, td!))
+
+  if (nextBirthday < todayDate) {
+    // Already passed this year — next birthday is in the next year
+    nextYear += 1
+    const nextBd = new Date(Date.UTC(nextYear, bm! - 1, bd!))
+    return Math.round((nextBd.getTime() - todayDate.getTime()) / 86_400_000)
+  }
+
+  return Math.round((nextBirthday.getTime() - todayDate.getTime()) / 86_400_000)
+}
+
+/**
+ * Полных лет стажа от hired_on до today (UTC-чисто).
+ * null если hiredOnISO не задан.
+ */
+export function yearsOfService(hiredOnISO: string | null, todayISO: string): number | null {
+  if (!hiredOnISO) return null
+  const [ty, tm, td] = todayISO.split('-').map(Number)
+  const [hy, hm, hd] = hiredOnISO.split('-').map(Number)
+
+  let years = ty! - hy!
+  // If we haven't reached the anniversary month/day yet this year, subtract 1
+  if (tm! < hm! || (tm === hm && td! < hd!)) {
+    years -= 1
+  }
+  return Math.max(0, years)
+}
+
+/**
  * Дата «сегодня» в таймзоне организации, формат YYYY-MM-DD.
  * @throws {RangeError} if timeZone is not a valid IANA zone
  */

@@ -43,6 +43,9 @@ import { EmployeeModal } from './employee-modal'
 import type { EmployeeModalState } from './employee-modal'
 import type { EmployeeRow } from '@/lib/schedule/types'
 import { reorderEmployeesAction } from '@/lib/actions/employees'
+import { EmployeesTab } from './employees-tab'
+import type { EmployeeView } from './employees-tab'
+import { EmployeeOverlay } from './employees-tab/employee-overlay'
 
 // ── Row height by mode ──────────────────────────────────────────────
 
@@ -105,6 +108,11 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
   const mode: GridMode = (['compact', 'detail', 'extended'].includes(searchParams.get('mode') ?? '')
     ? (searchParams.get('mode') as GridMode)
     : 'detail')
+
+  // Tab: schedule | employees
+  const activeTab = searchParams.get('tab') === 'employees' ? 'employees' : 'schedule'
+  // Employee tab view: cards | list
+  const empView: EmployeeView = searchParams.get('view') === 'list' ? 'list' : 'cards'
 
   // Local search input state — debounced 200ms before pushing to URL
   const [searchInput, setSearchInput] = useState(searchParams.get('q') ?? '')
@@ -262,6 +270,8 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
 
   const [deptModal, setDeptModal] = useState<DeptModalState | null>(null)
   const [employeeModal, setEmployeeModal] = useState<EmployeeModalState | null>(null)
+  // Employee overlay (click on name in grid → sheet)
+  const [overlayEmployee, setOverlayEmployee] = useState<EmployeeRow | null>(null)
 
   const handleModalError = useCallback(
     (code: string) => {
@@ -472,18 +482,44 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
   // ── Render ───────────────────────────────────────────────────────
   return (
     <div className="flex flex-col">
+
+      {/* Tab switcher — always visible */}
+      <div className="mb-3 flex items-center gap-1 border-b border-border pb-0">
+        {(['schedule', 'employees'] as const).map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === tab}
+            onClick={() => setShallowParam('tab', tab === 'schedule' ? null : tab)}
+            className={[
+              'px-3 py-2 text-[13px] font-medium transition-colors border-b-2 -mb-px',
+              activeTab === tab
+                ? 'border-primary text-foreground'
+                : 'border-transparent text-muted-foreground hover:text-foreground',
+            ].join(' ')}
+          >
+            {tab === 'schedule' ? t('scheduleTab') : t('employeesTab')}
+          </button>
+        ))}
+      </div>
+
       {/* Toolbar — hidden when fully empty (month/filters are meaningless) */}
       {!isFullyEmpty && (
       <div className="mb-3 flex flex-wrap items-center gap-2" data-slot="toolbar">
-        {/* Mode switcher — left */}
-        <ModeSwitcher value={mode} onChange={handleModeChange} />
+        {/* Mode switcher — grid tab only */}
+        {activeTab === 'schedule' && (
+          <ModeSwitcher value={mode} onChange={handleModeChange} />
+        )}
 
-        {/* Month nav — centered */}
-        <div className="flex flex-1 justify-center">
-          <MonthNav year={year} month={month} />
-        </div>
+        {/* Month nav — grid tab only, centered */}
+        {activeTab === 'schedule' && (
+          <div className="flex flex-1 justify-center">
+            <MonthNav year={year} month={month} />
+          </div>
+        )}
 
-        {/* Dept filter */}
+        {/* Dept filter — shared on both tabs */}
         <DeptFilter
           departments={data.departments}
           employees={data.employees}
@@ -491,7 +527,7 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
           onChange={handleDeptChange}
         />
 
-        {/* Search input */}
+        {/* Search input — shared on both tabs */}
         <div className="relative flex items-center">
           <Search
             size={13}
@@ -528,7 +564,7 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
             {t('addEmployee')}
           </button>
         )}
-        {canManageDepts && (
+        {canManageDepts && activeTab === 'schedule' && (
           <button
             type="button"
             onClick={() => setDeptModal({ mode: 'create' })}
@@ -538,18 +574,35 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
           </button>
         )}
 
-        {/* Alerts / coverage thresholds — rightmost */}
-        <AlertsForm
-          orgId={orgId}
-          year={year}
-          month={month}
-          role={role}
-          departments={data.departments}
-          alertConfigs={data.alertConfigs}
-        />
+        {/* Alerts / coverage thresholds — grid tab only */}
+        {activeTab === 'schedule' && (
+          <AlertsForm
+            orgId={orgId}
+            year={year}
+            month={month}
+            role={role}
+            departments={data.departments}
+            alertConfigs={data.alertConfigs}
+          />
+        )}
       </div>
       )}
 
+      {/* Employees tab content */}
+      {activeTab === 'employees' && (
+        <EmployeesTab
+          employees={filteredEmployees}
+          departments={data.departments}
+          today={today}
+          view={empView}
+          onViewChange={(v) => setShallowParam('view', v === 'cards' ? null : v)}
+          onEdit={canCrudEmployees ? (emp) => setEmployeeModal({ mode: 'edit', employee: emp }) : undefined}
+        />
+      )}
+
+      {/* Schedule tab content */}
+      {activeTab === 'schedule' && (
+      <>
       {/* Fully empty state — QuickStart replaces the grid entirely */}
       {isFullyEmpty ? (
         <QuickStart
@@ -671,9 +724,10 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
                           statusById={statusById}
                           entriesForEmployee={scheduleMap.get(emp.id)}
                           onCellClick={canEdit ? handleCellClick : undefined}
-                          onEmployeeClick={canCrudEmployees
-                            ? (e) => setEmployeeModal({ mode: 'edit', employee: e })
-                            : undefined}
+                          onEmployeeClick={
+                            // All roles can see overlay (read-only content); edit button inside is guarded
+                            (e) => setOverlayEmployee(e)
+                          }
                           draggable={canCrudEmployees && !qFilter}
                         />
                       </div>
@@ -710,6 +764,10 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
           <Legend statusTypes={data.statusTypes} />
         </>
       )}
+      {/* end schedule tab: isFullyEmpty ternary */}
+      </>
+      )}
+      {/* end activeTab === 'schedule' */}
 
       {/* Cell editor popover */}
       {editorAnchor && (
@@ -744,6 +802,21 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
           currentCount={data.employees.length}
           onClose={() => setEmployeeModal(null)}
           onError={handleModalError}
+        />
+      )}
+
+      {/* Employee overlay sheet (click on name in grid → sheet) */}
+      {overlayEmployee && (
+        <EmployeeOverlay
+          employee={overlayEmployee}
+          departments={data.departments}
+          today={today}
+          days={days}
+          entriesForEmployee={scheduleMap.get(overlayEmployee.id)}
+          statusById={statusById}
+          canEdit={canCrudEmployees}
+          onEdit={(emp) => { setOverlayEmployee(null); setEmployeeModal({ mode: 'edit', employee: emp }) }}
+          onClose={() => setOverlayEmployee(null)}
         />
       )}
 

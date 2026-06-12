@@ -1927,7 +1927,18 @@
       "fieldHiredOn": "Hire date",
       "noDept": "No department",
       "employeeCount": "Employees: {count}",
-      "deptNameLabel": "Name"
+      "deptNameLabel": "Name",
+      "scheduleTab": "Schedule",
+      "employeesTab": "Employees",
+      "viewCards": "Cards",
+      "viewList": "List",
+      "copied": "Copied",
+      "editEmployee": "Edit",
+      "birthdayIn": "Birthday in {n}d",
+      "birthdayToday": "Birthday today",
+      "serviceYears": "{n}y on team",
+      "overlayClose": "Close",
+      "overlayMiniCalTitle": "Month schedule"
     },
     "employees": {
       "title": "Employees",

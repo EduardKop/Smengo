@@ -1926,7 +1926,18 @@
       "fieldHiredOn": "Дата приёма",
       "noDept": "Без отдела",
       "employeeCount": "Сотрудников: {count}",
-      "deptNameLabel": "Название"
+      "deptNameLabel": "Название",
+      "scheduleTab": "Расписание",
+      "employeesTab": "Сотрудники",
+      "viewCards": "Карточки",
+      "viewList": "Список",
+      "copied": "Скопировано",
+      "editEmployee": "Редактировать",
+      "birthdayIn": "ДР через {n} дн.",
+      "birthdayToday": "День рождения сегодня",
+      "serviceYears": "{n} г. в команде",
+      "overlayClose": "Закрыть",
+      "overlayMiniCalTitle": "График месяца"
     },
     "employees": {
       "title": "Сотрудники",
