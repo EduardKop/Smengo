@@ -20,7 +20,7 @@ import type { UserRole } from '@/supabase/types'
 import type { MonthData, GridMode, ScheduleEntryRow, StatusTypeRow } from '@/lib/schedule/types'
 import { monthDays } from '@/lib/schedule/month'
 import { buildScheduleMap, coverageByDay, aggregateMinPresent, shortageByDay } from '@/lib/schedule/map'
-import { nameColumnWidth, useViewportWidth } from './grid-visual'
+import { nameColumnWidth, useViewportWidth, deptColor } from './grid-visual'
 import { can } from '@/lib/permissions'
 import { useScheduleData, useUpsertEntry, useClearEntry } from './use-schedule'
 import type { UpsertInput } from './use-schedule'
@@ -28,6 +28,7 @@ import { scheduleKey } from './use-schedule'
 import { useQueryClient } from '@tanstack/react-query'
 import { GridHeader, TOTALS_OFF_W, TOTALS_HRS_W } from './grid-header'
 import { GroupRow, EmployeeGridRow } from './grid-row'
+import type { GridRowLabels, CellRect } from './grid-row'
 import { AlertsForm } from './settings/alerts-form'
 import { StatusManager } from './settings/status-manager'
 import { CellEditor } from './cell-editor'
@@ -129,8 +130,21 @@ export interface ScheduleGridProps {
 export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, initialData }: ScheduleGridProps) {
   const t = useTranslations('app.schedule')
   const locale = useLocale()
-  const hourSuffix = t('hourSuffix')
-  const nightBadge = t('nightBadge')
+
+  // Лейблы чипов/строк — собираются один раз, без useTranslations на ячейку
+  const rowLabels = useMemo((): GridRowLabels => ({
+    shiftMorning: t('shiftMorning'),
+    shiftEvening: t('shiftEvening'),
+    shiftNight: t('shiftNight'),
+    unassigned: t('statusUncovered'),
+    vacShort: t('statusVacShort'),
+    sickShort: t('statusSickShort'),
+    offShort: t('statusOffShort'),
+    hourSuffix: t('hourSuffix'),
+    telegramLabel: t('telegramBtn'),
+    colOffDays: t('colOffDays'),
+    colWorkHrs: t('colWorkHrs'),
+  }), [t])
 
   // ── URL state (dept, q, mode) ───────────────────────────────────
   const searchParams = useSearchParams()
@@ -185,6 +199,8 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
   const [display, setDisplay] = useState<DisplaySettings>(DEFAULT_DISPLAY_SETTINGS)
   const [displayLoaded, setDisplayLoaded] = useState(false)
   const [showTelegram, setShowTelegram] = useState(false)
+  // TODO(зона е): setEditMode подключается к кнопке «Правка/Готово» в тулбаре
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [editMode, setEditMode] = useState(false)
 
   useEffect(() => {
@@ -202,6 +218,8 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
     } catch { /* ignore */ }
   }, [display, displayLoaded])
 
+  // TODO(зона е): setDisplayKey подключается к поповеру настроек (SettingRow)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const setDisplayKey = useCallback(<K extends keyof DisplaySettings>(key: K, value: boolean) => {
     setDisplay((prev) => ({ ...prev, [key]: value }))
   }, [])
@@ -275,12 +293,11 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
   }, [])
 
   const handleCellClick = useCallback(
-    (employeeId: string, dateISO: string, cellEl: HTMLElement) => {
+    (employeeId: string, dateISO: string, cellRect: CellRect) => {
       if (!canEdit) return
       const container = scrollContainerRef.current
       if (!container) return
 
-      const cellRect = cellEl.getBoundingClientRect()
       const containerRect = container.getBoundingClientRect()
 
       // Convert to coordinates relative to the scroll container content area
@@ -384,6 +401,15 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
     for (const d of data.departments) m.set(d.id, d)
     return m
   }, [data.departments])
+
+  // Порог min_present по отделу (для подписи «· мин {n}/день» в строке группы)
+  const minByDept = useMemo(() => {
+    const m = new Map<string, number>()
+    for (const c of data.alertConfigs) {
+      if (c.min_present > 0) m.set(c.department_id, c.min_present)
+    }
+    return m
+  }, [data.alertConfigs])
 
   // Filter employees by search query (and dept filter for the Employees tab).
   // NOTE: the schedule-tab groups useMemo applies dept filtering independently,
@@ -763,6 +789,7 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
                     if (row.kind === 'group') {
                       const collapsed = isDeptCollapsed(row.deptId)
                       const dept = row.deptId ? deptById.get(row.deptId) : undefined
+                      const min = row.deptId ? minByDept.get(row.deptId) : undefined
                       return (
                         <div
                           key={`group-${row.deptId ?? 'null'}`}
@@ -776,10 +803,12 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
                         >
                           <GroupRow
                             deptName={row.deptName}
-                            count={row.count}
+                            accent={deptColor(row.deptId)}
+                            minLabel={min ? t('minDay', { n: min }) : undefined}
                             collapsed={collapsed}
                             onToggle={() => toggleDept(row.deptId)}
-                            employeesCountLabel={t('employeesCount', { count: row.count })}
+                            nameColWidth={nameColW}
+                            mode={mode}
                             onAddEmployee={canCrudEmployees
                               ? () => setEmployeeModal({ mode: 'create', deptId: row.deptId })
                               : undefined}
@@ -810,23 +839,32 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
                       >
                         <EmployeeGridRow
                           employee={emp}
+                          deptName={emp.dept_id ? (deptMap.get(emp.dept_id) ?? t('deptNoDept')) : t('deptNoDept')}
+                          deptAccent={deptColor(emp.dept_id)}
                           days={days}
-                          today={today}
                           rowHeight={virtualItem.size}
+                          nameColWidth={nameColW}
                           cellW={cellW}
                           mode={mode}
                           locale={locale}
-                          hourSuffix={hourSuffix}
-                          nightBadge={nightBadge}
-                          scheduleMap={scheduleMap}
+                          labels={rowLabels}
+                          weekendBg={weekendBg}
+                          problemDays={problemDays}
+                          showGrid={display.showGrid}
+                          showTimes={display.showTimes}
+                          merged={display.merged}
+                          showTelegram={showTelegram}
+                          showEmployeeDepartment={display.showEmployeeDepartment}
+                          showEmployeeRole={display.showEmployeeRole}
+                          showEmployeeDot={display.showEmployeeDot}
                           statusById={statusById}
                           entriesForEmployee={scheduleMap.get(emp.id)}
-                          onCellClick={canEdit ? handleCellClick : undefined}
+                          onCellClick={canEdit && editMode ? handleCellClick : undefined}
                           onEmployeeClick={
                             // All roles can see overlay (read-only content); edit button inside is guarded
                             (e) => setOverlayEmployee(e)
                           }
-                          draggable={canCrudEmployees && !qFilter}
+                          draggable={canCrudEmployees && !qFilter && editMode}
                         />
                       </div>
                     )

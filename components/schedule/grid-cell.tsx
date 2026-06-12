@@ -1,305 +1,643 @@
 'use client'
 
+/**
+ * Чипы статусов — разметка и стили скопированы дословно из демо-грида
+ * (grid-preview.tsx: renderExtWorkCard / renderDetailWorkChip /
+ * renderExtDayoffCard / leave-карточки / compact-чипы / CustomScheduleChip).
+ */
+
 import { memo } from 'react'
+import { Sun, Sunset, Moon, TreePalm, Thermometer, CalendarDays, AlertCircle } from 'lucide-react'
 import type { ScheduleEntryRow, StatusTypeRow, GridMode } from '@/lib/schedule/types'
-import { statusStyle, statusLabel } from './status-style'
-import { shiftDurationHours, isNightShift } from '@/lib/schedule/month'
+import { shiftDurationHours } from '@/lib/schedule/month'
+import {
+  type DemoStatusCode,
+  statusLabel,
+  shiftKind,
+  workShiftBg,
+  chipBg,
+  chipFg,
+  leaveIconColor,
+  fmtTime,
+  fmtShortWindow,
+} from './status-style'
+import { ShiftTimeStack, ScheduleLeaveLabelText, readableColorForHex } from './grid-visual'
 
-// ── Props ───────────────────────────────────────────────────────────
+// ── Лейблы, прокинутые из grid.tsx (без useTranslations на каждую ячейку) ──
 
-export interface GridCellProps {
-  entry: ScheduleEntryRow | undefined
-  /** resolved by parent from statusTypes map */
-  status: StatusTypeRow | undefined
-  mode: GridMode
-  isWeekend: boolean
-  isToday: boolean
-  cellW: number
-  locale: string
-  /** lifted from parent to avoid per-cell hook call */
+export interface ChipLabels {
+  shiftMorning: string
+  shiftEvening: string
+  shiftNight: string
+  /** '?' — метка «не назначено» (demo statusUncovered) */
+  unassigned: string
+  vacShort: string
+  sickShort: string
+  offShort: string
   hourSuffix: string
-  /** lifted from parent to avoid per-cell hook call */
-  nightBadge: string
-  onClick?: () => void
 }
 
-// ── Helpers ─────────────────────────────────────────────────────────
+// ── Work-карточка: метаданные смены из времени записи ───────────────
 
-/** Format time as HH:MM; pass raw 'HH:MM:SS' or 'HH:MM' string */
-function fmtTime(t: string): string {
-  return t.slice(0, 5) // 'HH:MM'
+interface WorkMeta {
+  bg: string
+  name: string
+  hours: number | null
+  start: string | null
+  end: string | null
+  kind: 'morning' | 'evening' | 'night'
 }
 
-// ── Keyboard handler ─────────────────────────────────────────────────
-
-function handleCellKeyDown(e: React.KeyboardEvent, onClick?: () => void) {
-  if (onClick && (e.key === 'Enter' || e.key === ' ')) {
-    e.preventDefault()
-    onClick()
+function workMetaOf(entry: ScheduleEntryRow, status: StatusTypeRow, labels: ChipLabels): WorkMeta {
+  const start = entry.start_time ?? status.start_time
+  const end = entry.end_time ?? status.end_time
+  const kind = shiftKind(start, end)
+  const name = kind === 'morning' ? labels.shiftMorning : kind === 'evening' ? labels.shiftEvening : labels.shiftNight
+  return {
+    bg: workShiftBg(kind),
+    name,
+    hours: start && end ? shiftDurationHours(start, end) : null,
+    start,
+    end,
+    kind,
   }
 }
 
-// ── Component ───────────────────────────────────────────────────────
+// ── «Не назначено» (demo код 'U'): пустая ячейка в проблемной колонке ──
 
-export const GridCell = memo(function GridCell({
-  entry,
-  status,
-  mode,
-  isWeekend,
-  isToday: _isToday, // background handled by parent; kept for aria-label
-  cellW,
-  locale,
-  hourSuffix,
-  nightBadge,
-  onClick,
-}: GridCellProps) {
-  // ── Empty cell ─────────────────────────────────────────────────
-  if (!entry || !status) {
-    // TODO(a11y): локализовать aria-label empty/entry-no-status (T15)
-    const label = entry ? `entry-no-status` : 'empty'
+export function UnassignedChip({ mode, label }: { mode: GridMode; label: string }) {
+  if (mode === 'extended') {
     return (
       <div
-        role="gridcell"
-        aria-label={label}
-        tabIndex={onClick ? 0 : undefined}
-        onClick={onClick}
-        onKeyDown={(e) => handleCellKeyDown(e, onClick)}
-        style={{ width: cellW, flex: 'none', height: '100%' }}
-        className={[
-          'flex items-center justify-center',
-          onClick ? 'cursor-pointer focus:outline-none focus:ring-1 focus:ring-ring focus:ring-inset' : '',
-          'hover:bg-muted/30 transition-colors',
-        ].join(' ')}
+        className="smengo-schedule-chip"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 5,
+          width: '100%',
+          minHeight: 46,
+          background: 'transparent',
+          color: 'var(--st-uncovered)',
+          border: '1.5px dashed var(--st-uncovered)',
+          padding: '5px 7px',
+          borderRadius: 8,
+          fontSize: 12,
+          fontWeight: 750,
+          lineHeight: 1,
+          textAlign: 'center',
+          boxShadow: 'none',
+        }}
       >
-        {onClick && (
-          <span className="text-[11px] text-muted-foreground opacity-0 group-hover:opacity-100 hover:!opacity-100 transition-opacity select-none">
-            +
-          </span>
-        )}
+        <AlertCircle size={11} strokeWidth={2.4} color="var(--st-uncovered)" />
+        <span>{label}</span>
       </div>
     )
   }
-
-  const style = statusStyle(status, isWeekend)
-  const label = statusLabel(status, locale)
-  const ariaLabel = `${entry.entry_date}: ${label}`
-  const startTime = entry.start_time ?? status.start_time
-  const endTime = entry.end_time ?? status.end_time
-
-  // ── Compact mode ──────────────────────────────────────────────
-  if (mode === 'compact') {
-    const letter = label.charAt(0).toUpperCase()
-    return (
-      <div
-        role="gridcell"
-        aria-label={ariaLabel}
-        tabIndex={onClick ? 0 : undefined}
-        onClick={onClick}
-        onKeyDown={(e) => handleCellKeyDown(e, onClick)}
-        style={{ width: cellW, flex: 'none', height: '100%' }}
-        className={[
-          'flex items-center justify-center',
-          onClick ? 'cursor-pointer focus:outline-none focus:ring-1 focus:ring-ring focus:ring-inset' : '',
-          'hover:bg-muted/10 transition-colors',
-        ].join(' ')}
-      >
-        <div
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 'calc(100% - 4px)',
-            boxSizing: 'border-box',
-            background: style.bg,
-            color: style.fg,
-            borderRadius: 4,
-            fontSize: 10.5,
-            fontWeight: 600,
-            padding: '3px 2px',
-            lineHeight: 1.15,
-            minHeight: 28,
-            overflow: 'hidden',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {letter}
-        </div>
-      </div>
-    )
-  }
-
-  // ── Detail mode ───────────────────────────────────────────────
   if (mode === 'detail') {
     return (
       <div
-        role="gridcell"
-        aria-label={ariaLabel}
-        tabIndex={onClick ? 0 : undefined}
-        onClick={onClick}
-        onKeyDown={(e) => handleCellKeyDown(e, onClick)}
-        style={{ width: cellW, flex: 'none', height: '100%' }}
-        className={[
-          'flex items-center justify-center px-[2px]',
-          onClick ? 'cursor-pointer focus:outline-none focus:ring-1 focus:ring-ring focus:ring-inset' : '',
-          'hover:bg-muted/10 transition-colors',
-        ].join(' ')}
+        className="smengo-schedule-chip"
+        style={{
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 2,
+          background: 'transparent',
+          color: 'var(--st-uncovered)',
+          border: '1.5px dashed var(--st-uncovered)',
+          width: 'calc(100% - 4px)',
+          maxWidth: '100%',
+          boxSizing: 'border-box',
+          margin: '0 auto',
+          padding: '1px 5px', borderRadius: 3,
+          minWidth: 0,
+          minHeight: 36,
+          fontSize: 12,
+          fontWeight: 500, whiteSpace: 'nowrap',
+        }}
       >
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 2,
-            width: 'calc(100% - 4px)',
-            boxSizing: 'border-box',
-            background: style.bg,
-            color: style.fg,
-            borderRadius: 6,
-            padding: '4px 3px',
-            minHeight: 36,
-            overflow: 'hidden',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {startTime && endTime ? (
-            <>
-              <span style={{ fontSize: 10.5, fontWeight: 700, lineHeight: 1.02, fontVariantNumeric: 'tabular-nums' }}>
-                {fmtTime(startTime)}–{fmtTime(endTime)}
-              </span>
-              <span style={{ fontSize: 8.2, fontWeight: 600, lineHeight: 1, opacity: 0.78, letterSpacing: '0.02em' }}>
-                {label}
-              </span>
-            </>
-          ) : (
-            <span style={{ fontSize: 10.5, fontWeight: 700, lineHeight: 1.1 }}>
-              {label}
-            </span>
-          )}
-        </div>
+        <AlertCircle size={11} color="var(--st-uncovered)" />
+        {label}
       </div>
     )
   }
-
-  // ── Extended mode ─────────────────────────────────────────────
-  // extended: time + duration chip + optional night badge
-  const hasTime = !!(startTime && endTime)
-  const durationH = hasTime ? shiftDurationHours(startTime!, endTime!) : null
-  const nightShift = hasTime ? isNightShift(startTime!, endTime!) : false
-
   return (
     <div
-      role="gridcell"
-      aria-label={ariaLabel}
-      tabIndex={onClick ? 0 : undefined}
-      onClick={onClick}
-      onKeyDown={(e) => handleCellKeyDown(e, onClick)}
-      style={{ width: cellW, flex: 'none', height: '100%' }}
-      className={[
-        'flex items-center justify-center px-[2px]',
-        onClick ? 'cursor-pointer focus:outline-none focus:ring-1 focus:ring-ring focus:ring-inset' : '',
-        'hover:bg-muted/10 transition-colors',
-      ].join(' ')}
+      className="smengo-schedule-chip"
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 'calc(100% - 4px)',
+        maxWidth: '100%',
+        boxSizing: 'border-box',
+        margin: '0 auto',
+        minWidth: 0,
+        background: 'transparent',
+        color: 'var(--st-uncovered)',
+        border: '1px dashed var(--st-uncovered)',
+        borderRadius: 4,
+        fontSize: 10.5,
+        fontWeight: 600,
+        padding: '3px 2px',
+        lineHeight: 1.15,
+        minHeight: 34,
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+      }}
+    >
+      {label}
+    </div>
+  )
+}
+
+/** Пустая ячейка: «—» 9px --grid-empty-fg (демо). */
+export function EmptyCellMark() {
+  return <span style={{ fontSize: 9, color: 'var(--grid-empty-fg)', textAlign: 'center' }}>—</span>
+}
+
+// ── Кастомный статус: одиночный сектор CustomScheduleChip из демо ───
+
+function CustomStatusChip({
+  status,
+  locale,
+  compact,
+  minHeight,
+}: {
+  status: StatusTypeRow
+  locale: string
+  compact: boolean
+  minHeight: number
+}) {
+  const color = status.color
+  const textColor = readableColorForHex(color)
+  return (
+    <div
+      className="smengo-schedule-chip"
+      style={{
+        width: 'calc(100% - 4px)',
+        maxWidth: '100%',
+        minHeight,
+        margin: '0 auto',
+        boxSizing: 'border-box',
+        display: 'grid',
+        gridTemplateRows: '1fr',
+        overflow: 'hidden',
+        borderRadius: compact ? 4 : 8,
+        background: color,
+        color: textColor,
+        boxShadow: '0 1px 2px rgba(0,0,0,0.12)',
+      }}
     >
       <div
         style={{
-          position: 'relative',
+          minWidth: 0,
+          minHeight: 0,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: 3,
-          width: 'calc(100% - 4px)',
-          boxSizing: 'border-box',
-          background: style.bg,
-          color: style.fg,
-          padding: '5px 6px 6px',
-          borderRadius: 8,
-          minHeight: 46,
-          boxShadow: 'var(--shadow-sm)',
+          gap: compact ? 2 : 4,
+          padding: compact ? '1px 2px' : '5px 4px',
+          background: color,
+          color: textColor,
           textAlign: 'center',
-          overflow: 'hidden',
         }}
       >
-        {/* Top row: duration chip (right-aligned) */}
-        {durationH !== null && (
-          <span
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'flex-end',
-              gap: 3,
-            }}
-          >
-            <span
-              style={{
-                padding: '2.5px 6px',
-                borderRadius: 999,
-                background: 'var(--grid-badge-bg)',
-                fontSize: 8,
-                fontWeight: 700,
-                lineHeight: 1,
-                letterSpacing: '0.02em',
-                fontVariantNumeric: 'tabular-nums',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {durationH}{hourSuffix}
-            </span>
-          </span>
-        )}
+        <span
+          style={{
+            maxWidth: '100%',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            color: textColor,
+            fontSize: compact ? 8.2 : 11,
+            fontWeight: 650,
+            lineHeight: 1.05,
+          }}
+        >
+          {statusLabel(status, locale)}
+        </span>
+      </div>
+    </div>
+  )
+}
 
-        {/* Time window or label */}
-        {hasTime ? (
+// ── Extended-режим ──────────────────────────────────────────────────
+
+function ExtWorkCard({ entry, status, showTimes, labels }: { entry: ScheduleEntryRow; status: StatusTypeRow; showTimes: boolean; labels: ChipLabels }) {
+  const wm = workMetaOf(entry, status, labels)
+  const ShiftIcon = wm.kind === 'night' ? Moon : Sun
+  return (
+    <div
+      className="smengo-schedule-chip"
+      style={{
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 3,
+        background: wm.bg,
+        color: 'var(--st-work-fg)',
+        padding: '5px 6px 6px',
+        borderRadius: 8,
+        minHeight: 46,
+        boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
+        textAlign: 'center',
+      }}
+    >
+      <span style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
+        <span
+          className="inline-flex shrink-0 items-center justify-center rounded-full bg-white/15"
+          style={{ width: 16, height: 16 }}
+        >
+          <ShiftIcon size={10} strokeWidth={2.5} color="var(--st-work-fg)" />
+        </span>
+        {wm.hours !== null && (
           <span
             style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              fontSize: 13,
-              fontWeight: 700,
-              lineHeight: 1.02,
-              whiteSpace: 'nowrap',
+              padding: '2.5px 6px',
+              borderRadius: 999,
+              background: 'rgba(255,255,255,0.15)',
+              fontSize: 8,
+              fontWeight: 750,
+              lineHeight: 1,
+              letterSpacing: '0.02em',
               fontVariantNumeric: 'tabular-nums',
             }}
           >
-            <span>{fmtTime(startTime!)}</span>
-            <span>{fmtTime(endTime!)}</span>
-          </span>
-        ) : (
-          <span style={{ fontSize: 12, fontWeight: 700, lineHeight: 1.05 }}>
-            {label}
+            {wm.hours}{labels.hourSuffix}
           </span>
         )}
-
-        {/* Label below time */}
-        {hasTime && (
-          <span style={{ fontSize: 10, fontWeight: 600, lineHeight: 1, opacity: 0.78, letterSpacing: '0.02em' }}>
-            {label}
-          </span>
-        )}
-
-        {/* Night badge */}
-        {nightShift && (
-          <span
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              padding: '1.5px 5px',
-              borderRadius: 999,
-              background: 'var(--grid-night-badge-bg)',
-              fontSize: 7.5,
-              fontWeight: 700,
-              lineHeight: 1,
-              letterSpacing: '0.03em',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {nightBadge}
-          </span>
-        )}
-      </div>
+      </span>
+      <span
+        style={{
+          minWidth: 0,
+          maxWidth: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'var(--st-work-fg)',
+          fontSize: 13,
+          fontWeight: 700,
+          lineHeight: 1.02,
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {showTimes && wm.start && wm.end ? (
+          <>
+            <span>{fmtTime(wm.start)}</span>
+            <span>{fmtTime(wm.end)}</span>
+          </>
+        ) : wm.name}
+      </span>
     </div>
+  )
+}
+
+function ExtLeaveCard({ code, span, full, short }: { code: 'V' | 'S'; span: number; full: string; short: string }) {
+  const LeaveIcon = code === 'S' ? Thermometer : TreePalm
+  const isWideRun = span > 1
+  return (
+    <div
+      className="smengo-schedule-chip smengo-leave-chip"
+      style={{
+        position: 'relative',
+        display: 'flex',
+        flexDirection: isWideRun ? 'row' : 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: isWideRun ? 0 : 3,
+        width: '100%',
+        minHeight: 46,
+        background: chipBg(code),
+        color: chipFg(code),
+        padding: isWideRun ? '5px 26px' : '5px 7px',
+        borderRadius: 8,
+        boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
+        textAlign: 'center',
+      }}
+    >
+      <span
+        className="inline-flex shrink-0 items-center justify-center rounded-full bg-white/15"
+        style={isWideRun
+          ? { position: 'absolute', top: '50%', left: 7, transform: 'translateY(-50%)', width: 16, height: 16 }
+          : { width: 16, height: 16 }}
+      >
+        <LeaveIcon size={10} strokeWidth={2.5} color={leaveIconColor(code)} />
+      </span>
+      <span
+        style={{
+          color: chipFg(code),
+          fontSize: 11.5,
+          fontWeight: 750,
+          lineHeight: 1.05,
+          minWidth: 0,
+          maxWidth: '100%',
+          overflow: 'hidden',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        <ScheduleLeaveLabelText full={full} short={short} />
+      </span>
+    </div>
+  )
+}
+
+function ExtDayoffCard({ label }: { label: string }) {
+  return (
+    <div
+      className="smengo-schedule-chip"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 3,
+        width: '100%',
+        minHeight: 46,
+        background: chipBg('D'),
+        color: chipFg('D'),
+        padding: '5px 7px',
+        borderRadius: 8,
+        fontSize: 12,
+        fontWeight: 750,
+        lineHeight: 1.05,
+        boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
+        textAlign: 'center',
+      }}
+    >
+      <span
+        className="inline-flex shrink-0 items-center justify-center rounded-full bg-white/15"
+        style={{ width: 16, height: 16 }}
+      >
+        <CalendarDays size={10} strokeWidth={2.4} color={chipFg('D')} />
+      </span>
+      <span style={{ minWidth: 0, maxWidth: '100%', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+        {label}
+      </span>
+    </div>
+  )
+}
+
+/** Late ('L'): в демо нет — карточка по структуре dayoff, палитра --chip-l-*. */
+function ExtLateCard({ label }: { label: string }) {
+  return (
+    <div
+      className="smengo-schedule-chip"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 3,
+        width: '100%',
+        minHeight: 46,
+        background: chipBg('L'),
+        color: chipFg('L'),
+        padding: '5px 7px',
+        borderRadius: 8,
+        fontSize: 12,
+        fontWeight: 750,
+        lineHeight: 1.05,
+        boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
+        textAlign: 'center',
+      }}
+    >
+      <span style={{ minWidth: 0, maxWidth: '100%', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+        {label}
+      </span>
+    </div>
+  )
+}
+
+// ── Detail-режим ────────────────────────────────────────────────────
+
+function DetailWorkChip({ entry, status, showTimes, labels }: { entry: ScheduleEntryRow; status: StatusTypeRow; showTimes: boolean; labels: ChipLabels }) {
+  const wm = workMetaOf(entry, status, labels)
+  const WIcon = wm.kind === 'morning' ? Sun : wm.kind === 'evening' ? Sunset : Moon
+  return (
+    <div
+      className="smengo-schedule-chip"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 3,
+        background: wm.bg,
+        color: 'var(--st-work-fg)',
+        width: 'calc(100% - 4px)',
+        maxWidth: '100%',
+        boxSizing: 'border-box',
+        margin: '0 auto',
+        padding: '4px 3px',
+        borderRadius: 6,
+        minWidth: 0,
+        minHeight: 36,
+        whiteSpace: 'nowrap',
+      }}
+    >
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3.5, fontSize: 10.5, fontWeight: 750, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+        <WIcon size={10} strokeWidth={2.4} color="var(--st-work-fg)" />
+        {showTimes && wm.start && wm.end ? fmtShortWindow(wm.start, wm.end) : wm.name}
+      </span>
+      {wm.hours !== null && (
+        <span style={{ fontSize: 8.2, fontWeight: 650, lineHeight: 1, opacity: 0.78, letterSpacing: '0.02em' }}>
+          {wm.hours}{labels.hourSuffix}{showTimes ? ` · ${wm.name}` : ''}
+        </span>
+      )}
+    </div>
+  )
+}
+
+function DetailFlatChip({
+  code,
+  isRun,
+  showTimes,
+  children,
+}: {
+  code: Exclude<DemoStatusCode, 'CUSTOM' | 'W'>
+  isRun: boolean
+  showTimes: boolean
+  children: React.ReactNode
+}) {
+  const isLeave = code === 'V' || code === 'S'
+  return (
+    <div
+      className={`smengo-schedule-chip${isLeave ? ' smengo-leave-chip' : ''}`}
+      style={{
+        display: isRun ? 'flex' : 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: isRun ? undefined : 2,
+        background: chipBg(code),
+        color: chipFg(code),
+        width: 'calc(100% - 4px)',
+        maxWidth: '100%',
+        boxSizing: 'border-box',
+        margin: '0 auto',
+        padding: '1px 5px',
+        borderRadius: 3,
+        minWidth: 0,
+        minHeight: 36,
+        fontSize: code === 'S' && showTimes ? 11.2 : 12,
+        fontWeight: 500,
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {children}
+    </div>
+  )
+}
+
+// ── Compact-режим ───────────────────────────────────────────────────
+
+function CompactChip({
+  code,
+  entry,
+  status,
+  isRun,
+  showTimes,
+  labels,
+  full,
+  short,
+}: {
+  code: Exclude<DemoStatusCode, 'CUSTOM'>
+  entry: ScheduleEntryRow
+  status: StatusTypeRow
+  isRun: boolean
+  showTimes: boolean
+  labels: ChipLabels
+  full: string
+  short: string
+}) {
+  const wm = code === 'W' ? workMetaOf(entry, status, labels) : null
+  const shiftParts = code === 'W' && showTimes && wm?.start && wm?.end
+    ? [fmtTime(wm.start), fmtTime(wm.end)] as const
+    : null
+  const isLeave = code === 'V' || code === 'S'
+  // Run-чипы в демо красятся chipBg(code); одиночные work — фоном смены.
+  const bg = !isRun && code === 'W' && wm ? wm.bg : chipBg(code)
+  return (
+    <div
+      className={`smengo-schedule-chip${isLeave ? ' smengo-leave-chip' : ''}`}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 'calc(100% - 4px)',
+        maxWidth: '100%',
+        boxSizing: 'border-box',
+        margin: '0 auto',
+        minWidth: 0,
+        background: bg,
+        color: chipFg(code),
+        borderRadius: 4,
+        fontSize: isRun
+          ? (shiftParts ? 8.2 : (code === 'S' && showTimes ? 7.5 : 9))
+          : (shiftParts ? 8.5 : ((code === 'W' || code === 'S') && showTimes ? 9 : 10.5)),
+        fontWeight: 600,
+        padding: shiftParts ? '4px 2px' : '3px 2px',
+        lineHeight: isRun ? 1.1 : 1.15,
+        textAlign: 'center',
+        minHeight: 34,
+        whiteSpace: shiftParts ? 'normal' : 'nowrap',
+        overflow: 'hidden',
+      }}
+    >
+      {shiftParts ? (
+        <ShiftTimeStack start={shiftParts[0]} end={shiftParts[1]} fontSize={isRun ? 8.2 : 8.5} />
+      ) : isLeave ? (
+        <ScheduleLeaveLabelText full={full} short={short} />
+      ) : null}
+    </div>
+  )
+}
+
+// ── Главный компонент чипа статуса ──────────────────────────────────
+
+export interface StatusChipProps {
+  mode: GridMode
+  code: DemoStatusCode
+  status: StatusTypeRow
+  entry: ScheduleEntryRow
+  /** длина merge-прогона (1 = одиночная ячейка) */
+  span: number
+  isRun: boolean
+  showTimes: boolean
+  locale: string
+  labels: ChipLabels
+}
+
+export const StatusChip = memo(function StatusChip({
+  mode,
+  code,
+  status,
+  entry,
+  span,
+  isRun,
+  showTimes,
+  locale,
+  labels,
+}: StatusChipProps) {
+  const full = statusLabel(status, locale)
+  const short = code === 'V' ? labels.vacShort : code === 'S' ? labels.sickShort : full
+
+  if (code === 'CUSTOM') {
+    return (
+      <CustomStatusChip
+        status={status}
+        locale={locale}
+        compact={mode !== 'extended'}
+        minHeight={mode === 'extended' ? 46 : mode === 'detail' ? 36 : 34}
+      />
+    )
+  }
+
+  if (mode === 'extended') {
+    if (code === 'W') return <ExtWorkCard entry={entry} status={status} showTimes={showTimes} labels={labels} />
+    if (code === 'D') return <ExtDayoffCard label={full} />
+    if (code === 'L') return <ExtLateCard label={full} />
+    if (code === 'V' || code === 'S') return <ExtLeaveCard code={code} span={span} full={full} short={short} />
+    return null
+  }
+
+  if (mode === 'detail') {
+    if (code === 'W') return <DetailWorkChip entry={entry} status={status} showTimes={showTimes} labels={labels} />
+    if (code === 'V' || code === 'S') {
+      const StIcon = code === 'V' ? TreePalm : Thermometer
+      return (
+        <DetailFlatChip code={code} isRun={isRun} showTimes={showTimes}>
+          {isRun ? (
+            <ScheduleLeaveLabelText full={full} short={short} />
+          ) : (
+            <>
+              <StIcon size={11} color={leaveIconColor(code)} />
+              <ScheduleLeaveLabelText full={full} short={short} />
+            </>
+          )}
+        </DetailFlatChip>
+      )
+    }
+    // D — короткая метка как в демо (chipLbl), L — полный лейбл статуса
+    return (
+      <DetailFlatChip code={code} isRun={isRun} showTimes={showTimes}>
+        {code === 'D' ? labels.offShort : full}
+      </DetailFlatChip>
+    )
+  }
+
+  return (
+    <CompactChip
+      code={code}
+      entry={entry}
+      status={status}
+      isRun={isRun}
+      showTimes={showTimes}
+      labels={labels}
+      full={full}
+      short={short}
+    />
   )
 })
