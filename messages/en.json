@@ -1893,7 +1893,10 @@
         "empty_list": "Empty list",
         "plan_limit_employees": "Employee limit reached for your plan. Upgrade to add more.",
         "invalid_id": "Invalid identifier",
-        "status_in_use": "Status is used in the schedule — remove it from cells first"
+        "status_in_use": "Status is used in the schedule — remove it from cells first",
+        "unauthorized": "Session expired — please sign in again",
+        "no_org": "No active organization — create one in onboarding",
+        "org_not_found": "Organization not found"
       },
       "quickStart": {
         "title": "Build your first schedule",

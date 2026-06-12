@@ -174,7 +174,8 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
         'server_error', 'forbidden', 'invalid_reference', 'duplicate',
         'status_wrong_org', 'ids_outside_scope', 'status_not_found',
         'invalid_value', 'empty_list',
-        'plan_limit_employees', 'invalid_id', 'status_in_use',
+        'plan_limit_employees', 'invalid_id',
+        'unauthorized', 'no_org', 'org_not_found', 'status_in_use',
       ] as const
       type KnownCode = typeof knownCodes[number]
       const isKnown = (knownCodes as readonly string[]).includes(errorCode)
