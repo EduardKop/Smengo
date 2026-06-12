@@ -8,6 +8,7 @@ export type Action =
   | 'edit_schedule'
   | 'manage_alerts'
   | 'manage_status_types'
+  | 'customize_view'
   | 'view_grid'
 
 const PERMISSIONS: Record<UserRole, ReadonlySet<Action>> = {
@@ -19,6 +20,7 @@ const PERMISSIONS: Record<UserRole, ReadonlySet<Action>> = {
     'edit_schedule',
     'manage_alerts',
     'manage_status_types',
+    'customize_view',
     'view_grid',
   ]),
   admin: new Set([
@@ -28,9 +30,10 @@ const PERMISSIONS: Record<UserRole, ReadonlySet<Action>> = {
     'edit_schedule',
     'manage_alerts',
     'manage_status_types',
+    'customize_view',
     'view_grid',
   ]),
-  manager: new Set(['crud_employees', 'edit_schedule', 'manage_alerts', 'view_grid']),
+  manager: new Set(['crud_employees', 'edit_schedule', 'manage_alerts', 'customize_view', 'view_grid']),
   viewer: new Set(['view_grid']),
 }
 

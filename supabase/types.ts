@@ -204,6 +204,35 @@ export type Database = {
           },
         ]
       }
+      grid_view_settings: {
+        Row: {
+          org_id: string
+          settings: Json
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          org_id: string
+          settings?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          org_id?: string
+          settings?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grid_view_settings_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invitations: {
         Row: {
           accepted_at: string | null
