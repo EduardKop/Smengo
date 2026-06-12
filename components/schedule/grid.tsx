@@ -28,7 +28,7 @@ import type { UpsertInput } from './use-schedule'
 import { scheduleKey } from './use-schedule'
 import { useQueryClient } from '@tanstack/react-query'
 import { GridHeader, TOTALS_OFF_W, TOTALS_HRS_W } from './grid-header'
-import { GroupRow, EmployeeGridRow } from './grid-row'
+import { GroupRow, EmployeeGridRow, AddEmployeeRow } from './grid-row'
 import type { GridRowLabels, CellRect } from './grid-row'
 import { OnShiftRow } from './on-shift-row'
 import { DisplaySettingsButton, type DisplayToggle } from './display-settings'
@@ -96,6 +96,11 @@ const DISPLAY_SETTINGS_KEY = 'smengo:app:gridDisplay'
 type VirtualRow =
   | { kind: 'group'; deptId: string | null; deptName: string; count: number }
   | { kind: 'employee'; employeeId: string }
+  /** Ghost-плашка «+ Добавить сотрудника» под заголовком пустого отдела */
+  | { kind: 'addEmployee'; deptId: string }
+
+/** Высота ghost-плашки пустого отдела (во всех режимах одинаковая) */
+const ADD_EMPLOYEE_ROW_HEIGHT = 42
 
 // ── Props ───────────────────────────────────────────────────────────
 
@@ -440,10 +445,18 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
 
     const result: DeptGroup[] = []
 
-    // Named departments (in sort order)
+    // Named departments (in sort order). Пустой отдел тоже попадает в грид
+    // (группа + плашка «Добавить сотрудника»), кроме случаев: активен поиск
+    // (ищем сотрудников — пустые группы только шумят) или dept-фильтр
+    // указывает на другой отдел / «без отдела».
     for (const deptId of sortedDeptIds) {
       const employees = byDept.get(deptId)
-      if (!employees || employees.length === 0) continue
+      if (!employees || employees.length === 0) {
+        if (qFilter) continue
+        if (deptFilter && deptFilter !== deptId) continue
+        result.push({ deptId, deptName: deptMap.get(deptId) ?? deptId, employees: [] })
+        continue
+      }
       result.push({ deptId, deptName: deptMap.get(deptId) ?? deptId, employees })
     }
 
@@ -454,7 +467,7 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
     }
 
     return result
-  }, [filteredEmployees, sortedDeptIds, deptMap, t])
+  }, [filteredEmployees, sortedDeptIds, deptMap, t, qFilter, deptFilter])
 
   // ── «НА СМЕНЕ»: охват и счётчики по дням ─────────────────────────
   const [onShiftScope, setOnShiftScope] = useState('all')
@@ -502,11 +515,15 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
         for (const emp of group.employees) {
           rows.push({ kind: 'employee', employeeId: emp.id })
         }
+        // Пустой отдел: ghost-плашка «+ Добавить сотрудника» (только с правом crud)
+        if (group.employees.length === 0 && group.deptId && canCrudEmployees) {
+          rows.push({ kind: 'addEmployee', deptId: group.deptId })
+        }
       }
     }
     return rows
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [groups, collapsedDepts])
+  }, [groups, collapsedDepts, canCrudEmployees])
 
   // Employee lookup map for O(1) access in render
   const empById = useMemo(() => {
@@ -581,7 +598,9 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
     getScrollElement: () => scrollContainerRef.current,
     estimateSize: (i) => {
       const row = virtualRows[i]
-      return row?.kind === 'group' ? GROUP_ROW_HEIGHT : rowHeight
+      if (row?.kind === 'group') return GROUP_ROW_HEIGHT
+      if (row?.kind === 'addEmployee') return ADD_EMPLOYEE_ROW_HEIGHT
+      return rowHeight
     },
     overscan: 10,
   })
@@ -863,6 +882,27 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
                             onDeleteDept={canManageDepts && dept
                               ? () => setDeptModal({ mode: 'delete', dept })
                               : undefined}
+                          />
+                        </div>
+                      )
+                    }
+
+                    if (row.kind === 'addEmployee') {
+                      return (
+                        <div
+                          key={`add-emp-${row.deptId}`}
+                          style={{
+                            position: 'absolute',
+                            top: virtualItem.start,
+                            left: 0,
+                            right: 0,
+                            height: virtualItem.size,
+                          }}
+                        >
+                          <AddEmployeeRow
+                            label={t('emptyDeptAddEmployee')}
+                            nameColWidth={nameColW}
+                            onClick={() => setEmployeeModal({ mode: 'create', deptId: row.deptId })}
                           />
                         </div>
                       )

@@ -1911,6 +1911,7 @@
       },
       "addEmployee": "+ Employee",
       "addDepartment": "+ Department",
+      "emptyDeptAddEmployee": "Add employee",
       "deptModalTitleCreate": "Create department",
       "deptModalTitleRename": "Rename department",
       "deptModalTitleDelete": "Delete department",

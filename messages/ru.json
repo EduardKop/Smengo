@@ -1910,6 +1910,7 @@
       },
       "addEmployee": "+ Сотрудник",
       "addDepartment": "+ Отдел",
+      "emptyDeptAddEmployee": "Добавить сотрудника",
       "deptModalTitleCreate": "Создать отдел",
       "deptModalTitleRename": "Переименовать отдел",
       "deptModalTitleDelete": "Удалить отдел",

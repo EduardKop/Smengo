@@ -183,6 +183,62 @@ export function GroupRow({
   )
 }
 
+// ── Плашка пустого отдела: «+ Добавить сотрудника» ──────────────────
+// Ghost-строка под заголовком отдела без сотрудников (язык демо:
+// пунктирные dashed-чипы UnassignedChip). Рендерится только ролям
+// с правом crud_employees — гейтится наличием onClick в grid.tsx.
+
+interface AddEmployeeRowProps {
+  label: string
+  nameColWidth: number
+  onClick: () => void
+}
+
+export function AddEmployeeRow({ label, nameColWidth, onClick }: AddEmployeeRowProps) {
+  return (
+    <div
+      role="row"
+      className="flex h-full w-full"
+      style={{ borderBottom: '1px solid var(--grid-row-divider)' }}
+    >
+      <div
+        className="sticky left-0 z-10 flex shrink-0 items-center"
+        style={{
+          width: nameColWidth,
+          minWidth: nameColWidth,
+          maxWidth: nameColWidth,
+          boxSizing: 'border-box',
+          padding: '5px 12px 5px 10px',
+          background: 'var(--grid-cell)',
+          borderRight: '1px solid var(--border)',
+        }}
+      >
+        <button
+          type="button"
+          onClick={onClick}
+          className="flex w-full cursor-pointer items-center justify-center gap-1.5 text-muted-foreground transition-colors hover:text-accent"
+          style={{
+            border: '1.5px dashed color-mix(in oklab, currentColor 45%, transparent)',
+            borderRadius: 8,
+            background: 'transparent',
+            padding: '6px 10px',
+            fontSize: 11.5,
+            fontWeight: 600,
+            lineHeight: 1.1,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+          }}
+        >
+          <Plus size={12} strokeWidth={2.4} />
+          <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</span>
+        </button>
+      </div>
+      {/* остаток строки — обычный фон ячеек */}
+      <div className="min-w-0 flex-1" style={{ background: 'var(--grid-cell)' }} />
+    </div>
+  )
+}
+
 // ── Runs: merge подряд идущих V/S (или всех при merged) ────────────
 
 interface DayCellData {
