@@ -26,7 +26,6 @@ export function AlertsForm({ orgId, year, month, role, departments, alertConfigs
   const [open, setOpen] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
 
-  if (!can(role, 'manage_alerts')) return null
 
   const getMinPresent = (deptId: string): number =>
     alertConfigs.find((c) => c.department_id === deptId)?.min_present ?? 0
@@ -49,6 +48,8 @@ export function AlertsForm({ orgId, year, month, role, departments, alertConfigs
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [alertConfigs, key, qc],
   )
+
+  if (!can(role, 'manage_alerts')) return null
 
   return (
     <div className="relative">

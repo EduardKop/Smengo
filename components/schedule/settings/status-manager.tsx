@@ -72,7 +72,6 @@ export function StatusManager({ orgId, year, month, role, statusTypes }: StatusM
 
   const panelRef = useRef<HTMLDivElement>(null)
 
-  if (!can(role, 'manage_status_types')) return null
 
   const systemStatuses = statusTypes.filter((s) => s.org_id === null)
   const customStatuses = statusTypes.filter((s) => s.org_id !== null)
@@ -153,6 +152,8 @@ export function StatusManager({ orgId, year, month, role, statusTypes }: StatusM
     if (code === 'invalid_reference') return t('errors.invalid_reference')
     return t('errors.server_error')
   }
+
+  if (!can(role, 'manage_status_types')) return null
 
   return (
     <div className="relative">

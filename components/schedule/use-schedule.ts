@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import { upsertEntryAction, clearEntryAction } from '@/lib/actions/schedule'
@@ -12,10 +13,12 @@ export function scheduleKey(orgId: string, year: number, month: number) {
 }
 
 export function useScheduleData(orgId: string, year: number, month: number, initialData: MonthData) {
+  // Лениво и стабильно: SSR-данные считаем свежими на момент первого маунта
+  const [hydratedAt] = useState(() => Date.now())
   return useQuery({
     queryKey: scheduleKey(orgId, year, month),
     initialData,
-    initialDataUpdatedAt: Date.now(), // SSR-данные свежие на момент гидрации — гасим немедленный фоновый рефетч
+    initialDataUpdatedAt: hydratedAt,
     queryFn: (): Promise<MonthData> => fetchMonthData(createClient(), year, month),
   })
 }

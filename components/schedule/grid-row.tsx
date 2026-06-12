@@ -26,7 +26,7 @@ interface GroupRowProps {
 
 export function GroupRow({
   deptName,
-  count,
+  count: _count,
   collapsed,
   onToggle,
   employeesCountLabel,

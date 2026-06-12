@@ -71,11 +71,11 @@ export function isNightShift(start: string, end: string): boolean {
 export function daysUntilBirthday(birthDateISO: string | null, todayISO: string): number | null {
   if (!birthDateISO) return null
   const [ty, tm, td] = todayISO.split('-').map(Number)
-  let [, bm, bd] = birthDateISO.split('-').map(Number)
+  const [, bm, bd] = birthDateISO.split('-').map(Number)
 
   // Normalise Feb-29 birthday: if target year is not a leap year, use Feb-28
   function effectiveBirthday(year: number): Date {
-    let effM = bm!
+    const effM = bm!
     let effD = bd!
     if (effM === 2 && effD === 29) {
       // Is this year a leap year?

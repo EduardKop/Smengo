@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { Phone, Send, Mail, Copy, Check } from 'lucide-react'
+import { Phone, Send, Mail, Check } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import type { EmployeeRow, DepartmentRow } from '@/lib/schedule/types'
 import { daysUntilBirthday, yearsOfService } from '@/lib/schedule/month'

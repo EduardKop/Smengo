@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useSearchParams, useRouter, usePathname } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useTranslations, useLocale } from 'next-intl'
 import { Search, X } from 'lucide-react'
@@ -101,8 +101,6 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
 
   // ── URL state (dept, q, mode) ───────────────────────────────────
   const searchParams = useSearchParams()
-  const router = useRouter()
-  const pathname = usePathname()
 
   const deptFilter = searchParams.get('dept') ?? null   // dept id or null = all
   const qFilter = (searchParams.get('q') ?? '').toLowerCase()
