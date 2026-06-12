@@ -150,6 +150,7 @@ export function StatusManager({ orgId, year, month, role, statusTypes }: StatusM
     if (code === 'forbidden') return t('errors.forbidden')
     if (code === 'duplicate') return t('errors.duplicate')
     if (code === 'invalid_id') return t('errors.invalid_id')
+    if (code === 'invalid_reference') return t('errors.invalid_reference')
     return t('errors.server_error')
   }
 

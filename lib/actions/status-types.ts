@@ -76,12 +76,12 @@ export async function updateStatusTypeAction(
   const parsed = StatusTypeSchema.safeParse(input)
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message }
 
-  const { label, code, color, counts_as_present, start_time, end_time } = parsed.data
+  const { label, color, counts_as_present, start_time, end_time } = parsed.data
 
+  // code намеренно не обновляется: после создания он иммутабелен
   const { error } = await ctx.supabase
     .from('status_types')
     .update({
-      code,
       label: { ru: label, uk: label, en: label },
       color,
       counts_as_present,
