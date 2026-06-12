@@ -89,7 +89,9 @@ export function AppSidebar({
       {/* Desktop sidebar: рейка 64px в потоке (контент — во всю ширину);
           панель выезжает поверх контента при hover/фокусе */}
       <aside className="sticky top-0 z-40 hidden h-screen w-16 shrink-0 md:block">
-        <div className="group/sb absolute inset-y-0 left-0 flex w-16 flex-col overflow-hidden border-r border-border bg-background px-3 py-4 transition-[width,box-shadow] duration-300 ease-out hover:w-60 hover:shadow-xl has-[:focus-visible]:w-60 has-[:focus-visible]:shadow-xl">
+        {/* transition-all вместо transition-[width,box-shadow]: arbitrary-значение
+            с запятой не генерируется Tailwind v4 (проверено в живом превью) */}
+        <div className="group/sb absolute inset-y-0 left-0 flex w-16 flex-col overflow-hidden border-r border-border bg-background px-3 py-4 transition-all duration-300 ease-out hover:w-60 hover:shadow-xl has-[:focus-visible]:w-60 has-[:focus-visible]:shadow-xl">
           <div className="mb-6">
             <div className="flex items-center gap-2.5 px-0.5">
               <span
