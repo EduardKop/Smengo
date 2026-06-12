@@ -377,9 +377,9 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
     ? scheduleMap.get(editorAnchor.employeeId)?.get(editorAnchor.dateISO)
     : undefined
 
-  // System "work" status: org_id IS NULL and counts_as_present = true, code starts with 'W'
+  // Системный статус «работает»: код 'work' сидирован в нижнем регистре
   const workStatus: StatusTypeRow | undefined = useMemo(
-    () => data.statusTypes.find((s) => s.org_id === null && s.counts_as_present && s.code.startsWith('W')),
+    () => data.statusTypes.find((s) => s.org_id === null && s.code === 'work'),
     [data.statusTypes],
   )
 
