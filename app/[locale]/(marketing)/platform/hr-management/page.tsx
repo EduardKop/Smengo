@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { JsonLd } from '@/components/seo/json-ld'
 import Link from 'next/link'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { ArrowRight, Check } from 'lucide-react'
@@ -101,10 +102,7 @@ export default async function HrManagementPage({ params }: PageProps) {
 
   return (
     <div className="overflow-x-hidden">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(pageJsonLd) }}
-      />
+      <JsonLd data={pageJsonLd} />
 
       {/* ─────────────── 1. HERO ─────────────── */}
       <section className="relative overflow-hidden">

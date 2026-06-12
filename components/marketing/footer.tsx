@@ -16,7 +16,7 @@ export async function MarketingFooter() {
   return (
     <footer className="border-t border-border" style={{ background: 'var(--surface)' }}>
       <div className="mx-auto max-w-[1100px] px-4 py-14 sm:px-6">
-        <div className="grid grid-cols-2 gap-6 sm:gap-10 sm:[grid-template-columns:1.6fr_1fr_1fr]">
+        <div className="grid grid-cols-2 gap-6 sm:gap-10 sm:[grid-template-columns:1.6fr_1fr_1fr_1fr]">
           {/* Brand */}
           <div className="col-span-2 max-w-[260px] sm:col-span-1">
             <Link
@@ -57,6 +57,15 @@ export async function MarketingFooter() {
               {t('company')}
             </span>
             <a href="mailto:hello@smengo.com" className={colLink}>{t('companyContact')}</a>
+          </div>
+
+          {/* Legal */}
+          <div className="flex flex-col gap-2">
+            <span className={colLabel} style={{ letterSpacing: '0.08em', color: 'var(--subtle)' }}>
+              {t('legal')}
+            </span>
+            <Link href="/terms" className={colLink}>{t('terms')}</Link>
+            <Link href="/privacy" className={colLink}>{t('privacy')}</Link>
           </div>
         </div>
 

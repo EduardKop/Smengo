@@ -44,23 +44,51 @@ describe('LoginSchema', () => {
 })
 
 describe('RegisterSchema', () => {
-  const valid = { full_name: 'John Doe', email: 'john@test.com', password: 'Secure1pass' }
+  const valid = {
+    first_name: 'John',
+    last_name: 'Doe',
+    company_name: 'Acme Coffee',
+    email: 'john@test.com',
+    password: 'Secure1pass',
+    acquisition_source: '',
+    terms: 'on',
+  }
 
   it('accepts valid registration data', () => {
     expect(RegisterSchema.safeParse(valid).success).toBe(true)
   })
 
-  it('trims full_name whitespace', () => {
-    const result = RegisterSchema.safeParse({ ...valid, full_name: '  Jo  ' })
+  it('trims first_name whitespace', () => {
+    const result = RegisterSchema.safeParse({ ...valid, first_name: '  Jo  ' })
     expect(result.success).toBe(true)
     if (result.success) {
-      expect(result.data.full_name).toBe('Jo')
+      expect(result.data.first_name).toBe('Jo')
     }
   })
 
-  it('rejects full_name shorter than 2 chars', () => {
-    const result = RegisterSchema.safeParse({ ...valid, full_name: 'J' })
+  it('rejects first_name shorter than 2 chars', () => {
+    const result = RegisterSchema.safeParse({ ...valid, first_name: 'J' })
     expect(result.success).toBe(false)
+  })
+
+  it('rejects missing company_name', () => {
+    const result = RegisterSchema.safeParse({ ...valid, company_name: '' })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects unchecked terms', () => {
+    const result = RegisterSchema.safeParse({ ...valid, terms: null })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.flatten().fieldErrors.terms).toBeDefined()
+    }
+  })
+
+  it('accepts empty acquisition_source and caps it at 255 chars', () => {
+    expect(RegisterSchema.safeParse({ ...valid, acquisition_source: undefined }).success).toBe(true)
+    expect(
+      RegisterSchema.safeParse({ ...valid, acquisition_source: 'x'.repeat(256) }).success,
+    ).toBe(false)
   })
 
   it('rejects password without a letter', () => {

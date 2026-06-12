@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { JsonLd } from '@/components/seo/json-ld'
 import type { CSSProperties } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -335,10 +336,7 @@ export default async function ScheduleGridPage({ params }: PageProps) {
 
   return (
     <div className="overflow-x-hidden">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(pageJsonLd) }}
-      />
+      <JsonLd data={pageJsonLd} />
 
       {/* Fixed-positioned real grid that morphs between hero and demo slots on scroll (lg only) */}
       <ScrollMorphGrid labels={gridLabels} heroSlotId="hero-grid-slot" demoSlotId="demo-grid-slot" />

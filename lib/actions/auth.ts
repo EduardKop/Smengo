@@ -35,19 +35,34 @@ export async function registerAction(
   formData: FormData,
 ): Promise<AuthFormState> {
   const parsed = RegisterSchema.safeParse({
-    full_name: formData.get('full_name'),
+    first_name: formData.get('first_name'),
+    last_name: formData.get('last_name'),
+    company_name: formData.get('company_name'),
     email: formData.get('email'),
     password: formData.get('password'),
+    acquisition_source: formData.get('acquisition_source') ?? '',
+    terms: formData.get('terms'),
   })
   if (!parsed.success) {
     return { errors: parsed.error.flatten().fieldErrors }
   }
 
+  const { first_name, last_name, company_name, acquisition_source } = parsed.data
+
   const supabase = await createClient()
   const { error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
-    options: { data: { full_name: parsed.data.full_name } },
+    options: {
+      data: {
+        full_name: `${first_name} ${last_name}`,
+        first_name,
+        last_name,
+        company_name,
+        acquisition_source: acquisition_source || null,
+        terms_accepted_at: new Date().toISOString(),
+      },
+    },
   })
   if (error) return { message: error.message }
 

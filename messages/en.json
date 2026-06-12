@@ -62,7 +62,20 @@
     "newPassword": "New password",
     "resetPasswordButton": "Save password",
     "backToLogin": "Back to sign in",
-    "googleButton": "Continue with Google"
+    "googleButton": "Continue with Google",
+    "firstName": "First name",
+    "firstNamePlaceholder": "John",
+    "lastName": "Last name",
+    "lastNamePlaceholder": "Doe",
+    "companyName": "Company name",
+    "companyNamePlaceholder": "Morning Coffee Co.",
+    "sourceLabel": "How did you hear about us?",
+    "sourceOptional": "(optional)",
+    "sourcePlaceholder": "Google, referral, social media…",
+    "termsAgree": "I agree to the Smengo <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>",
+    "valueProp1": "14 days free",
+    "valueProp2": "Cancel anytime",
+    "noCard": "No credit card required"
   },
   "onboarding": {
     "title": "Create your company",
@@ -72,7 +85,10 @@
     "billingEmail": "Billing email",
     "timezone": "Timezone",
     "language": "Interface language",
-    "createButton": "Create company"
+    "createButton": "Create company",
+    "signedInAs": "Signed in as",
+    "wrongAccount": "Wrong account?",
+    "signOut": "Sign out"
   },
   "marketing": {
     "comingSoon": {
@@ -108,22 +124,38 @@
       "tagline": "Less routine – more time for the business.",
       "chooseStage": "Stages of your team’s work",
       "groups": {
-        "schedule":   { "verb": "Plan",   "name": "Schedule",   "description": "Flexible shifts, check-ins, and AI fill-ins." },
-        "storage":    { "verb": "Store",  "name": "Storage",    "description": "Team data and onboarding in one place." },
-        "hr":         { "verb": "Hire",   "name": "HR",         "description": "Hiring dashboard and full employee journey." },
-        "motivation": { "verb": "Engage", "name": "Motivation", "description": "Shift swaps, motivation, and a fast UI." }
+        "schedule": {
+          "verb": "Plan",
+          "name": "Schedule",
+          "description": "Flexible shifts, check-ins, and AI fill-ins."
+        },
+        "storage": {
+          "verb": "Store",
+          "name": "Storage",
+          "description": "Team data and onboarding in one place."
+        },
+        "hr": {
+          "verb": "Hire",
+          "name": "HR",
+          "description": "Hiring dashboard and full employee journey."
+        },
+        "motivation": {
+          "verb": "Engage",
+          "name": "Motivation",
+          "description": "Shift swaps, motivation, and a fast UI."
+        }
       },
       "items": {
-        "scheduleGrid":     "Shift schedule",
-        "telegramBot":      "Telegram bot: check-ins & alerts",
-        "aiAssistant":      "AI assistant",
+        "scheduleGrid": "Shift schedule",
+        "telegramBot": "Telegram bot: check-ins & alerts",
+        "aiAssistant": "AI assistant",
         "employeeDatabase": "Employee database",
-        "onboarding":       "Onboarding",
-        "hrDashboard":      "HR Dashboard",
-        "hrManagement":     "HR Management",
-        "shiftSwaps":       "Shift swaps",
-        "teamMotivation":   "Team motivation",
-        "fastUi":           "Fast interface"
+        "onboarding": "Onboarding",
+        "hrDashboard": "HR Dashboard",
+        "hrManagement": "HR Management",
+        "shiftSwaps": "Shift swaps",
+        "teamMotivation": "Team motivation",
+        "fastUi": "Fast interface"
       }
     },
     "builtFor": {
@@ -220,9 +252,18 @@
       "steps": {
         "title": "Get going in 3 steps. No training needed.",
         "items": {
-          "1": { "title": "Sign up", "desc": "Email and venue name. No card, no long forms." },
-          "2": { "title": "Import your team", "desc": "CSV or by hand: 30 staff added in 5 minutes." },
-          "3": { "title": "Publish the schedule", "desc": "Staff get a notification in Telegram or by email - everyone knows their shifts." }
+          "1": {
+            "title": "Sign up",
+            "desc": "Email and venue name. No card, no long forms."
+          },
+          "2": {
+            "title": "Import your team",
+            "desc": "CSV or by hand: 30 staff added in 5 minutes."
+          },
+          "3": {
+            "title": "Publish the schedule",
+            "desc": "Staff get a notification in Telegram or by email - everyone knows their shifts."
+          }
         },
         "imageAlt": "Restaurant dining room"
       },
@@ -235,7 +276,7 @@
           "3": "Alerts when someone is on track to exceed hours this month"
         },
         "metricLabel": "Average coverage improvement",
-        "metricCaption": "Based on anonymized data from pilot teams."
+        "metricCaption": "Estimate based on a modeled team scenario — not customer data."
       },
       "testimonial": {
         "quote": "We used to spend 2 hours a week putting the schedule together - now it's 15 minutes. Conflicts show up in advance, and we stopped firefighting on Saturday mornings.",
@@ -256,7 +297,7 @@
       "cta": "Start free",
       "ctaHint": "14 days, no card",
       "demo": "See how it works",
-      "tag": "Trusted by 400+ companies",
+      "tag": "Early access — be among the first",
       "sub": "Shift scheduling that doesn't suck.\nSpot coverage gaps, stop living in Excel. One calm grid - every employee, every day.",
       "cta1": "Start free trial",
       "cta2": "See how it works",
@@ -637,9 +678,9 @@
       "title": "Ready to stop living in Excel?",
       "sub": "Join teams from around the world.",
       "cta": "Start your free trial →",
-      "statBig": "400+",
-      "statLabel": "companies already plan with Smengo",
-      "statGrowth": "Growth over 12 months"
+      "statBig": "14",
+      "statLabel": "days of free trial — no card required",
+      "statGrowth": "Early access"
     },
     "plans": {
       "tag": "Pricing",
@@ -1466,7 +1507,16 @@
       "seo": {
         "title": "Employee shift schedule planner online — Smengo schedule grid",
         "description": "Smengo is an online shift schedule planner for teams of 15–300. Replace Excel with a live schedule grid, role coverage, alerts, hour tracking, Telegram notifications, and edit history.",
-        "keywords": ["shift schedule", "employee schedule planner", "shift planner", "staff rota software", "employee work schedule", "Excel schedule replacement", "online shift scheduling", "coverage alerts"],
+        "keywords": [
+          "shift schedule",
+          "employee schedule planner",
+          "shift planner",
+          "staff rota software",
+          "employee work schedule",
+          "Excel schedule replacement",
+          "online shift scheduling",
+          "coverage alerts"
+        ],
         "ogTitle": "Smengo — shift scheduling without Excel chaos",
         "ogDescription": "Build staff schedules, see coverage, track hours, manage swaps, and keep every change in one system.",
         "imageAlt": "Manager reviewing the Smengo shift schedule grid on a tablet",
@@ -1499,7 +1549,15 @@
         "coverageGapPrefix": "Sat — open slots:",
         "off": "Off",
         "hoursShort": "h",
-        "weekdays": ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"],
+        "weekdays": [
+          "Mon",
+          "Tue",
+          "Wed",
+          "Thu",
+          "Fri",
+          "Sat",
+          "Sun"
+        ],
         "tooltipRole": "Role",
         "tooltipHours": "Hours",
         "tooltipCoverage": "Counts toward coverage"
@@ -1524,22 +1582,69 @@
         "gridNightShift": "Night\nshift",
         "gridDayOff": "Day off",
         "gridUnassigned": "Shift not\nassigned",
-        "gridDays": ["Mon", "Tue", "Wed", "Thu", "Fri"],
+        "gridDays": [
+          "Mon",
+          "Tue",
+          "Wed",
+          "Thu",
+          "Fri"
+        ],
         "i3Title": "Any structure: departments, roles, locations",
-        "i3Desc": "Flexible setup for any team — from one location to a chain.",        "i3B1": "Create custom roles and departments inside the schedule",
+        "i3Desc": "Flexible setup for any team — from one location to a chain.",
+        "i3B1": "Create custom roles and departments inside the schedule",
         "i3B2": "Configure everything to fit your business",
         "i3B3": "Full customization to build one unified system",
         "i3Roles": [
-          "🍳 Cook", "🧑‍💼 Manager", "💻 Frontend", "🛎 Waiter", "🔒 Security",
-          "📦 Logistics", "💊 Pharmacist", "🩺 Medic", "📞 Operator", "🎨 Designer",
-          "📢 Marketer", "💰 Cashier", "🚚 Courier", "🏗 Foreman", "🧹 Cleaner",
-          "📋 Administrator", "🔧 Technician", "🍸 Bartender", "👨‍🍳 Sous-chef", "📊 Analyst",
-          "🛒 Sales rep", "🎭 Animator", "🏥 Orderly", "🚗 Driver", "📱 SMM",
-          "🏋️ Trainer", "🎓 Instructor", "🔍 Auditor", "🖨 PC Operator", "📸 Photographer",
-          "🌿 Gardener", "🛠 Mechanic", "⚡ Electrician", "🧑‍🔬 Lab Tech", "📰 Editor",
-          "🎙 Host", "🤝 HR", "🏦 Finance", "🖥 DevOps", "🎯 QA",
-          "☕ Barista", "🛁 Attendant", "🎪 Promoter", "📚 Librarian", "🗂 Clerk",
-          "🔑 Concierge", "🩹 Nurse", "🚒 Rescuer", "🎲 Dealer", "🌐 Translator"
+          "🍳 Cook",
+          "🧑‍💼 Manager",
+          "💻 Frontend",
+          "🛎 Waiter",
+          "🔒 Security",
+          "📦 Logistics",
+          "💊 Pharmacist",
+          "🩺 Medic",
+          "📞 Operator",
+          "🎨 Designer",
+          "📢 Marketer",
+          "💰 Cashier",
+          "🚚 Courier",
+          "🏗 Foreman",
+          "🧹 Cleaner",
+          "📋 Administrator",
+          "🔧 Technician",
+          "🍸 Bartender",
+          "👨‍🍳 Sous-chef",
+          "📊 Analyst",
+          "🛒 Sales rep",
+          "🎭 Animator",
+          "🏥 Orderly",
+          "🚗 Driver",
+          "📱 SMM",
+          "🏋️ Trainer",
+          "🎓 Instructor",
+          "🔍 Auditor",
+          "🖨 PC Operator",
+          "📸 Photographer",
+          "🌿 Gardener",
+          "🛠 Mechanic",
+          "⚡ Electrician",
+          "🧑‍🔬 Lab Tech",
+          "📰 Editor",
+          "🎙 Host",
+          "🤝 HR",
+          "🏦 Finance",
+          "🖥 DevOps",
+          "🎯 QA",
+          "☕ Barista",
+          "🛁 Attendant",
+          "🎪 Promoter",
+          "📚 Librarian",
+          "🗂 Clerk",
+          "🔑 Concierge",
+          "🩹 Nurse",
+          "🚒 Rescuer",
+          "🎲 Dealer",
+          "🌐 Translator"
         ],
         "i4Title": "Nights, overtime, vacations — all visible",
         "i4Desc": "All special statuses are clearly marked on the grid. Nothing gets lost."
@@ -1620,7 +1725,7 @@
         "imageAlt": "Manager looking at a shift schedule on a tablet",
         "caseBadge": "generated case visual",
         "imageCaption": "A restaurant, retail, or service team scenario: the manager sees the month, coverage, and changes in one place.",
-        "caseLabel": "pilot scenario",
+        "caseLabel": "modeled scenario",
         "caseTitle": "A 24-person team moved from a shared spreadsheet to a live schedule",
         "caseText": "Instead of forwarding an Excel file, the manager runs the schedule in Smengo: staff see current shifts, and disputed edits stay in history.",
         "caseB1": "fewer questions about which version is current",
@@ -1708,7 +1813,7 @@
     "riskReducer": "14 days free · no card required",
     "incrementalIntro": "Everything in {plan}, plus:",
     "socialProof": "Trusted by teams in restaurants, clinics, retail and IT",
-    "socialProofStat": "400+ teams already plan shifts with Smengo",
+    "socialProofStat": "We're launching: early access for the first teams",
     "enterpriseTitle": "Enterprise",
     "enterpriseDesc": "For companies with 300+ employees – custom terms, SSO and a dedicated manager",
     "enterpriseFeature1": "SSO / SAML",
@@ -1716,5 +1821,105 @@
     "enterpriseFeature3": "SLA and priority support",
     "enterpriseFeature4": "Migration assistance",
     "enterpriseCta": "Contact us"
+  },
+  "app": {
+    "nav": {
+      "schedule": "Schedule",
+      "employees": "Employees",
+      "dashboard": "Dashboard"
+    },
+    "roles": {
+      "owner": "Owner",
+      "admin": "Admin",
+      "manager": "Manager",
+      "viewer": "Viewer"
+    },
+    "sidebar": {
+      "logout": "Log out",
+      "orgSwitcher": "Organization"
+    },
+    "schedule": {
+      "title": "Schedule",
+      "emptyTitle": "Your team's shift grid will live here",
+      "emptyText": "A month at a glance: rows are employees, columns are days. Start by adding employees and departments.",
+      "cta": "Go to employees"
+    },
+    "employees": {
+      "title": "Employees",
+      "emptyTitle": "No employees yet",
+      "emptyText": "Adding employees and departments is coming here very soon — this section is in active development."
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "emptyTitle": "Team metrics will appear here",
+      "emptyText": "Hours, coverage and team events will be calculated from the shift schedule. Start with the schedule.",
+      "cta": "Go to schedule"
+    }
+  },
+  "legal": {
+    "terms": {
+      "metaTitle": "Terms of Service — Smengo",
+      "metaDescription": "The terms that govern your use of Smengo, the team shift scheduling service.",
+      "title": "Terms of Service",
+      "updated": "Last updated: 12 June 2026",
+      "intro": "These Terms of Service (the “Terms”) govern access to and use of Smengo — a web application for planning team work schedules, available at smengo.com (the “Service”). The Service is operated by the Smengo team (“Smengo”, “we”). By registering an account or using the Service, you confirm that you have read, understood and agree to be bound by these Terms and our Privacy Policy. If you use the Service on behalf of a company, you confirm that you are authorised to accept these Terms for that company.",
+      "serviceTitle": "The Service",
+      "serviceBody": "Smengo lets organisations plan and track team work schedules: a monthly grid of employees and days, work statuses (working day, day off, vacation, sick leave and custom statuses), departments, coverage alerts, exports and multi-user access with roles. The feature set depends on the selected plan and may evolve over time.",
+      "accountsTitle": "Account and registration",
+      "accountsBody": "To use the Service you must create an account with accurate, up-to-date information and keep it accurate. You are responsible for safeguarding your credentials and for all activity under your account. You must be at least 18 years old and have the legal capacity to enter into this agreement. Organisation owners and administrators control who has access to their organisation’s data and are responsible for the actions of users they invite.",
+      "billingTitle": "Trial, subscriptions and payments",
+      "billingBody": "New organisations receive a free 14-day trial with no payment card required. When the trial ends, continued full use of the Service requires a paid subscription; otherwise the account switches to a limited read-only mode and your data is preserved.\nPayments are processed by Paddle (Paddle.com Market Ltd / Paddle.com Inc.), our Merchant of Record. Paddle is the seller of record: it handles checkout, invoicing, payment methods, sales taxes / VAT and refunds in accordance with Paddle’s own terms (paddle.com/legal). By purchasing a subscription you also agree to Paddle’s Buyer Terms.\nSubscriptions renew automatically for the chosen billing period until cancelled. You can cancel at any time, with effect from the end of the current paid period. Prices may change; we will notify you of price increases in advance, and they take effect from the next billing period. Refunds are handled in accordance with Paddle’s refund policy unless the law of your country requires otherwise.",
+      "customerDataTitle": "Your data",
+      "customerDataBody": "All data your organisation adds to the Service — employee names, departments, schedules, statuses and other records (“Customer Data”) — belongs to your organisation. We process Customer Data only to provide the Service, as described in our Privacy Policy. You are responsible for ensuring that you have a lawful basis to add personal data of your employees to the Service and for the accuracy of that data. You can export your data and request its deletion at any time.",
+      "acceptableUseTitle": "Acceptable use",
+      "acceptableUseBody": "You agree not to:\n• use the Service for unlawful purposes or in violation of the rights of others;\n• attempt to gain unauthorised access to the Service, other accounts or its infrastructure;\n• interfere with the operation of the Service, including excessive automated load, scraping or denial-of-service attacks;\n• reverse engineer, copy or resell the Service or its parts without our written consent;\n• upload malicious code or unlawful content.\nWe may suspend or terminate accounts that violate these rules.",
+      "ipTitle": "Intellectual property",
+      "ipBody": "The Service, including its code, design, logo and content (excluding Customer Data), is owned by Smengo and protected by intellectual property law. We grant you a limited, non-exclusive, non-transferable right to use the Service for the duration of your subscription, in accordance with these Terms.",
+      "disclaimerTitle": "Availability and warranties",
+      "disclaimerBody": "We aim to keep the Service available around the clock, but provide it “as is” and “as available”, without warranties of uninterrupted or error-free operation. We may temporarily suspend the Service for maintenance or updates and will try to minimise such interruptions.",
+      "liabilityTitle": "Limitation of liability",
+      "liabilityBody": "To the maximum extent permitted by law, Smengo is not liable for indirect or consequential damages, loss of profit, data or business arising from the use of, or inability to use, the Service. Our total aggregate liability under these Terms is limited to the amount you paid for the Service in the 12 months preceding the event giving rise to the claim. Nothing in these Terms limits liability that cannot be limited under applicable law.",
+      "terminationTitle": "Term and termination",
+      "terminationBody": "You may stop using the Service and delete your account at any time. We may suspend or terminate access for material breach of these Terms, with notice where reasonably possible. After termination or trial expiry your data is retained in read-only mode for a reasonable period so that you can export it, after which it may be deleted.",
+      "changesTitle": "Changes to these Terms",
+      "changesBody": "We may update these Terms from time to time. For material changes we will notify you by email or in the app at least 14 days before they take effect. Continued use of the Service after the changes take effect constitutes acceptance of the updated Terms.",
+      "lawTitle": "Governing law and disputes",
+      "lawBody": "These Terms are governed by the laws of Ukraine, unless mandatory consumer protection rules of your country of residence provide otherwise. The parties will first attempt to resolve any dispute by negotiation; if that fails, disputes are resolved by the competent courts.",
+      "contactTitle": "Contact",
+      "contactBody": "Questions about these Terms: hello@smengo.com."
+    },
+    "privacy": {
+      "metaTitle": "Privacy Policy — Smengo",
+      "metaDescription": "How Smengo collects, uses and protects personal data.",
+      "title": "Privacy Policy",
+      "updated": "Last updated: 12 June 2026",
+      "intro": "This Privacy Policy explains how Smengo (“we”) collects, uses and protects personal data when you use smengo.com and the Smengo application (the “Service”). It applies to website visitors, account holders and members of organisations that use the Service. We process personal data in accordance with applicable data protection law, including the EU General Data Protection Regulation (GDPR) and the Law of Ukraine “On Personal Data Protection”.",
+      "collectTitle": "What data we collect",
+      "collectBody": "• Account data: name, email address, password (stored in hashed form), interface language.\n• Organisation data: company name, billing email, time zone, plan and subscription status.\n• Employee data added by your organisation: names, departments, positions, work schedules and statuses.\n• Payment data: processed by our payment provider Paddle; we do not store full card numbers.\n• Usage data: actions in the app, pages visited, device and browser type, IP address.\n• Support communications: messages you send us by email.",
+      "useTitle": "How we use data",
+      "useBody": "We use data to: provide and maintain the Service; create and secure accounts; process subscription payments; respond to support requests; send service emails (email confirmation, password reset, important notifications about the account or changes to terms); analyse aggregated usage to improve the product; ensure security and prevent abuse. We do not sell personal data and do not use Customer Data for advertising.",
+      "rolesTitle": "Our role: controller and processor",
+      "rolesBody": "For account data of registered users and website analytics we act as the data controller. For employee data that organisations add to the Service, the organisation is the controller and Smengo acts as a processor: we process such data only on the organisation’s instructions to provide the Service. If you are an employee whose data was added by your employer, please direct requests about that data to your employer in the first instance.",
+      "legalBasesTitle": "Legal bases",
+      "legalBasesBody": "We rely on the following legal bases: performance of a contract (providing the Service); legitimate interests (security, preventing abuse, product improvement); consent (where required, e.g. for non-essential analytics); compliance with legal obligations (accounting and tax records).",
+      "sharingTitle": "Who we share data with",
+      "sharingBody": "We share data only with service providers that help us run the Service:\n• Supabase — database, authentication and file storage;\n• Vercel — application hosting;\n• Paddle — payment processing as Merchant of Record;\n• Resend — transactional email delivery;\n• PostHog — product analytics;\n• Sentry — error monitoring.\nThese providers process data under agreements that require an adequate level of protection. We may also disclose data where required by law.",
+      "transfersTitle": "International transfers",
+      "transfersBody": "Our providers may process data in the European Union and the United States. Where data is transferred outside your jurisdiction, we rely on appropriate safeguards such as the EU Standard Contractual Clauses or equivalent mechanisms.",
+      "retentionTitle": "Data retention",
+      "retentionBody": "We keep account and organisation data while the account is active. After the trial expires without payment, data is preserved in read-only mode. If an account is deleted, we delete or anonymise personal data within a reasonable period (up to 90 days), except where longer retention is required by law (e.g. billing records).",
+      "rightsTitle": "Your rights",
+      "rightsBody": "Depending on applicable law, you have the right to: access your personal data; rectify inaccurate data; erase data; restrict or object to processing; data portability; withdraw consent at any time; and lodge a complaint with a supervisory authority. To exercise your rights, contact us at hello@smengo.com.",
+      "securityTitle": "Security",
+      "securityBody": "We use technical and organisational measures to protect data: encryption in transit (TLS), encrypted storage, access controls and row-level isolation of each organisation’s data, the principle of least privilege, and monitoring. No method of transmission or storage is completely secure, but we work to keep risks to a minimum.",
+      "cookiesTitle": "Cookies",
+      "cookiesBody": "We use strictly necessary cookies (authentication session, interface language and theme) and analytics cookies that help us understand how the product is used. You can restrict cookies in your browser settings; necessary cookies are required for the Service to function.",
+      "childrenTitle": "Children",
+      "childrenBody": "The Service is intended for business use and is not addressed to children under 16. We do not knowingly collect data from children.",
+      "changesTitle": "Changes to this Policy",
+      "changesBody": "We may update this Policy. We will post the new version on this page and, for material changes, notify you by email or in the app.",
+      "contactTitle": "Contact",
+      "contactBody": "Privacy questions and requests: hello@smengo.com."
+    }
   }
 }

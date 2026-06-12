@@ -7,6 +7,9 @@ describe('CreateOrgSchema', () => {
     billing_email: 'billing@company.com',
     timezone: 'Europe/Kyiv',
     locale: 'ru' as const,
+    first_name: 'Иван',
+    last_name: 'Иванов',
+    acquisition_source: '',
   }
 
   it('accepts valid org data', () => {
@@ -34,7 +37,7 @@ describe('CreateOrgSchema', () => {
   })
 
   it('defaults timezone to Europe/Kyiv when not provided', () => {
-    const result = CreateOrgSchema.safeParse({ name: valid.name, billing_email: valid.billing_email })
+    const result = CreateOrgSchema.safeParse({ name: valid.name, billing_email: valid.billing_email, first_name: valid.first_name, last_name: valid.last_name })
     expect(result.success).toBe(true)
     if (result.success) {
       expect(result.data.timezone).toBe('Europe/Kyiv')
@@ -42,7 +45,7 @@ describe('CreateOrgSchema', () => {
   })
 
   it('defaults locale to ru when not provided', () => {
-    const result = CreateOrgSchema.safeParse({ name: valid.name, billing_email: valid.billing_email })
+    const result = CreateOrgSchema.safeParse({ name: valid.name, billing_email: valid.billing_email, first_name: valid.first_name, last_name: valid.last_name })
     expect(result.success).toBe(true)
     if (result.success) {
       expect(result.data.locale).toBe('ru')

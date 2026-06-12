@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { JsonLd } from '@/components/seo/json-ld'
 import Link from 'next/link'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { Check, Minus, Sparkles } from 'lucide-react'
@@ -165,10 +166,7 @@ export default async function PricingPage({
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <JsonLd data={jsonLd} />
 
       {/* ── HERO ── */}
       <section className="px-4 pb-4 pt-16 text-center sm:px-6 sm:pt-20">

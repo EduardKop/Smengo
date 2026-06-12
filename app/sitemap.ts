@@ -13,6 +13,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: '', priority: 1.0, changeFrequency: 'weekly' },
     { path: '/platform/schedule-grid', priority: 0.85, changeFrequency: 'monthly' },
     { path: '/pricing', priority: 0.8, changeFrequency: 'monthly' },
+    { path: '/terms', priority: 0.3, changeFrequency: 'monthly' },
+    { path: '/privacy', priority: 0.3, changeFrequency: 'monthly' },
   ]
 
   return paths.flatMap(({ path, priority, changeFrequency }) =>

@@ -306,6 +306,7 @@ export type Database = {
       }
       organizations: {
         Row: {
+          acquisition_source: string | null
           billing_email: string
           created_at: string
           default_locale: string
@@ -318,6 +319,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          acquisition_source?: string | null
           billing_email: string
           created_at?: string
           default_locale?: string
@@ -330,6 +332,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          acquisition_source?: string | null
           billing_email?: string
           created_at?: string
           default_locale?: string
@@ -576,6 +579,7 @@ export type Database = {
       }
       create_organization: {
         Args: {
+          p_acquisition_source?: string
           p_billing_email: string
           p_locale?: string
           p_name: string

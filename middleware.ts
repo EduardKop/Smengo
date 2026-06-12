@@ -1,12 +1,11 @@
 import createMiddleware from 'next-intl/middleware'
 import { NextResponse, type NextRequest } from 'next/server'
 import { routing } from '@/i18n/routing'
-import { updateSession } from '@/lib/supabase/middleware'
+import { updateSession, APP_PREFIXES } from '@/lib/supabase/middleware'
 
 const intlMiddleware = createMiddleware(routing)
 
 const AUTH_PREFIXES = ['/login', '/register', '/forgot-password', '/reset-password', '/invite', '/auth/']
-const APP_PREFIXES = ['/dashboard', '/onboarding', '/settings', '/employees', '/departments', '/billing']
 
 function startsWithAny(pathname: string, prefixes: readonly string[]): boolean {
   return prefixes.some((p) => pathname === p || pathname.startsWith(p + '/') || pathname.startsWith(p))

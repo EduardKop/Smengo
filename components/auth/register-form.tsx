@@ -1,16 +1,24 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { Check } from 'lucide-react'
 import { registerAction, loginWithGoogleAction } from '@/lib/actions/auth'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import { Link as LocaleLink } from '@/i18n/routing'
 
 const initialState = undefined
+
+const SOURCE_MAX = 255
+
+const inputClass =
+  'w-full rounded-md border bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring'
 
 export function RegisterForm() {
   const t = useTranslations('auth')
   const [state, action, pending] = useActionState(registerAction, initialState)
+  const [sourceLen, setSourceLen] = useState(0)
 
   if (state?.message === 'check_email') {
     return (
@@ -22,28 +30,78 @@ export function RegisterForm() {
   }
 
   return (
-    <div className="w-full max-w-sm space-y-6 rounded-xl border bg-card p-8 shadow-sm">
-      <div>
+    <div className="w-full max-w-md space-y-3 rounded-xl border bg-card px-7 py-6 shadow-sm">
+      <div className="text-center">
         <h1 className="text-2xl font-semibold tracking-tight">{t('registerTitle')}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t('registerSubtitle')}</p>
+        <div className="mt-3 flex items-center justify-center gap-5 text-sm font-medium">
+          <span className="flex items-center gap-2">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-foreground text-background">
+              <Check className="h-3 w-3" />
+            </span>
+            {t('valueProp1')}
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-foreground text-background">
+              <Check className="h-3 w-3" />
+            </span>
+            {t('valueProp2')}
+          </span>
+        </div>
       </div>
 
-      <form action={action} className="space-y-4">
+      <form action={action} className="space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <label htmlFor="first_name" className="text-sm font-medium">
+              {t('firstName')}
+            </label>
+            <input
+              id="first_name"
+              name="first_name"
+              type="text"
+              required
+              autoComplete="given-name"
+              className={inputClass}
+              placeholder={t('firstNamePlaceholder')}
+            />
+            {state?.errors?.first_name && (
+              <p className="text-xs text-destructive">{state.errors.first_name[0]}</p>
+            )}
+          </div>
+          <div className="space-y-1">
+            <label htmlFor="last_name" className="text-sm font-medium">
+              {t('lastName')}
+            </label>
+            <input
+              id="last_name"
+              name="last_name"
+              type="text"
+              required
+              autoComplete="family-name"
+              className={inputClass}
+              placeholder={t('lastNamePlaceholder')}
+            />
+            {state?.errors?.last_name && (
+              <p className="text-xs text-destructive">{state.errors.last_name[0]}</p>
+            )}
+          </div>
+        </div>
+
         <div className="space-y-1">
-          <label htmlFor="full_name" className="text-sm font-medium">
-            {t('fullName')}
+          <label htmlFor="company_name" className="text-sm font-medium">
+            {t('companyName')}
           </label>
           <input
-            id="full_name"
-            name="full_name"
+            id="company_name"
+            name="company_name"
             type="text"
             required
-            autoComplete="name"
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            placeholder={t('fullNamePlaceholder')}
+            autoComplete="organization"
+            className={inputClass}
+            placeholder={t('companyNamePlaceholder')}
           />
-          {state?.errors?.full_name && (
-            <p className="text-xs text-destructive">{state.errors.full_name[0]}</p>
+          {state?.errors?.company_name && (
+            <p className="text-xs text-destructive">{state.errors.company_name[0]}</p>
           )}
         </div>
 
@@ -57,7 +115,7 @@ export function RegisterForm() {
             type="email"
             required
             autoComplete="email"
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            className={inputClass}
             placeholder="you@company.com"
           />
           {state?.errors?.email && (
@@ -75,10 +133,69 @@ export function RegisterForm() {
             type="password"
             required
             autoComplete="new-password"
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            className={inputClass}
           />
           {state?.errors?.password && (
             <p className="text-xs text-destructive">{state.errors.password[0]}</p>
+          )}
+        </div>
+
+        <div className="space-y-1">
+          <label htmlFor="acquisition_source" className="text-sm font-medium">
+            {t('sourceLabel')}{' '}
+            <span className="font-normal text-muted-foreground">{t('sourceOptional')}</span>
+          </label>
+          <input
+            id="acquisition_source"
+            name="acquisition_source"
+            type="text"
+            maxLength={SOURCE_MAX}
+            className={inputClass}
+            placeholder={t('sourcePlaceholder')}
+            onChange={(e) => setSourceLen(e.target.value.length)}
+          />
+          {sourceLen > 0 && (
+            <p className="text-xs text-muted-foreground">
+              {SOURCE_MAX - sourceLen} / {SOURCE_MAX}
+            </p>
+          )}
+        </div>
+
+        <div className="space-y-1">
+          <label className="flex items-start gap-2 text-sm leading-snug">
+            <input
+              type="checkbox"
+              name="terms"
+              required
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border accent-primary"
+            />
+            <span>
+              {t.rich('termsAgree', {
+                terms: (chunks) => (
+                  <LocaleLink
+                    href="/terms"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline underline-offset-4 hover:text-foreground"
+                  >
+                    {chunks}
+                  </LocaleLink>
+                ),
+                privacy: (chunks) => (
+                  <LocaleLink
+                    href="/privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline underline-offset-4 hover:text-foreground"
+                  >
+                    {chunks}
+                  </LocaleLink>
+                ),
+              })}
+            </span>
+          </label>
+          {state?.errors?.terms && (
+            <p className="text-xs text-destructive">{state.errors.terms[0]}</p>
           )}
         </div>
 
@@ -91,6 +208,7 @@ export function RegisterForm() {
         <Button type="submit" className="w-full" disabled={pending}>
           {pending ? t('loading') : t('registerButton')}
         </Button>
+        <p className="text-center text-xs text-muted-foreground">{t('noCard')}</p>
       </form>
 
       <div className="relative">

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { JsonLd } from '@/components/seo/json-ld'
 import Link from 'next/link'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import {
@@ -359,17 +360,12 @@ export default async function LandingPage({
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(
-            buildJsonLd(locale, t('seo.ogLandingDescription'), [
-              t('plans.startName'),
-              t('plans.teamName'),
-              t('plans.bizName'),
-            ]),
-          ),
-        }}
+      <JsonLd
+        data={buildJsonLd(locale, t('seo.ogLandingDescription'), [
+          t('plans.startName'),
+          t('plans.teamName'),
+          t('plans.bizName'),
+        ])}
       />
 
       {/* ── HERO ──────────────────────────────────────────────── */}

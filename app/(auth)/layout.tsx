@@ -23,7 +23,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       </div>
 
       {/* Centered form */}
-      <main className="relative z-10 flex min-h-[calc(100vh-68px)] items-center justify-center px-4 pb-16 pt-4">
+      <main className="relative z-10 flex min-h-[calc(100vh-68px)] items-center justify-center px-4 pb-8 pt-2">
         {children}
       </main>
     </div>

@@ -5,6 +5,7 @@ import './globals.css'
 import { cn } from "@/lib/utils"
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages, getLocale } from 'next-intl/server'
+import { JsonLd } from '@/components/seo/json-ld'
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
@@ -102,12 +103,7 @@ export default async function RootLayout({
       style={theme ? { colorScheme: theme } : undefined}
     >
       <head>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(orgJsonLd).replace(/</g, '\\u003c'),
-          }}
-        />
+        <JsonLd data={orgJsonLd} />
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <NextIntlClientProvider messages={messages} locale={locale}>
