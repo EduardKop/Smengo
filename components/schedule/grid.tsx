@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useTranslations, useLocale } from 'next-intl'
+import { Search, X } from 'lucide-react'
 
 import type { UserRole } from '@/supabase/types'
 import type { MonthData, GridMode, ScheduleEntryRow, StatusTypeRow } from '@/lib/schedule/types'
@@ -19,6 +20,10 @@ import { AlertsForm } from './settings/alerts-form'
 import { CellEditor } from './cell-editor'
 import type { CellEditorAnchor } from './cell-editor'
 import { ToastViewport, useToasts } from './toast'
+import { MonthNav } from './month-nav'
+import { DeptFilter } from './dept-filter'
+import { ModeSwitcher } from './mode-switcher'
+import { Legend } from './legend'
 
 // ── Row height by mode ──────────────────────────────────────────────
 
@@ -82,14 +87,35 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
     ? (searchParams.get('mode') as GridMode)
     : 'detail')
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const setParam = useCallback((key: string, value: string | null) => {
+  // Local search input state — debounced 200ms before pushing to URL
+  const [searchInput, setSearchInput] = useState(searchParams.get('q') ?? '')
+
+  /** Shallow URL update — does NOT trigger RSC refetch; useSearchParams picks it up */
+  const setShallowParam = useCallback((key: string, value: string | null) => {
     const next = new URLSearchParams(searchParams.toString())
     if (value === null) next.delete(key)
     else next.set(key, value)
-    router.replace(`${pathname}?${next.toString()}`, { scroll: false })
-  }, [searchParams, router, pathname])
-  // TODO(T15): setParam used by toolbar filters/mode switcher
+    window.history.replaceState(null, '', `${pathname}?${next.toString()}`)
+  }, [searchParams, pathname])
+
+  const handleDeptChange = useCallback((value: string | null) => {
+    setShallowParam('dept', value)
+  }, [setShallowParam])
+
+  const handleModeChange = useCallback((newMode: GridMode) => {
+    // mode is shallow — no router.replace, no RSC refetch
+    setShallowParam('mode', newMode)
+  }, [setShallowParam])
+
+  // Debounce search input → URL (shallow)
+  useEffect(() => {
+    const id = setTimeout(() => {
+      const trimmed = searchInput.trim()
+      setShallowParam('q', trimmed === '' ? null : trimmed)
+    }, 200)
+    return () => clearTimeout(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchInput])
 
   // ── Data ────────────────────────────────────────────────────────
   const { data } = useScheduleData(orgId, year, month, initialData)
@@ -323,9 +349,52 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
   // ── Render ───────────────────────────────────────────────────────
   return (
     <div className="flex flex-col">
-      {/* Toolbar — Task 15 will add filters/mode switcher; gear button lives here now */}
-      <div className="mb-3 flex items-center gap-2" data-slot="toolbar">
-        <div className="flex-1" />
+      {/* Toolbar */}
+      <div className="mb-3 flex flex-wrap items-center gap-2" data-slot="toolbar">
+        {/* Mode switcher — left */}
+        <ModeSwitcher value={mode} onChange={handleModeChange} />
+
+        {/* Month nav — centered */}
+        <div className="flex flex-1 justify-center">
+          <MonthNav year={year} month={month} />
+        </div>
+
+        {/* Dept filter */}
+        <DeptFilter
+          departments={data.departments}
+          employees={data.employees}
+          value={deptFilter}
+          onChange={handleDeptChange}
+        />
+
+        {/* Search input */}
+        <div className="relative flex items-center">
+          <Search
+            size={13}
+            className="pointer-events-none absolute left-2.5 text-muted-foreground"
+          />
+          <input
+            type="text"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.currentTarget.value)}
+            placeholder={t('searchPlaceholder')}
+            aria-label={t('searchPlaceholder')}
+            className="h-8 rounded-md border border-border bg-background pl-8 pr-7 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            style={{ minWidth: 160 }}
+          />
+          {searchInput && (
+            <button
+              type="button"
+              aria-label={t('clearSearch')}
+              onClick={() => setSearchInput('')}
+              className="absolute right-2 text-muted-foreground hover:text-foreground"
+            >
+              <X size={13} />
+            </button>
+          )}
+        </div>
+
+        {/* Alerts / coverage thresholds — rightmost */}
         <AlertsForm
           orgId={orgId}
           year={year}
@@ -434,6 +503,9 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
           </div>
         )}
       </div>
+
+      {/* Legend — status chips below grid */}
+      <Legend statusTypes={data.statusTypes} />
 
       {/* Cell editor popover */}
       {editorAnchor && (

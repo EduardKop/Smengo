@@ -5,6 +5,9 @@ import type { MonthDay } from '@/lib/schedule/month'
 
 const WEEKDAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
 
+/** Shared header height — used by CoverageRow for sticky top offset */
+export const HEADER_HEIGHT = 48
+
 interface GridHeaderProps {
   days: MonthDay[]
   today: string
@@ -22,6 +25,7 @@ export function GridHeader({ days, today, nameColWidth, cellW }: GridHeaderProps
       className="sticky top-0 z-20 flex border-b border-border bg-background"
       role="row"
       aria-label="Days header"
+      style={{ height: HEADER_HEIGHT }}
     >
       {/* Sticky name column placeholder */}
       <div

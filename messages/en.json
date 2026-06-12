@@ -1839,6 +1839,15 @@
       "orgSwitcher": "Organization"
     },
     "schedule": {
+      "prevMonth": "Previous month",
+      "nextMonth": "Next month",
+      "allDepts": "All departments",
+      "modeCompact": "Compact",
+      "modeDetail": "Detail",
+      "modeExtended": "Extended",
+      "searchPlaceholder": "Search by name…",
+      "legendLabel": "Statuses",
+      "clearSearch": "Clear search",
       "title": "Schedule",
       "emptyTitle": "Your team's shift grid will live here",
       "emptyText": "A month at a glance: rows are employees, columns are days. Start by adding employees and departments.",

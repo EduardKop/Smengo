@@ -6,6 +6,7 @@ import type { MonthDay } from '@/lib/schedule/month'
 import type { AlertConfigRow, EmployeeRow, ScheduleEntryRow, StatusTypeRow } from '@/lib/schedule/types'
 import { coverageByDay, shortageByDay, aggregateMinPresent } from '@/lib/schedule/map'
 import { NAME_COL_WIDTH } from './grid-row'
+import { HEADER_HEIGHT } from './grid-header'
 
 interface CoverageRowProps {
   days: MonthDay[]
@@ -56,7 +57,8 @@ export function CoverageRow({
       role="row"
       aria-label={t('coverageLabel')}
       className="flex border-b border-border bg-background"
-      style={{ position: 'sticky', top: 40, zIndex: 15 }}
+      // TODO: no-dept группа показывает сумму всех порогов
+      style={{ position: 'sticky', top: HEADER_HEIGHT, zIndex: 15 }}
     >
       {/* Sticky label column */}
       <div

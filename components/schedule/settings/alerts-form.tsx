@@ -45,6 +45,7 @@ export function AlertsForm({ orgId, year, month, role, departments, alertConfigs
       }
       await qc.invalidateQueries({ queryKey: key })
     },
+    // getMinPresent замыкает alertConfigs, который в deps
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [alertConfigs, key, qc],
   )
