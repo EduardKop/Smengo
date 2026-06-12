@@ -589,11 +589,13 @@ export function readableColorForHex(hex: string): '#111827' | '#ffffff' {
 }
 
 // ── Ширина колонки сотрудника (формулы из демо) ─────────────────────
+// Demo detailEmployeeNameColumnWidth возвращает CSS clamp(): ширина
+// резолвится чистым CSS (vw), без замера window.innerWidth — нет прыжка
+// после гидрации и зависимости от JS. Все слои (шапка/строки/«НА СМЕНЕ»)
+// получают одну и ту же строку → одинаковый вычисленный px.
 
-function clampPx(min: number, vwFraction: number, max: number, viewportW: number): number {
-  if (viewportW <= 0) return min
-  return Math.round(Math.min(max, Math.max(min, vwFraction * viewportW)))
-}
+/** CSS-ширина колонки сотрудника: число (compact) или clamp-строка (detail/ext). */
+export type NameColumnWidth = number | string
 
 export interface NameColumnOptions {
   showEmployeeRole: boolean
@@ -611,41 +613,29 @@ export function compactNameColumnWidth(opts: NameColumnOptions): number {
   return opts.showEmployeeDot ? 254 : 246
 }
 
-/** Копия detailEmployeeNameColumnWidth из демо (sticky=true), clamp → px. */
-export function detailNameColumnWidth(mode: GridMode, opts: NameColumnOptions, viewportW: number): number {
+/** Копия detailEmployeeNameColumnWidth из демо (sticky=true) — clamp-строки 1:1. */
+export function detailNameColumnWidth(mode: GridMode, opts: NameColumnOptions): string {
   const isExt = mode === 'extended'
   if (opts.showTelegram) {
-    return isExt ? clampPx(280, 0.28, 350, viewportW) : clampPx(250, 0.25, 300, viewportW)
+    return isExt ? 'clamp(280px, 28vw, 350px)' : 'clamp(250px, 25vw, 300px)'
   }
   const count = Number(opts.showEmployeeDepartment) + Number(opts.showEmployeeRole)
   if (count === 0) {
     return opts.showEmployeeDot
-      ? clampPx(230, 0.23, 280, viewportW)
-      : (isExt ? clampPx(215, 0.22, 255, viewportW) : clampPx(220, 0.22, 260, viewportW))
+      ? 'clamp(230px, 23vw, 280px)'
+      : (isExt ? 'clamp(215px, 22vw, 255px)' : 'clamp(220px, 22vw, 260px)')
   }
   if (count === 1) {
-    if (opts.showEmployeeRole) return isExt ? clampPx(260, 0.27, 330, viewportW) : clampPx(250, 0.25, 300, viewportW)
-    return isExt ? clampPx(245, 0.26, 310, viewportW) : clampPx(240, 0.24, 290, viewportW)
+    if (opts.showEmployeeRole) return isExt ? 'clamp(260px, 27vw, 330px)' : 'clamp(250px, 25vw, 300px)'
+    return isExt ? 'clamp(245px, 26vw, 310px)' : 'clamp(240px, 24vw, 290px)'
   }
   return isExt
-    ? clampPx(260, 0.30, 370, viewportW)
-    : clampPx(260, 0.27, 320, viewportW)
+    ? 'clamp(260px, 30vw, 370px)'
+    : 'clamp(260px, 27vw, 320px)'
 }
 
-export function nameColumnWidth(mode: GridMode, opts: NameColumnOptions, viewportW: number): number {
-  return mode === 'compact' ? compactNameColumnWidth(opts) : detailNameColumnWidth(mode, opts, viewportW)
-}
-
-/** Ширина вьюпорта для clamp-формул демо (vw). 0 до маунта → min из clamp. */
-export function useViewportWidth(): number {
-  const [width, setWidth] = useState(0)
-  useEffect(() => {
-    const update = () => setWidth(window.innerWidth)
-    update()
-    window.addEventListener('resize', update)
-    return () => window.removeEventListener('resize', update)
-  }, [])
-  return width
+export function nameColumnWidth(mode: GridMode, opts: NameColumnOptions): NameColumnWidth {
+  return mode === 'compact' ? compactNameColumnWidth(opts) : detailNameColumnWidth(mode, opts)
 }
 
 // ── macOS-style overlay-скроллбар (demo AppleHScrollbar) ────────────

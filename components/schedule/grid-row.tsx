@@ -58,7 +58,7 @@ interface GroupRowProps {
   minLabel?: string
   collapsed: boolean
   onToggle: () => void
-  nameColWidth: number
+  nameColWidth: number | string
   mode: GridMode
   /** If provided, show department action buttons (rename/delete) */
   onRenameDept?: () => void
@@ -190,7 +190,7 @@ export function GroupRow({
 
 interface AddEmployeeRowProps {
   label: string
-  nameColWidth: number
+  nameColWidth: number | string
   onClick: () => void
 }
 
@@ -292,7 +292,7 @@ interface EmployeeRowProps {
   deptAccent: string
   days: MonthDay[]
   rowHeight: number
-  nameColWidth: number
+  nameColWidth: number | string
   /** Deterministic cell width in px (from CELL_WIDTH[mode]) */
   cellW: number
   mode: GridMode

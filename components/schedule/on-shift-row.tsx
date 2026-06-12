@@ -15,10 +15,10 @@ import { TOTALS_OFF_W, TOTALS_HRS_W } from './grid-header'
 interface OnShiftRowProps {
   days: MonthDay[]
   mode: GridMode
-  nameColWidth: number
+  nameColWidth: number | string
   cellW: number
-  /** Полная ширина контента грида в px — единая для всех трёх слоёв (см. GridHeader). */
-  totalWidth: number
+  /** Полная ширина контента грида (px или calc-строка) — единая для всех трёх слоёв (см. GridHeader). */
+  totalWidth: number | string
   weekendBg: string
   problemDays: ReadonlySet<string>
   showGrid: boolean

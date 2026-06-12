@@ -21,17 +21,17 @@ interface GridHeaderProps {
   days: MonthDay[]
   today: string
   mode: GridMode
-  /** Width in px for the sticky employee name column */
-  nameColWidth: number
+  /** Ширина sticky-колонки сотрудника: px или CSS clamp-строка (как в демо) */
+  nameColWidth: number | string
   /** Deterministic cell width in px (from CELL_WIDTH[mode]) */
   cellW: number
   /**
-   * Полная ширина контента грида в px (nameColW + days×cellW + итоги).
+   * Полная ширина контента грида (px или calc-строка поверх clamp).
    * Все три слоя (шапка, строки, «НА СМЕНЕ») задают её явно — intrinsic
    * max-content зависел бы от контента ячеек (1px бордеры «Сетки» раздували
    * строки тела) и ломал выравнивание колонок между слоями.
    */
-  totalWidth: number
+  totalWidth: number | string
   /** Фон выходных колонок (зависит от настройки «Выделять выходные») */
   weekendBg: string
   /** Даты (dateISO) с дефицитом покрытия — «проблемные» колонки */

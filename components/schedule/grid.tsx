@@ -21,7 +21,7 @@ import type { MonthData, GridMode, ScheduleEntryRow, StatusTypeRow } from '@/lib
 import type { GridViewSettings } from '@/lib/validation/grid-view'
 import { monthDays } from '@/lib/schedule/month'
 import { buildScheduleMap, coverageByDay, aggregateMinPresent, shortageByDay } from '@/lib/schedule/map'
-import { nameColumnWidth, useViewportWidth, deptColor, AppleHScrollbar } from './grid-visual'
+import { nameColumnWidth, deptColor, AppleHScrollbar } from './grid-visual'
 import { can } from '@/lib/permissions'
 import { useScheduleData, useUpsertEntry, useClearEntry } from './use-schedule'
 import type { UpsertInput } from './use-schedule'
@@ -356,15 +356,21 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
   // ── Computed widths ──────────────────────────────────────────────
 
   const cellW = CELL_WIDTH[mode]
-  const viewportW = useViewportWidth()
+  // Колонка сотрудника: число (compact) или CSS clamp-строка (detail/ext),
+  // как в демо — резолвится чистым CSS без замера window.innerWidth.
   const nameColW = nameColumnWidth(mode, {
     showEmployeeRole: view.showEmployeeRole,
     showEmployeeDepartment: view.showEmployeeDepartment,
     showEmployeeDot: view.showEmployeeDot,
     showTelegram,
-  }, viewportW)
+  })
   const totalsW = mode === 'compact' ? 0 : TOTALS_OFF_W + TOTALS_HRS_W
-  const totalWidth = nameColW + days.length * cellW + totalsW
+  // Полная ширина контента: px-число или calc() поверх clamp-строки.
+  // Одно и то же выражение во всех трёх слоях → пиксельное выравнивание.
+  const dayRegionW = days.length * cellW + totalsW
+  const totalWidth: number | string = typeof nameColW === 'number'
+    ? nameColW + dayRegionW
+    : `calc(${nameColW} + ${dayRegionW}px)`
 
   // ── Проблемные колонки: дефицит покрытия ниже порога alert_configs ──
 
