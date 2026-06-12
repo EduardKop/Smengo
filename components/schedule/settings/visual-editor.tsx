@@ -10,7 +10,8 @@
  * и сохраняются debounced (use-grid-view.ts).
  */
 
-import { useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Check, ChevronDown, Palette, RotateCcw } from 'lucide-react'
 import { useTranslations, useLocale } from 'next-intl'
 import type { UserRole } from '@/supabase/types'
@@ -35,6 +36,98 @@ import { CardVisualChip } from '../card-visual-chip'
 
 const PANEL_W = 480
 
+// ── Портал-дропдаун триггер+меню ────────────────────────────────────
+// Палитра раскрывается ВНУТРИ скроллящегося поповера «Визуала» и раньше
+// обрезалась его maxHeight/overflow. Меню выносится порталом в body с
+// fixed-позиционированием у триггера (паттерн OnShiftScopePicker в
+// grid-visual.tsx): ниже триггера, если влезает, иначе сверху; по
+// горизонтали правый край меню прижат к правому краю триггера с
+// клампом в 8px от краёв вьюпорта.
+
+function DropdownPortal({
+  open,
+  onClose,
+  triggerRef,
+  menuWidth,
+  children,
+}: {
+  open: boolean
+  onClose: () => void
+  triggerRef: React.RefObject<HTMLButtonElement | null>
+  menuWidth: number
+  children: React.ReactNode
+}) {
+  const menuRef = useRef<HTMLDivElement | null>(null)
+  const [pos, setPos] = useState<{ left: number; top: number } | null>(null)
+
+  // Позиция после маунта меню: реальная высота вместо оценки
+  useLayoutEffect(() => {
+    if (!open) {
+      setPos(null)
+      return
+    }
+
+    const update = () => {
+      const rect = triggerRef.current?.getBoundingClientRect()
+      const menuH = menuRef.current?.offsetHeight ?? 0
+      if (!rect) return
+      const w = Math.min(menuWidth, window.innerWidth - 16)
+      const left = Math.min(
+        Math.max(8, rect.right - w),
+        Math.max(8, window.innerWidth - w - 8),
+      )
+      const topBelow = rect.bottom + 4
+      const top = topBelow + menuH <= window.innerHeight - 8
+        ? topBelow
+        : Math.max(8, rect.top - menuH - 4)
+      setPos({ left, top })
+    }
+
+    update()
+
+    const onDown = (event: MouseEvent) => {
+      const target = event.target as Node
+      if (triggerRef.current?.contains(target) || menuRef.current?.contains(target)) return
+      onClose()
+    }
+
+    window.addEventListener('mousedown', onDown)
+    window.addEventListener('resize', update)
+    window.addEventListener('scroll', update, true)
+    return () => {
+      window.removeEventListener('mousedown', onDown)
+      window.removeEventListener('resize', update)
+      window.removeEventListener('scroll', update, true)
+    }
+  }, [open, menuWidth, onClose, triggerRef])
+
+  if (!open || typeof document === 'undefined') return null
+
+  return createPortal(
+    <div
+      ref={menuRef}
+      role="listbox"
+      style={{
+        position: 'fixed',
+        left: pos?.left ?? 8,
+        top: pos?.top ?? 8,
+        zIndex: 5000,
+        visibility: pos ? 'visible' : 'hidden',
+        width: menuWidth,
+        maxWidth: 'calc(100vw - 16px)',
+        boxSizing: 'border-box',
+        borderRadius: 10,
+        border: '1px solid var(--border)',
+        background: 'var(--surface)',
+        boxShadow: '0 14px 28px rgba(0,0,0,0.25)',
+      }}
+    >
+      {children}
+    </div>,
+    document.body,
+  )
+}
+
 // ── Дропдаун цвета (демо CustomColorDropdown: свотч 32px + сетка кружков) ──
 
 function ColorDropdown({
@@ -46,18 +139,24 @@ function ColorDropdown({
   onChange: (value: string) => void
   title: string
 }) {
+  const [open, setOpen] = useState(false)
+  const triggerRef = useRef<HTMLButtonElement | null>(null)
   const checkColor = readableColorForHex(value)
   return (
-    <details style={{ position: 'relative' }}>
-      <summary
+    <>
+      <button
+        ref={triggerRef}
+        type="button"
         title={`${title}: ${value}`}
         aria-label={title}
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
         style={{
-          listStyle: 'none',
           cursor: 'pointer',
           userSelect: 'none',
           width: 30,
           height: 30,
+          boxSizing: 'border-box',
           borderRadius: 7,
           border: '1px solid var(--border)',
           background: 'var(--grid-pill-bg)',
@@ -77,55 +176,48 @@ function ColorDropdown({
             boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.18)',
           }}
         />
-      </summary>
-      <div
-        style={{
-          position: 'absolute',
-          top: 'calc(100% + 4px)',
-          right: 0,
-          zIndex: 10,
-          display: 'grid',
-          gridTemplateColumns: 'repeat(10, 24px)',
-          gap: 6,
-          width: 324,
-          maxWidth: 'calc(100vw - 32px)',
-          padding: 9,
-          borderRadius: 10,
-          border: '1px solid var(--border)',
-          background: 'var(--surface)',
-          boxShadow: '0 14px 28px rgba(0,0,0,0.25)',
-        }}
-      >
-        {CARD_COLOR_OPTIONS.map((option) => (
-          <button
-            key={option}
-            type="button"
-            title={option}
-            onClick={(e) => {
-              onChange(option)
-              e.currentTarget.closest('details')?.removeAttribute('open')
-            }}
-            style={{
-              width: 24,
-              height: 24,
-              borderRadius: '50%',
-              cursor: 'pointer',
-              border: '1px solid rgba(0,0,0,0.16)',
-              background: option,
-              boxShadow: option === value
-                ? '0 0 0 2px var(--surface), 0 0 0 4px color-mix(in oklab, var(--accent) 70%, #fff)'
-                : 'none',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: 0,
-            }}
-          >
-            {option === value && <Check size={14} strokeWidth={3} color={checkColor} />}
-          </button>
-        ))}
-      </div>
-    </details>
+      </button>
+      <DropdownPortal open={open} onClose={() => setOpen(false)} triggerRef={triggerRef} menuWidth={324}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(10, 24px)',
+            justifyContent: 'center',
+            gap: 6,
+            padding: 9,
+          }}
+        >
+          {CARD_COLOR_OPTIONS.map((option) => (
+            <button
+              key={option}
+              type="button"
+              title={option}
+              onClick={() => {
+                onChange(option)
+                setOpen(false)
+              }}
+              style={{
+                width: 24,
+                height: 24,
+                borderRadius: '50%',
+                cursor: 'pointer',
+                border: '1px solid rgba(0,0,0,0.16)',
+                background: option,
+                boxShadow: option === value
+                  ? '0 0 0 2px var(--surface), 0 0 0 4px color-mix(in oklab, var(--accent) 70%, #fff)'
+                  : 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 0,
+              }}
+            >
+              {option === value && <Check size={14} strokeWidth={3} color={checkColor} />}
+            </button>
+          ))}
+        </div>
+      </DropdownPortal>
+    </>
   )
 }
 
@@ -140,13 +232,18 @@ function EmojiDropdown({
   onChange: (value: string) => void
   label: string
 }) {
+  const [open, setOpen] = useState(false)
+  const triggerRef = useRef<HTMLButtonElement | null>(null)
   return (
-    <details style={{ position: 'relative' }}>
-      <summary
+    <>
+      <button
+        ref={triggerRef}
+        type="button"
         title={label}
         aria-label={label}
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
         style={{
-          listStyle: 'none',
           cursor: 'pointer',
           userSelect: 'none',
           minWidth: 38,
@@ -163,48 +260,41 @@ function EmojiDropdown({
         }}
       >
         {value || '—'}
-      </summary>
-      <div
-        style={{
-          position: 'absolute',
-          top: 'calc(100% + 4px)',
-          right: 0,
-          zIndex: 10,
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-          gap: 4,
-          minWidth: 150,
-          padding: 6,
-          borderRadius: 8,
-          border: '1px solid var(--border)',
-          background: 'var(--surface)',
-          boxShadow: '0 14px 28px rgba(0,0,0,0.25)',
-        }}
-      >
-        {CARD_EMOJI_OPTIONS.map((option) => (
-          <button
-            key={option || 'none'}
-            type="button"
-            onClick={(e) => {
-              onChange(option)
-              e.currentTarget.closest('details')?.removeAttribute('open')
-            }}
-            style={{
-              height: 28,
-              border: 0,
-              borderRadius: 6,
-              cursor: 'pointer',
-              background: option === value ? 'var(--accent)' : 'var(--grid-pill-bg)',
-              color: option === value ? '#fff' : 'var(--foreground)',
-              fontSize: option ? 12 : 10,
-              fontWeight: 650,
-            }}
-          >
-            {option || '—'}
-          </button>
-        ))}
-      </div>
-    </details>
+      </button>
+      <DropdownPortal open={open} onClose={() => setOpen(false)} triggerRef={triggerRef} menuWidth={150}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+            gap: 4,
+            padding: 6,
+          }}
+        >
+          {CARD_EMOJI_OPTIONS.map((option) => (
+            <button
+              key={option || 'none'}
+              type="button"
+              onClick={() => {
+                onChange(option)
+                setOpen(false)
+              }}
+              style={{
+                height: 28,
+                border: 0,
+                borderRadius: 6,
+                cursor: 'pointer',
+                background: option === value ? 'var(--accent)' : 'var(--grid-pill-bg)',
+                color: option === value ? '#fff' : 'var(--foreground)',
+                fontSize: option ? 12 : 10,
+                fontWeight: 650,
+              }}
+            >
+              {option || '—'}
+            </button>
+          ))}
+        </div>
+      </DropdownPortal>
+    </>
   )
 }
 
