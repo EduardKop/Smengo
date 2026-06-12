@@ -394,29 +394,31 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
 
       const deptId = activeEmp.dept_id ?? null
 
-      // Find the dept group and compute new order
-      const group = groups.find((g) => g.deptId === deptId)
-      if (!group) return
-
-      const oldOrder = group.employees.map((e) => e.id)
+      // Use the FULL dept list from data.employees (sorted by sort_order from server),
+      // not the filtered subset — otherwise reorder indices are wrong when search is active.
+      // (drag is disabled when qFilter is set, but this is defensive and correct regardless.)
+      const fullDeptList = data.employees.filter((e) => (e.dept_id ?? null) === deptId)
+      const oldOrder = fullDeptList.map((e) => e.id)
       const oldIndex = oldOrder.indexOf(activeId)
       const newIndex = oldOrder.indexOf(overId)
       if (oldIndex === -1 || newIndex === -1) return
 
-      const ordered_ids = arrayMove(oldOrder, oldIndex, newIndex)
+      const reorderedDept = arrayMove(fullDeptList, oldIndex, newIndex)
+      const ordered_ids = reorderedDept.map((e) => e.id)
 
-      // Optimistic update: rebuild employees array with new sort_order for this dept
+      // Optimistic update: splice the reordered dept employees back into prev.employees
+      // without touching sort_order values — the array order itself is the source of truth
+      // for the virtualizer, and the server will persist the new order.
       const prev = qc.getQueryData<MonthData>(schedKey)
       if (prev) {
-        const minSort = Math.min(...group.employees.map((e) => e.sort_order))
-        const updatedEmpMap = new Map<string, EmployeeRow>()
-        ordered_ids.forEach((id, idx) => {
-          const emp = empById.get(id)
-          if (emp) updatedEmpMap.set(id, { ...emp, sort_order: minSort + idx })
+        let deptCursor = 0
+        const newEmployees = prev.employees.map((e) => {
+          if ((e.dept_id ?? null) === deptId) {
+            // Replace with next employee from the reordered dept list
+            return reorderedDept[deptCursor++]
+          }
+          return e
         })
-        const newEmployees = prev.employees.map((e) =>
-          updatedEmpMap.has(e.id) ? updatedEmpMap.get(e.id)! : e,
-        )
         qc.setQueryData<MonthData>(schedKey, { ...prev, employees: newEmployees })
       }
 
@@ -428,7 +430,7 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
         }
       })
     },
-    [empById, groups, qc, schedKey, pushToast, resolveErrorMessage],
+    [empById, data.employees, qc, schedKey, pushToast, resolveErrorMessage],
   )
 
   // ── Virtualizer ──────────────────────────────────────────────────
@@ -672,7 +674,7 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
                           onEmployeeClick={canCrudEmployees
                             ? (e) => setEmployeeModal({ mode: 'edit', employee: e })
                             : undefined}
-                          draggable={canCrudEmployees}
+                          draggable={canCrudEmployees && !qFilter}
                         />
                       </div>
                     )
