@@ -161,9 +161,9 @@ export function EmployeeOverlay({
                   </span>
                   <button
                     type="button"
-                    aria-label={label}
+                    aria-label={copiedField === field ? t('copied') : `${t('copyAction')} ${label}`}
                     onClick={() => copy(value, field)}
-                    className="shrink-0 rounded p-0.5 text-muted-foreground opacity-0 group-hover/contact:opacity-100 hover:text-foreground hover:bg-muted transition-all"
+                    className="shrink-0 rounded p-0.5 text-muted-foreground opacity-0 group-hover/contact:opacity-100 focus-visible:opacity-100 hover:text-foreground hover:bg-muted transition-all"
                   >
                     {copiedField === field
                       ? <Check size={12} className="text-green-600" />

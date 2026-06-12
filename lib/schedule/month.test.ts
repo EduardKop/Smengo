@@ -95,6 +95,17 @@ describe('daysUntilBirthday', () => {
     // today = 2026-06-12, birthday = 1990-06-11 (passed yesterday) → next is 2027-06-11 = 364 days
     expect(daysUntilBirthday('1990-06-11', '2026-06-12')).toBe(364)
   })
+
+  it('handles Feb 29 birthdays in non-leap years', () => {
+    // 2026 is not a leap year → Feb-29 normalised to Feb-28
+    // today = 2026-02-27, effective birthday = 2026-02-28 → 1 day away
+    expect(daysUntilBirthday('1996-02-29', '2026-02-27')).toBe(1)
+    // today = 2026-02-28, effective birthday = 2026-02-28 → 0 (today)
+    expect(daysUntilBirthday('1996-02-29', '2026-02-28')).toBe(0)
+    // today = 2026-03-01, effective birthday 2026-02-28 already passed →
+    // next is 2027-02-28 (2027 is also non-leap); 2026-03-01 to 2027-02-28 = 364 days
+    expect(daysUntilBirthday('1996-02-29', '2026-03-01')).toBe(364)
+  })
 })
 
 describe('yearsOfService', () => {

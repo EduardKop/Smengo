@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import { Phone, Send, Mail, Copy, Check } from 'lucide-react'
-import { useTranslations, useLocale } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import type { EmployeeRow, DepartmentRow } from '@/lib/schedule/types'
 import { daysUntilBirthday, yearsOfService } from '@/lib/schedule/month'
 
@@ -16,7 +16,6 @@ interface EmployeeCardProps {
 
 export function EmployeeCard({ employee, departments, today, onEdit }: EmployeeCardProps) {
   const t = useTranslations('app.schedule')
-  const locale = useLocale()
   const [copiedField, setCopiedField] = useState<string | null>(null)
 
   const dept = departments.find((d) => d.id === employee.dept_id)
@@ -121,9 +120,9 @@ export function EmployeeCard({ employee, departments, today, onEdit }: EmployeeC
                 </span>
                 <button
                   type="button"
-                  aria-label={`${t('copied')} ${label}`}
+                  aria-label={copiedField === field ? t('copied') : `${t('copyAction')} ${label}`}
                   onClick={() => copy(value, field)}
-                  className="shrink-0 rounded p-0.5 text-muted-foreground opacity-0 group-hover/contact:opacity-100 hover:text-foreground hover:bg-muted transition-all"
+                  className="shrink-0 rounded p-0.5 text-muted-foreground opacity-0 group-hover/contact:opacity-100 focus-visible:opacity-100 hover:text-foreground hover:bg-muted transition-all"
                 >
                   {copiedField === field
                     ? <Check size={12} className="text-green-600" />

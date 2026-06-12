@@ -41,7 +41,7 @@ export function EmployeeList({ employees, departments, today, onEdit }: Employee
               {t('fieldDept')}
             </th>
             <th className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-              Контакты
+              {t('fieldContacts')}
             </th>
             <th className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
               {t('fieldBirthDate')}
@@ -65,10 +65,10 @@ export function EmployeeList({ employees, departments, today, onEdit }: Employee
 
             const serviceLabel = service !== null ? t('serviceYears', { n: service }) : null
 
-            const contacts: Array<{ field: string; value: string | null; Icon: typeof Phone }> = [
-              { field: `${emp.id}-phone`, value: emp.phone, Icon: Phone },
-              { field: `${emp.id}-telegram`, value: emp.telegram, Icon: Send },
-              { field: `${emp.id}-email`, value: emp.email, Icon: Mail },
+            const contacts: Array<{ field: string; value: string | null; Icon: typeof Phone; label: string }> = [
+              { field: `${emp.id}-phone`, value: emp.phone, Icon: Phone, label: t('fieldPhone') },
+              { field: `${emp.id}-telegram`, value: emp.telegram, Icon: Send, label: t('fieldTelegram') },
+              { field: `${emp.id}-email`, value: emp.email, Icon: Mail, label: t('fieldEmail') },
             ]
 
             return (
@@ -104,14 +104,15 @@ export function EmployeeList({ employees, departments, today, onEdit }: Employee
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="flex items-center gap-1.5">
-                    {contacts.map(({ field, value, Icon }) =>
+                    {contacts.map(({ field, value, Icon, label }) =>
                       value ? (
                         <button
                           key={field}
                           type="button"
                           title={value}
+                          aria-label={copiedKey === field ? t('copied') : `${t('copyAction')} ${label}`}
                           onClick={() => copy(value, field)}
-                          className="group/btn flex items-center gap-1 rounded border border-border/60 px-1.5 py-0.5 text-[11px] text-muted-foreground hover:border-border hover:text-foreground transition-colors"
+                          className="group/btn flex items-center gap-1 rounded border border-border/60 px-1.5 py-0.5 text-[11px] text-muted-foreground hover:border-border hover:text-foreground focus-visible:opacity-100 transition-colors"
                         >
                           {copiedKey === field
                             ? <Check size={11} className="text-green-600" />

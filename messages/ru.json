@@ -1932,6 +1932,8 @@
       "viewCards": "Карточки",
       "viewList": "Список",
       "copied": "Скопировано",
+      "copyAction": "Копировать",
+      "fieldContacts": "Контакты",
       "editEmployee": "Редактировать",
       "birthdayIn": "ДР через {n} дн.",
       "birthdayToday": "День рождения сегодня",

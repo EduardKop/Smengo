@@ -64,21 +64,36 @@ export function isNightShift(start: string, end: string): boolean {
 /**
  * Дней до ближайшего дня рождения (0 = сегодня, считается UTC-чисто).
  * null если birthDateISO не задан.
+ *
+ * Feb-29 in a non-leap year is normalised to Feb-28 (next occurrence of "their
+ * birthday" in years that do not have Feb 29).
  */
 export function daysUntilBirthday(birthDateISO: string | null, todayISO: string): number | null {
   if (!birthDateISO) return null
   const [ty, tm, td] = todayISO.split('-').map(Number)
-  const [, bm, bd] = birthDateISO.split('-').map(Number)
+  let [, bm, bd] = birthDateISO.split('-').map(Number)
+
+  // Normalise Feb-29 birthday: if target year is not a leap year, use Feb-28
+  function effectiveBirthday(year: number): Date {
+    let effM = bm!
+    let effD = bd!
+    if (effM === 2 && effD === 29) {
+      // Is this year a leap year?
+      const isLeap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0
+      if (!isLeap) effD = 28
+    }
+    return new Date(Date.UTC(year, effM - 1, effD))
+  }
 
   // Next birthday in current or next year
   let nextYear = ty!
-  const nextBirthday = new Date(Date.UTC(nextYear, bm! - 1, bd!))
   const todayDate = new Date(Date.UTC(ty!, tm! - 1, td!))
+  const nextBirthday = effectiveBirthday(nextYear)
 
   if (nextBirthday < todayDate) {
     // Already passed this year — next birthday is in the next year
     nextYear += 1
-    const nextBd = new Date(Date.UTC(nextYear, bm! - 1, bd!))
+    const nextBd = effectiveBirthday(nextYear)
     return Math.round((nextBd.getTime() - todayDate.getTime()) / 86_400_000)
   }
 

@@ -1933,6 +1933,8 @@
       "viewCards": "Cards",
       "viewList": "List",
       "copied": "Copied",
+      "copyAction": "Copy",
+      "fieldContacts": "Contacts",
       "editEmployee": "Edit",
       "birthdayIn": "Birthday in {n}d",
       "birthdayToday": "Birthday today",

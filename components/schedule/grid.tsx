@@ -303,14 +303,25 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
     return m
   }, [data.departments])
 
-  // Filter employees by search query and dept filter
+  // Filter employees by search query (and dept filter for the Employees tab).
+  // NOTE: the schedule-tab groups useMemo applies dept filtering independently,
+  // so we only add dept filtering here — filteredEmployees is used by EmployeesTab.
   const filteredEmployees = useMemo(() => {
     let list = data.employees
     if (qFilter) {
       list = list.filter((e) => e.full_name.toLowerCase().includes(qFilter))
     }
+    // Dept filter — applied here so EmployeesTab respects it too.
+    // The schedule-tab groups useMemo below also filters by dept directly
+    // (it operates on filteredEmployees which already has q-filter applied),
+    // so we must NOT add dept-filtering there again.
+    if (deptFilter === NO_DEPT_FILTER) {
+      list = list.filter((e) => e.dept_id === null)
+    } else if (deptFilter) {
+      list = list.filter((e) => e.dept_id === deptFilter)
+    }
     return list
-  }, [data.employees, qFilter])
+  }, [data.employees, qFilter, deptFilter])
 
   // Group employees: by dept_id (departments in sort order), null dept last
   interface DeptGroup {
@@ -319,6 +330,8 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
     employees: typeof filteredEmployees
   }
 
+  // Group employees: filteredEmployees is already filtered by q and dept,
+  // so we just bucket them by dept_id here without re-applying dept filter.
   const groups = useMemo((): DeptGroup[] => {
     const byDept = new Map<string | null, typeof filteredEmployees>()
     for (const e of filteredEmployees) {
@@ -334,19 +347,17 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
     for (const deptId of sortedDeptIds) {
       const employees = byDept.get(deptId)
       if (!employees || employees.length === 0) continue
-      // Apply dept filter: only show selected dept
-      if (deptFilter && deptFilter !== deptId) continue
       result.push({ deptId, deptName: deptMap.get(deptId) ?? deptId, employees })
     }
 
     // "No department" group — only when employees exist without dept_id
     const noDeptEmployees = byDept.get(null)
-    if (noDeptEmployees && noDeptEmployees.length > 0 && (!deptFilter || deptFilter === NO_DEPT_FILTER)) {
+    if (noDeptEmployees && noDeptEmployees.length > 0) {
       result.push({ deptId: null, deptName: t('deptNoDept'), employees: noDeptEmployees })
     }
 
     return result
-  }, [filteredEmployees, sortedDeptIds, deptMap, deptFilter, t])
+  }, [filteredEmployees, sortedDeptIds, deptMap, t])
 
   // ── Collapsible groups ───────────────────────────────────────────
   const [collapsedDepts, setCollapsedDepts] = useState<Set<string>>(new Set())
@@ -484,7 +495,7 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
     <div className="flex flex-col">
 
       {/* Tab switcher — always visible */}
-      <div className="mb-3 flex items-center gap-1 border-b border-border pb-0">
+      <div role="tablist" className="mb-3 flex items-center gap-1 border-b border-border pb-0">
         {(['schedule', 'employees'] as const).map((tab) => (
           <button
             key={tab}
