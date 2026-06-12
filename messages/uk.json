@@ -1852,7 +1852,9 @@
         "sun": "Нд"
       },
       "deptNoDept": "Без відділу",
-      "employeesCount": "{count} осіб"
+      "employeesCount": "{count} осіб",
+      "hourSuffix": "год",
+      "nightBadge": "ніч"
     },
     "employees": {
       "title": "Співробітники",

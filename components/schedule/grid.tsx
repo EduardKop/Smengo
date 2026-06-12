@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 
 import type { UserRole } from '@/supabase/types'
 import type { MonthData, GridMode } from '@/lib/schedule/types'
@@ -60,6 +60,7 @@ export interface ScheduleGridProps {
 
 export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, initialData }: ScheduleGridProps) {
   const t = useTranslations('app.schedule')
+  const locale = useLocale()
 
   // ── URL state (dept, q, mode) ───────────────────────────────────
   const searchParams = useSearchParams()
@@ -86,10 +87,15 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
 
   const days = useMemo(() => monthDays(year, month), [year, month])
 
-  // Build schedule map for future cell rendering (Task 12)
+  // Build schedule map: employee_id → dateISO → entry
   const scheduleMap = useMemo(() => buildScheduleMap(data.entries), [data.entries])
-  // TODO(T12): scheduleMap passed into cell renderer once EmployeeGridRow supports entries
-  void scheduleMap
+
+  // Build status lookup map: status_id → StatusTypeRow
+  const statusById = useMemo(() => {
+    const m = new Map<string, (typeof data.statusTypes)[number]>()
+    for (const s of data.statusTypes) m.set(s.id, s)
+    return m
+  }, [data.statusTypes])
 
   // ── Computed widths ──────────────────────────────────────────────
 
@@ -281,6 +287,11 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
                   today={today}
                   rowHeight={virtualItem.size}
                   cellW={cellW}
+                  mode={mode}
+                  locale={locale}
+                  scheduleMap={scheduleMap}
+                  statusById={statusById}
+                  entriesForEmployee={scheduleMap.get(emp.id)}
                 />
               </div>
             )

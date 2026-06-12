@@ -1853,7 +1853,9 @@
         "sun": "Su"
       },
       "deptNoDept": "No department",
-      "employeesCount": "{count} ppl"
+      "employeesCount": "{count} ppl",
+      "hourSuffix": "h",
+      "nightBadge": "night"
     },
     "employees": {
       "title": "Employees",

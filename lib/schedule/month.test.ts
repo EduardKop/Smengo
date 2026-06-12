@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { monthDays, monthKey, monthRange, todayISOInTz } from './month'
+import { monthDays, monthKey, monthRange, todayISOInTz, shiftDurationHours } from './month'
 
 describe('monthDays', () => {
   it('returns 31 days for July 2026 with correct weekdays', () => {
@@ -40,5 +40,19 @@ describe('todayISOInTz', () => {
     const ref = new Date('2026-06-12T23:30:00Z')
     expect(todayISOInTz('Europe/Kyiv', ref)).toBe('2026-06-13')
     expect(todayISOInTz('UTC', ref)).toBe('2026-06-12')
+  })
+})
+
+describe('shiftDurationHours', () => {
+  it('ночная смена через полночь 22:00-06:00 → 8', () => {
+    expect(shiftDurationHours('22:00', '06:00')).toBe(8)
+  })
+
+  it('обычная смена 09:00-17:30 → 8.5', () => {
+    expect(shiftDurationHours('09:00', '17:30')).toBe(8.5)
+  })
+
+  it('одинаковое время 09:00-09:00 → 24 (полные сутки)', () => {
+    expect(shiftDurationHours('09:00', '09:00')).toBe(24)
   })
 })

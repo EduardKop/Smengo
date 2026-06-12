@@ -36,6 +36,19 @@ export function monthRange(year: number, month: number): { from: string; to: str
 }
 
 /**
+ * Длительность смены в часах; ночная через полночь корректна (22:00-06:00 → 8).
+ * 09:00-09:00 считается полной 24-часовой сменой.
+ */
+export function shiftDurationHours(start: string, end: string): number {
+  const [sh, sm] = start.split(':').map(Number)
+  const [eh, em] = end.split(':').map(Number)
+  const startMin = (sh ?? 0) * 60 + (sm ?? 0)
+  const endMin = (eh ?? 0) * 60 + (em ?? 0)
+  const diff = (endMin - startMin + 24 * 60) % (24 * 60)
+  return (diff === 0 ? 24 * 60 : diff) / 60
+}
+
+/**
  * Дата «сегодня» в таймзоне организации, формат YYYY-MM-DD.
  * @throws {RangeError} if timeZone is not a valid IANA zone
  */

@@ -2,7 +2,8 @@
 
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import type { MonthDay } from '@/lib/schedule/month'
-import type { EmployeeRow } from '@/lib/schedule/types'
+import type { EmployeeRow, StatusTypeRow, ScheduleEntryRow, GridMode, ScheduleMap } from '@/lib/schedule/types'
+import { GridCell } from './grid-cell'
 
 export const NAME_COL_WIDTH = 220
 
@@ -48,13 +49,30 @@ interface EmployeeRowProps {
   rowHeight: number
   /** Deterministic cell width in px (from CELL_WIDTH[mode]) */
   cellW: number
+  mode: GridMode
+  locale: string
+  scheduleMap: ScheduleMap
+  /** status_id → StatusTypeRow; built from data.statusTypes */
+  statusById: Map<string, StatusTypeRow>
+  /** Entry for a specific date (resolved from scheduleMap by parent for this employee) */
+  entriesForEmployee: Map<string, ScheduleEntryRow> | undefined
 }
 
-export function EmployeeGridRow({ employee, days, today, rowHeight, cellW }: EmployeeRowProps) {
+export function EmployeeGridRow({
+  employee,
+  days,
+  today,
+  rowHeight,
+  cellW,
+  mode,
+  locale,
+  statusById,
+  entriesForEmployee,
+}: EmployeeRowProps) {
   return (
     <div
       role="row"
-      className="flex border-b border-border"
+      className="flex border-b border-border group"
       style={{ height: rowHeight }}
       data-employee-id={employee.id}
     >
@@ -76,22 +94,36 @@ export function EmployeeGridRow({ employee, days, today, rowHeight, cellW }: Emp
       {/* Day cells — deterministic width, no flex-1 */}
       {days.map((d) => {
         const isToday = d.dateISO === today
+        const entry = entriesForEmployee?.get(d.dateISO)
+        const status = entry ? statusById.get(entry.status_id) : undefined
+
         return (
           <div
             key={d.dateISO}
-            role="gridcell"
+            role="presentation"
             data-cell={`${employee.id}-${d.dateISO}`}
             className="border-r border-border/50 last:border-r-0 transition-colors"
             style={{
               width: cellW,
               flex: 'none',
+              height: '100%',
               background: isToday
                 ? 'color-mix(in oklab, var(--primary) 6%, var(--grid-cell))'
                 : d.isWeekend
                   ? 'var(--grid-weekend)'
                   : 'var(--grid-cell)',
             }}
-          />
+          >
+            <GridCell
+              entry={entry}
+              status={status}
+              mode={mode}
+              isWeekend={d.isWeekend}
+              isToday={isToday}
+              cellW={cellW}
+              locale={locale}
+            />
+          </div>
         )
       })}
     </div>

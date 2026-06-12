@@ -1852,7 +1852,9 @@
         "sun": "Вс"
       },
       "deptNoDept": "Без отдела",
-      "employeesCount": "{count} чел."
+      "employeesCount": "{count} чел.",
+      "hourSuffix": "ч",
+      "nightBadge": "ночь"
     },
     "employees": {
       "title": "Сотрудники",
