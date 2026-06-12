@@ -29,6 +29,7 @@ import { GridHeader } from './grid-header'
 import { GroupRow, EmployeeGridRow, NAME_COL_WIDTH } from './grid-row'
 import { CoverageRow } from './coverage-row'
 import { AlertsForm } from './settings/alerts-form'
+import { StatusManager } from './settings/status-manager'
 import { CellEditor } from './cell-editor'
 import type { CellEditorAnchor } from './cell-editor'
 import { ToastViewport, useToasts } from './toast'
@@ -175,7 +176,7 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
         'server_error', 'forbidden', 'invalid_reference', 'duplicate',
         'status_wrong_org', 'ids_outside_scope', 'status_not_found',
         'invalid_value', 'empty_list',
-        'plan_limit_employees', 'invalid_id',
+        'plan_limit_employees', 'invalid_id', 'status_in_use',
       ] as const
       type KnownCode = typeof knownCodes[number]
       const isKnown = (knownCodes as readonly string[]).includes(errorCode)
@@ -594,6 +595,17 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
             role={role}
             departments={data.departments}
             alertConfigs={data.alertConfigs}
+          />
+        )}
+
+        {/* Custom status manager — grid tab only */}
+        {activeTab === 'schedule' && (
+          <StatusManager
+            orgId={orgId}
+            year={year}
+            month={month}
+            role={role}
+            statusTypes={data.statusTypes}
           />
         )}
       </div>

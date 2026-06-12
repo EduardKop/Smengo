@@ -1,7 +1,16 @@
 import { z } from 'zod'
 
 const DateISO = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/, { message: 'Формат даты: YYYY-MM-DD' })
-const TimeHM = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, { message: 'Формат времени: HH:MM' })
+export const TimeHM = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, { message: 'Формат времени: HH:MM' })
+
+export const StatusTypeSchema = z.object({
+  code: z.string().trim().regex(/^[a-z0-9_]{2,20}$/, { message: 'Код: 2-20 символов, a-z, 0-9, _' }),
+  label: z.string().trim().min(1, { message: 'Укажите название' }).max(40),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/, { message: 'Цвет в формате #RRGGBB' }),
+  counts_as_present: z.boolean(),
+  start_time: TimeHM.nullable().optional(),
+  end_time: TimeHM.nullable().optional(),
+})
 
 export const UpsertEntrySchema = z.object({
   employee_id: z.string().uuid(),

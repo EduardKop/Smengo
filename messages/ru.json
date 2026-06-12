@@ -1891,7 +1891,8 @@
         "invalid_value": "Недопустимое значение",
         "empty_list": "Пустой список",
         "plan_limit_employees": "Достигнут лимит сотрудников тарифа. Обновите план.",
-        "invalid_id": "Некорректный идентификатор"
+        "invalid_id": "Некорректный идентификатор",
+        "status_in_use": "Статус используется в графике — сначала уберите его из ячеек"
       },
       "quickStart": {
         "title": "Соберите первый график",
@@ -1939,7 +1940,17 @@
       "birthdayToday": "День рождения сегодня",
       "serviceYears": "{n} г. в команде",
       "overlayClose": "Закрыть",
-      "overlayMiniCalTitle": "График месяца"
+      "overlayMiniCalTitle": "График месяца",
+      "statusManagerLabel": "Статусы",
+      "systemBadge": "системный",
+      "addStatus": "Добавить статус",
+      "editStatus": "Редактировать",
+      "cancelEdit": "Отмена",
+      "statusCode": "Код",
+      "statusLabelField": "Название",
+      "statusColor": "Цвет",
+      "countsAsPresent": "Считается присутствием",
+      "deleteStatusConfirm": "Удалить?"
     },
     "employees": {
       "title": "Сотрудники",

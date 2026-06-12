@@ -1891,7 +1891,8 @@
         "invalid_value": "Неприпустиме значення",
         "empty_list": "Порожній список",
         "plan_limit_employees": "Досягнуто ліміт співробітників тарифу. Оновіть план.",
-        "invalid_id": "Некоректний ідентифікатор"
+        "invalid_id": "Некоректний ідентифікатор",
+        "status_in_use": "Статус використовується у графіку — спочатку приберіть його з комірок"
       },
       "quickStart": {
         "title": "Зберіть перший графік",
@@ -1939,7 +1940,17 @@
       "birthdayToday": "День народження сьогодні",
       "serviceYears": "{n} р. в команді",
       "overlayClose": "Закрити",
-      "overlayMiniCalTitle": "Розклад місяця"
+      "overlayMiniCalTitle": "Розклад місяця",
+      "statusManagerLabel": "Статуси",
+      "systemBadge": "системний",
+      "addStatus": "Додати статус",
+      "editStatus": "Редагувати",
+      "cancelEdit": "Скасувати",
+      "statusCode": "Код",
+      "statusLabelField": "Назва",
+      "statusColor": "Колір",
+      "countsAsPresent": "Вважається присутністю",
+      "deleteStatusConfirm": "Видалити?"
     },
     "employees": {
       "title": "Співробітники",
