@@ -60,12 +60,11 @@ function DropdownPortal({
   const menuRef = useRef<HTMLDivElement | null>(null)
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null)
 
-  // Позиция после маунта меню: реальная высота вместо оценки
+  // Позиция после маунта меню (до пейнта): реальная высота вместо оценки.
+  // pos не сбрасывается при закрытии — портал размонтируется, а при
+  // следующем открытии update() пересчитает позицию до отрисовки кадра.
   useLayoutEffect(() => {
-    if (!open) {
-      setPos(null)
-      return
-    }
+    if (!open) return
 
     const update = () => {
       const rect = triggerRef.current?.getBoundingClientRect()
