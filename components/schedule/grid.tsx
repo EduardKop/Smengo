@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useTranslations, useLocale } from 'next-intl'
-import { Search, X } from 'lucide-react'
+import { Search, X, Pencil } from 'lucide-react'
 import {
   DndContext,
   DragOverlay,
@@ -30,6 +30,8 @@ import { GridHeader, TOTALS_OFF_W, TOTALS_HRS_W } from './grid-header'
 import { GroupRow, EmployeeGridRow } from './grid-row'
 import type { GridRowLabels, CellRect } from './grid-row'
 import { OnShiftRow } from './on-shift-row'
+import { GridTabs } from './grid-tabs'
+import { DisplaySettingsButton, type DisplayToggle } from './display-settings'
 import { AlertsForm } from './settings/alerts-form'
 import { StatusManager } from './settings/status-manager'
 import { CellEditor } from './cell-editor'
@@ -200,8 +202,6 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
   const [display, setDisplay] = useState<DisplaySettings>(DEFAULT_DISPLAY_SETTINGS)
   const [displayLoaded, setDisplayLoaded] = useState(false)
   const [showTelegram, setShowTelegram] = useState(false)
-  // TODO(зона е): setEditMode подключается к кнопке «Правка/Готово» в тулбаре
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [editMode, setEditMode] = useState(false)
 
   useEffect(() => {
@@ -219,8 +219,6 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
     } catch { /* ignore */ }
   }, [display, displayLoaded])
 
-  // TODO(зона е): setDisplayKey подключается к поповеру настроек (SettingRow)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const setDisplayKey = useCallback(<K extends keyof DisplaySettings>(key: K, value: boolean) => {
     setDisplay((prev) => ({ ...prev, [key]: value }))
   }, [])
@@ -620,124 +618,74 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
   const isFullyEmpty = data.departments.length === 0 && data.employees.length === 0
   const hasDeptsNoEmployees = data.departments.length > 0 && data.employees.length === 0
 
+  // ── Тумблеры поповера «Отображение» (порядок и disabled — как в демо) ──
+  const displayToggles: DisplayToggle[] = [
+    { key: 'strongWeekend', label: t('highlightWeekendsLabel'), value: display.strongWeekend },
+    { key: 'showTimes', label: t('showTimesLabel'), value: display.showTimes },
+    { key: 'merged', label: t('mergedLabel'), value: display.merged },
+    { key: 'showGrid', label: t('gridLabel'), value: display.showGrid },
+    { key: 'showEmployeeDepartment', label: t('showEmployeeDepartmentLabel'), value: display.showEmployeeDepartment, disabled: mode === 'compact' },
+    { key: 'showEmployeeRole', label: t('showEmployeeRoleLabel'), value: display.showEmployeeRole, disabled: mode === 'compact' },
+    { key: 'showEmployeeDot', label: t('showEmployeeDotLabel'), value: display.showEmployeeDot },
+  ]
+
   // ── Render ───────────────────────────────────────────────────────
   return (
     <div className="flex flex-col">
 
-      {/* Tab switcher — always visible */}
-      <div role="tablist" className="mb-3 flex items-center gap-1 border-b border-border pb-0">
-        {(['schedule', 'employees'] as const).map((tab) => (
-          <button
-            key={tab}
-            type="button"
-            role="tab"
-            aria-selected={activeTab === tab}
-            onClick={() => setShallowParam('tab', tab === 'schedule' ? null : tab)}
-            className={[
-              'px-3 py-2 text-[13px] font-medium transition-colors border-b-2 -mb-px',
-              activeTab === tab
-                ? 'border-primary text-foreground'
-                : 'border-transparent text-muted-foreground hover:text-foreground',
-            ].join(' ')}
-          >
-            {tab === 'schedule' ? t('scheduleTab') : t('employeesTab')}
-          </button>
-        ))}
+      {/* Tab switcher — пилюли DemoTabs-стиля (демо 3771–3833) */}
+      <div className="mb-3 flex items-center">
+        <GridTabs
+          active={activeTab}
+          onChange={(tab) => setShallowParam('tab', tab === 'schedule' ? null : tab)}
+        />
       </div>
 
-      {/* Toolbar — hidden when fully empty (month/filters are meaningless) */}
-      {!isFullyEmpty && (
-      <div className="mb-3 flex flex-wrap items-center gap-2" data-slot="toolbar">
-        {/* Mode switcher — grid tab only */}
-        {activeTab === 'schedule' && (
-          <ModeSwitcher value={mode} onChange={handleModeChange} />
-        )}
-
-        {/* Month nav — grid tab only, centered */}
-        {activeTab === 'schedule' && (
-          <div className="flex flex-1 justify-center">
-            <MonthNav year={year} month={month} />
+      {/* Toolbar вкладки «Сотрудники» — лёгкий ряд над контентом */}
+      {!isFullyEmpty && activeTab === 'employees' && (
+        <div className="mb-3 flex flex-wrap items-center gap-2" data-slot="toolbar">
+          <DeptFilter
+            departments={data.departments}
+            employees={data.employees}
+            value={deptFilter}
+            onChange={handleDeptChange}
+          />
+          <div className="relative flex items-center">
+            <Search
+              size={13}
+              className="pointer-events-none absolute left-2.5 text-muted-foreground"
+            />
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.currentTarget.value)}
+              placeholder={t('searchPlaceholder')}
+              aria-label={t('searchPlaceholder')}
+              className="smengo-tool"
+              style={{ minWidth: 160, cursor: 'text', justifyContent: 'flex-start', paddingLeft: 30, paddingRight: 26 }}
+            />
+            {searchInput && (
+              <button
+                type="button"
+                aria-label={t('clearSearch')}
+                onClick={() => setSearchInput('')}
+                className="absolute right-2 text-muted-foreground hover:text-foreground"
+              >
+                <X size={13} />
+              </button>
+            )}
           </div>
-        )}
-
-        {/* Dept filter — shared on both tabs */}
-        <DeptFilter
-          departments={data.departments}
-          employees={data.employees}
-          value={deptFilter}
-          onChange={handleDeptChange}
-        />
-
-        {/* Search input — shared on both tabs */}
-        <div className="relative flex items-center">
-          <Search
-            size={13}
-            className="pointer-events-none absolute left-2.5 text-muted-foreground"
-          />
-          <input
-            type="text"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.currentTarget.value)}
-            placeholder={t('searchPlaceholder')}
-            aria-label={t('searchPlaceholder')}
-            className="h-8 rounded-md border border-border bg-background pl-8 pr-7 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-            style={{ minWidth: 160 }}
-          />
-          {searchInput && (
+          <div style={{ flex: 1 }} />
+          {canCrudEmployees && (
             <button
               type="button"
-              aria-label={t('clearSearch')}
-              onClick={() => setSearchInput('')}
-              className="absolute right-2 text-muted-foreground hover:text-foreground"
+              onClick={() => setEmployeeModal({ mode: 'create' })}
+              className="smengo-tool smengo-tool--primary"
             >
-              <X size={13} />
+              {t('addEmployee')}
             </button>
           )}
         </div>
-
-        {/* CRUD buttons — rightmost before alerts */}
-        {canCrudEmployees && (
-          <button
-            type="button"
-            onClick={() => setEmployeeModal({ mode: 'create' })}
-            className="h-8 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-          >
-            {t('addEmployee')}
-          </button>
-        )}
-        {canManageDepts && activeTab === 'schedule' && (
-          <button
-            type="button"
-            onClick={() => setDeptModal({ mode: 'create' })}
-            className="h-8 rounded-md border border-border px-3 text-sm font-medium text-foreground hover:bg-muted"
-          >
-            {t('addDepartment')}
-          </button>
-        )}
-
-        {/* Alerts / coverage thresholds — grid tab only */}
-        {activeTab === 'schedule' && (
-          <AlertsForm
-            orgId={orgId}
-            year={year}
-            month={month}
-            role={role}
-            departments={data.departments}
-            alertConfigs={data.alertConfigs}
-          />
-        )}
-
-        {/* Custom status manager — grid tab only */}
-        {activeTab === 'schedule' && (
-          <StatusManager
-            orgId={orgId}
-            year={year}
-            month={month}
-            role={role}
-            statusTypes={data.statusTypes}
-          />
-        )}
-      </div>
       )}
 
       {/* Employees tab content */}
@@ -772,11 +720,138 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
             />
           )}
 
+          {/* Карточка грида: топбар + скролл-контейнер («окно» демо от тулбара вниз) */}
+          <div
+            style={{
+              background: 'var(--grid-cell)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius)',
+              overflow: 'hidden',
+            }}
+          >
+          {/* App topbar (демо 3041–3165) */}
+          <div
+            data-grid-topbar
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '10px 14px', borderBottom: '1px solid var(--border)',
+              background: 'var(--grid-cell)', flexWrap: 'wrap',
+            }}
+          >
+            {/* Month switcher */}
+            <MonthNav year={year} month={month} />
+
+            {/* Dept dropdown */}
+            <DeptFilter
+              departments={data.departments}
+              employees={data.employees}
+              value={deptFilter}
+              onChange={handleDeptChange}
+            />
+
+            {/* Mode segmented */}
+            <ModeSwitcher value={mode} onChange={handleModeChange} />
+
+            <div style={{ flex: 1 }} />
+
+            {/* Search */}
+            <div className="relative flex items-center max-sm:hidden">
+              <Search
+                size={13}
+                className="pointer-events-none absolute left-2.5 text-muted-foreground"
+              />
+              <input
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.currentTarget.value)}
+                placeholder={t('searchPlaceholder')}
+                aria-label={t('searchPlaceholder')}
+                className="smengo-tool"
+                style={{ minWidth: 150, cursor: 'text', justifyContent: 'flex-start', paddingLeft: 30, paddingRight: 26 }}
+              />
+              {searchInput && (
+                <button
+                  type="button"
+                  aria-label={t('clearSearch')}
+                  onClick={() => setSearchInput('')}
+                  className="absolute right-2 text-muted-foreground hover:text-foreground"
+                >
+                  <X size={13} />
+                </button>
+              )}
+            </div>
+
+            {/* Add department (аналог «+ Секция» демо) */}
+            {canManageDepts && (
+              <button
+                type="button"
+                onClick={() => setDeptModal({ mode: 'create' })}
+                className="smengo-tool max-sm:hidden"
+              >
+                {t('addDepartment')}
+              </button>
+            )}
+
+            {/* Edit toggle */}
+            {canEdit && (
+              <button
+                type="button"
+                onClick={() => setEditMode((v) => !v)}
+                className="smengo-tool"
+                data-active={editMode}
+              >
+                <Pencil style={{ width: 11, height: 11 }} />
+                {editMode ? t('editDone') : t('editBtn')}
+              </button>
+            )}
+
+            {/* Export — реализация экспорта в этапе 1.5, пока тост */}
+            <button
+              type="button"
+              onClick={() => pushToast(t('toastExported'))}
+              className="smengo-tool"
+            >
+              {t('exportBtn')}
+            </button>
+
+            {/* Пороги покрытия / статусы / отображение */}
+            <AlertsForm
+              orgId={orgId}
+              year={year}
+              month={month}
+              role={role}
+              departments={data.departments}
+              alertConfigs={data.alertConfigs}
+            />
+            <StatusManager
+              orgId={orgId}
+              year={year}
+              month={month}
+              role={role}
+              statusTypes={data.statusTypes}
+            />
+            <DisplaySettingsButton
+              toggles={displayToggles}
+              onToggle={(key, v) => setDisplayKey(key as keyof DisplaySettings, v)}
+            />
+
+            {/* Add employee */}
+            {canCrudEmployees && (
+              <button
+                type="button"
+                onClick={() => setEmployeeModal({ mode: 'create' })}
+                className="smengo-tool smengo-tool--primary"
+              >
+                {t('addEmployee')}
+              </button>
+            )}
+          </div>
+
           {/* Scroll container */}
           <div
             ref={scrollContainerRef}
-            className="overflow-auto rounded-lg border border-border"
-            style={{ height: 'max(calc(100vh - 220px), 400px)' }}
+            className="overflow-auto"
+            style={{ height: 'max(calc(100vh - 270px), 400px)' }}
           >
             {/* Sticky header — same totalWidth as spacer guarantees alignment */}
             <GridHeader
@@ -934,6 +1009,8 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
                 scopeOptions={onShiftScopeOptions}
               />
             )}
+          </div>
+          {/* конец карточки грида */}
           </div>
 
           {/* Legend — status chips below grid */}

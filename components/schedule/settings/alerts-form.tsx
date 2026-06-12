@@ -58,7 +58,7 @@ export function AlertsForm({ orgId, year, month, role, departments, alertConfigs
         aria-label={t('alertsSettingsLabel')}
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        className="smengo-tool smengo-tool--icon"
       >
         <Settings size={15} />
       </button>

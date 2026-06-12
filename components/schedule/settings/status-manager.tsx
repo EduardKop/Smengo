@@ -162,7 +162,7 @@ export function StatusManager({ orgId, year, month, role, statusTypes }: StatusM
         aria-label={t('statusManagerLabel')}
         aria-expanded={open}
         onClick={() => { setOpen((v) => !v); resetForm() }}
-        className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        className="smengo-tool smengo-tool--icon"
       >
         <Palette size={15} />
       </button>
