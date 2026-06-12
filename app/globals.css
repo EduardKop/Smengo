@@ -105,6 +105,8 @@ html {
   --chart-5: #ece9e1;
 
   /* Grid preview palette */
+  --grid-badge-bg: rgba(255, 255, 255, 0.22);
+  --grid-night-badge-bg: rgba(0, 0, 0, 0.18);
   --grid-chrome: #f7f6f2;
   --grid-cell: #ffffff;
   --grid-weekend: #eaf0f7;
@@ -1053,6 +1055,8 @@ tr:hover > .smengo-schedule-cell::before {
   --tool-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
 
   /* Grid preview palette (dark) — Linear-style */
+  --grid-badge-bg: rgba(255, 255, 255, 0.14);
+  --grid-night-badge-bg: rgba(0, 0, 0, 0.42);
   --grid-chrome: #161a22;
   --grid-cell: #141821;
   --grid-weekend: rgba(255, 255, 255, 0.018);

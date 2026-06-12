@@ -17,6 +17,7 @@ export interface AppContext {
     name: string
     plan: PlanTier
     trialEndsAt: string | null
+    timezone: string | null
   }
   role: UserRole
   memberships: MembershipSummary[]
@@ -39,7 +40,7 @@ export async function getAppContext(): Promise<AppContext> {
 
   const { data: rows } = await supabase
     .from('memberships')
-    .select('role, org_id, organizations(id, name, plan, trial_ends_at)')
+    .select('role, org_id, organizations(id, name, plan, trial_ends_at, timezone)')
     .eq('user_id', user.id)
 
   if (!rows || rows.length === 0) redirect('/onboarding')
@@ -85,6 +86,7 @@ export async function getAppContext(): Promise<AppContext> {
       name: org.name,
       plan: org.plan,
       trialEndsAt: org.trial_ends_at,
+      timezone: org.timezone,
     },
     role: active.role,
     memberships,

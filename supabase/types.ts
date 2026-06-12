@@ -139,6 +139,7 @@ export type Database = {
           deleted_at: string | null
           dept_id: string | null
           email: string | null
+          employment_kind: string
           full_name: string
           hired_on: string | null
           id: string
@@ -156,6 +157,7 @@ export type Database = {
           deleted_at?: string | null
           dept_id?: string | null
           email?: string | null
+          employment_kind?: string
           full_name: string
           hired_on?: string | null
           id?: string
@@ -173,6 +175,7 @@ export type Database = {
           deleted_at?: string | null
           dept_id?: string | null
           email?: string | null
+          employment_kind?: string
           full_name?: string
           hired_on?: string | null
           id?: string
@@ -600,6 +603,10 @@ export type Database = {
       }
       remove_member: {
         Args: { p_org_id: string; p_user_id: string }
+        Returns: undefined
+      }
+      reorder_employees: {
+        Args: { p_dept_id?: string; p_ordered_ids: string[] }
         Returns: undefined
       }
       update_member_role: {
