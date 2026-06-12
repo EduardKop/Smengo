@@ -1,6 +1,6 @@
 'use client'
 
-import { Check, MousePointerClick, UserPlus, FolderOpen } from 'lucide-react'
+import { Check, MousePointerClick, UserPlus } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
 // ── Props ────────────────────────────────────────────────────────────

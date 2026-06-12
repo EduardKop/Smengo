@@ -1890,7 +1890,9 @@
         "ids_outside_scope": "Some employees are outside your access scope",
         "status_not_found": "Status not found",
         "invalid_value": "Invalid value",
-        "empty_list": "Empty list"
+        "empty_list": "Empty list",
+        "plan_limit_employees": "Employee limit reached for your plan. Upgrade to add more.",
+        "invalid_id": "Invalid identifier"
       },
       "quickStart": {
         "title": "Build your first schedule",
@@ -1902,7 +1904,30 @@
         "step3Desc": "Click any cell to set a shift, day off, or vacation. Build the whole month in minutes.",
         "addFirstEmployee": "You have departments — now add your first employee to start building the schedule.",
         "comingSoon": "Coming soon"
-      }
+      },
+      "addEmployee": "+ Employee",
+      "addDepartment": "+ Department",
+      "deptModalTitleCreate": "Create department",
+      "deptModalTitleRename": "Rename department",
+      "deptModalTitleDelete": "Delete department",
+      "deptDeleteWarning": "Employees will not be deleted — they will move to «No department»",
+      "employeeModalTitleCreate": "Add employee",
+      "employeeModalTitleEdit": "Edit employee",
+      "deleteEmployee": "Delete employee",
+      "deleteEmployeeConfirm": "The employee will be hidden. Data and schedule entries are preserved.",
+      "kindStaff": "Staff",
+      "kindTrainee": "Trainee",
+      "fieldFullName": "Full name",
+      "fieldPosition": "Position",
+      "fieldDept": "Department",
+      "fieldPhone": "Phone",
+      "fieldTelegram": "Telegram",
+      "fieldEmail": "Email",
+      "fieldBirthDate": "Date of birth",
+      "fieldHiredOn": "Hire date",
+      "noDept": "No department",
+      "employeeCount": "Employees: {count}",
+      "deptNameLabel": "Name"
     },
     "employees": {
       "title": "Employees",

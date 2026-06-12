@@ -1889,7 +1889,9 @@
         "ids_outside_scope": "Часть сотрудников вне вашей зоны доступа",
         "status_not_found": "Статус не найден",
         "invalid_value": "Недопустимое значение",
-        "empty_list": "Пустой список"
+        "empty_list": "Пустой список",
+        "plan_limit_employees": "Достигнут лимит сотрудников тарифа. Обновите план.",
+        "invalid_id": "Некорректный идентификатор"
       },
       "quickStart": {
         "title": "Соберите первый график",
@@ -1901,7 +1903,30 @@
         "step3Desc": "Кликните любую ячейку — поставьте смену, выходной или отпуск. Весь месяц — за несколько минут.",
         "addFirstEmployee": "Отделы созданы — добавьте первого сотрудника, чтобы начать составлять график.",
         "comingSoon": "Скоро"
-      }
+      },
+      "addEmployee": "+ Сотрудник",
+      "addDepartment": "+ Отдел",
+      "deptModalTitleCreate": "Создать отдел",
+      "deptModalTitleRename": "Переименовать отдел",
+      "deptModalTitleDelete": "Удалить отдел",
+      "deptDeleteWarning": "Сотрудники отдела не удаляются и попадут в «Без отдела»",
+      "employeeModalTitleCreate": "Добавить сотрудника",
+      "employeeModalTitleEdit": "Редактировать сотрудника",
+      "deleteEmployee": "Удалить сотрудника",
+      "deleteEmployeeConfirm": "Сотрудник будет скрыт. Данные и записи графика сохраняются.",
+      "kindStaff": "Штатный",
+      "kindTrainee": "Стажёр",
+      "fieldFullName": "ФИО",
+      "fieldPosition": "Должность",
+      "fieldDept": "Отдел",
+      "fieldPhone": "Телефон",
+      "fieldTelegram": "Telegram",
+      "fieldEmail": "Email",
+      "fieldBirthDate": "Дата рождения",
+      "fieldHiredOn": "Дата приёма",
+      "noDept": "Без отдела",
+      "employeeCount": "Сотрудников: {count}",
+      "deptNameLabel": "Название"
     },
     "employees": {
       "title": "Сотрудники",

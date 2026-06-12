@@ -1889,7 +1889,9 @@
         "ids_outside_scope": "Частина співробітників поза вашою зоною доступу",
         "status_not_found": "Статус не знайдено",
         "invalid_value": "Неприпустиме значення",
-        "empty_list": "Порожній список"
+        "empty_list": "Порожній список",
+        "plan_limit_employees": "Досягнуто ліміт співробітників тарифу. Оновіть план.",
+        "invalid_id": "Некоректний ідентифікатор"
       },
       "quickStart": {
         "title": "Зберіть перший графік",
@@ -1901,7 +1903,30 @@
         "step3Desc": "Клацніть будь-яку клітинку — поставте зміну, вихідний або відпустку. Весь місяць — за кілька хвилин.",
         "addFirstEmployee": "Відділи створені — додайте першого співробітника, щоб почати складати графік.",
         "comingSoon": "Скоро"
-      }
+      },
+      "addEmployee": "+ Співробітник",
+      "addDepartment": "+ Відділ",
+      "deptModalTitleCreate": "Створити відділ",
+      "deptModalTitleRename": "Перейменувати відділ",
+      "deptModalTitleDelete": "Видалити відділ",
+      "deptDeleteWarning": "Співробітники відділу не видаляються і потраплять до «Без відділу»",
+      "employeeModalTitleCreate": "Додати співробітника",
+      "employeeModalTitleEdit": "Редагувати співробітника",
+      "deleteEmployee": "Видалити співробітника",
+      "deleteEmployeeConfirm": "Співробітник буде прихований. Дані та записи графіку зберігаються.",
+      "kindStaff": "Штатний",
+      "kindTrainee": "Стажер",
+      "fieldFullName": "ПІБ",
+      "fieldPosition": "Посада",
+      "fieldDept": "Відділ",
+      "fieldPhone": "Телефон",
+      "fieldTelegram": "Telegram",
+      "fieldEmail": "Email",
+      "fieldBirthDate": "Дата народження",
+      "fieldHiredOn": "Дата прийому",
+      "noDept": "Без відділу",
+      "employeeCount": "Співробітників: {count}",
+      "deptNameLabel": "Назва"
     },
     "employees": {
       "title": "Співробітники",

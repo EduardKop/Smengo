@@ -25,6 +25,11 @@ import { DeptFilter } from './dept-filter'
 import { ModeSwitcher } from './mode-switcher'
 import { Legend } from './legend'
 import { QuickStart, QuickStartBanner } from './quick-start'
+import { DeptModal } from './dept-modal'
+import type { DeptModalState } from './dept-modal'
+import { EmployeeModal } from './employee-modal'
+import type { EmployeeModalState } from './employee-modal'
+import type { EmployeeRow } from '@/lib/schedule/types'
 
 // ── Row height by mode ──────────────────────────────────────────────
 
@@ -145,7 +150,12 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
 
   const resolveErrorMessage = useCallback(
     (errorCode: string): string => {
-      const knownCodes = ['server_error', 'forbidden', 'invalid_reference', 'duplicate', 'status_wrong_org', 'ids_outside_scope', 'status_not_found', 'invalid_value', 'empty_list'] as const
+      const knownCodes = [
+        'server_error', 'forbidden', 'invalid_reference', 'duplicate',
+        'status_wrong_org', 'ids_outside_scope', 'status_not_found',
+        'invalid_value', 'empty_list',
+        'plan_limit_employees', 'invalid_id',
+      ] as const
       type KnownCode = typeof knownCodes[number]
       const isKnown = (knownCodes as readonly string[]).includes(errorCode)
       return isKnown
@@ -168,6 +178,8 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   const canEdit = !isReadOnly && can(role, 'edit_schedule')
+  const canCrudEmployees = !isReadOnly && can(role, 'crud_employees')
+  const canManageDepts = !isReadOnly && can(role, 'manage_departments')
 
   const handleCellClick = useCallback(
     (employeeId: string, dateISO: string, cellEl: HTMLElement) => {
@@ -221,6 +233,18 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
     )
   }, [editorAnchor, clearMutation, pushToast, resolveErrorMessage])
 
+  // ── Modal state ──────────────────────────────────────────────────
+
+  const [deptModal, setDeptModal] = useState<DeptModalState | null>(null)
+  const [employeeModal, setEmployeeModal] = useState<EmployeeModalState | null>(null)
+
+  const handleModalError = useCallback(
+    (code: string) => {
+      pushToast(resolveErrorMessage(code))
+    },
+    [pushToast, resolveErrorMessage],
+  )
+
   // ── Computed widths ──────────────────────────────────────────────
 
   const cellW = CELL_WIDTH[mode]
@@ -235,6 +259,13 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
     for (const d of sorted) deptMap.set(d.id, d.name)
     const sortedDeptIds = sorted.map((d) => d.id)
     return { deptMap, sortedDeptIds }
+  }, [data.departments])
+
+  // Full dept lookup map: id → DepartmentRow
+  const deptById = useMemo(() => {
+    const m = new Map<string, typeof data.departments[number]>()
+    for (const d of data.departments) m.set(d.id, d)
+    return m
   }, [data.departments])
 
   // Filter employees by search query and dept filter
@@ -315,7 +346,7 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
 
   // Employee lookup map for O(1) access in render
   const empById = useMemo(() => {
-    const m = new Map<string, (typeof data.employees)[number]>()
+    const m = new Map<string, EmployeeRow>()
     for (const e of data.employees) m.set(e.id, e)
     return m
   }, [data.employees])
@@ -405,6 +436,26 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
           )}
         </div>
 
+        {/* CRUD buttons — rightmost before alerts */}
+        {canCrudEmployees && (
+          <button
+            type="button"
+            onClick={() => setEmployeeModal({ mode: 'create' })}
+            className="h-8 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            {t('addEmployee')}
+          </button>
+        )}
+        {canManageDepts && (
+          <button
+            type="button"
+            onClick={() => setDeptModal({ mode: 'create' })}
+            className="h-8 rounded-md border border-border px-3 text-sm font-medium text-foreground hover:bg-muted"
+          >
+            {t('addDepartment')}
+          </button>
+        )}
+
         {/* Alerts / coverage thresholds — rightmost */}
         <AlertsForm
           orgId={orgId}
@@ -422,14 +473,16 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
         <QuickStart
           departmentsCount={data.departments.length}
           employeesCount={data.employees.length}
-          onCreateDepartment={undefined}
-          onAddEmployee={undefined}
+          onCreateDepartment={canManageDepts ? () => setDeptModal({ mode: 'create' }) : undefined}
+          onAddEmployee={canCrudEmployees ? () => setEmployeeModal({ mode: 'create' }) : undefined}
         />
       ) : (
         <>
           {/* Mini-banner: depts exist but no employees yet */}
           {hasDeptsNoEmployees && (
-            <QuickStartBanner onAddEmployee={undefined} />
+            <QuickStartBanner
+              onAddEmployee={canCrudEmployees ? () => setEmployeeModal({ mode: 'create' }) : undefined}
+            />
           )}
 
           {/* Scroll container */}
@@ -465,6 +518,7 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
 
                 if (row.kind === 'group') {
                   const collapsed = isDeptCollapsed(row.deptId)
+                  const dept = row.deptId ? deptById.get(row.deptId) : undefined
                   return (
                     <div
                       key={`group-${row.deptId ?? 'null'}`}
@@ -482,6 +536,15 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
                         collapsed={collapsed}
                         onToggle={() => toggleDept(row.deptId)}
                         employeesCountLabel={t('employeesCount', { count: row.count })}
+                        onAddEmployee={canCrudEmployees
+                          ? () => setEmployeeModal({ mode: 'create', deptId: row.deptId })
+                          : undefined}
+                        onRenameDept={canManageDepts && dept
+                          ? () => setDeptModal({ mode: 'rename', dept })
+                          : undefined}
+                        onDeleteDept={canManageDepts && dept
+                          ? () => setDeptModal({ mode: 'delete', dept })
+                          : undefined}
                       />
                     </div>
                   )
@@ -515,6 +578,9 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
                       statusById={statusById}
                       entriesForEmployee={scheduleMap.get(emp.id)}
                       onCellClick={canEdit ? handleCellClick : undefined}
+                      onEmployeeClick={canCrudEmployees
+                        ? (e) => setEmployeeModal({ mode: 'edit', employee: e })
+                        : undefined}
                     />
                   </div>
                 )
@@ -547,6 +613,28 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
           onClear={handleClear}
           onClose={handleEditorClose}
           containerRef={scrollContainerRef}
+        />
+      )}
+
+      {/* Dept modal */}
+      {deptModal && (
+        <DeptModal
+          state={deptModal}
+          orgId={orgId}
+          onClose={() => setDeptModal(null)}
+          onError={handleModalError}
+        />
+      )}
+
+      {/* Employee modal */}
+      {employeeModal && (
+        <EmployeeModal
+          state={employeeModal}
+          orgId={orgId}
+          departments={data.departments}
+          currentCount={data.employees.length}
+          onClose={() => setEmployeeModal(null)}
+          onError={handleModalError}
         />
       )}
 

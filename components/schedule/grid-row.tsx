@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronDown, ChevronRight } from 'lucide-react'
+import { ChevronDown, ChevronRight, Pencil, Plus, Trash2 } from 'lucide-react'
 import type { MonthDay } from '@/lib/schedule/month'
 import type { EmployeeRow, StatusTypeRow, ScheduleEntryRow, GridMode, ScheduleMap } from '@/lib/schedule/types'
 import { GridCell } from './grid-cell'
@@ -15,19 +15,37 @@ interface GroupRowProps {
   collapsed: boolean
   onToggle: () => void
   employeesCountLabel: string
+  /** If provided, show department action buttons (rename/delete) */
+  onRenameDept?: () => void
+  onDeleteDept?: () => void
+  /** If provided, show "+" add employee button */
+  onAddEmployee?: () => void
 }
 
-export function GroupRow({ deptName, count, collapsed, onToggle, employeesCountLabel }: GroupRowProps) {
+export function GroupRow({
+  deptName,
+  count,
+  collapsed,
+  onToggle,
+  employeesCountLabel,
+  onRenameDept,
+  onDeleteDept,
+  onAddEmployee,
+}: GroupRowProps) {
+  const showDeptActions = onRenameDept || onDeleteDept
+  const showAddBtn = !!onAddEmployee
+
   return (
     <div
       role="row"
-      className="flex h-9 items-center border-b border-border bg-muted/60 hover:bg-muted transition-colors"
+      className="group flex h-9 items-center border-b border-border bg-muted/60 hover:bg-muted transition-colors"
     >
+      {/* Collapse toggle + label */}
       <button
         type="button"
         aria-expanded={!collapsed}
         onClick={onToggle}
-        className="flex flex-1 items-center gap-2 min-w-0 h-full px-3 cursor-pointer select-none w-full text-left"
+        className="flex flex-1 items-center gap-2 min-w-0 h-full px-3 cursor-pointer select-none text-left"
       >
         {collapsed
           ? <ChevronRight size={14} className="shrink-0 text-muted-foreground" />
@@ -36,6 +54,42 @@ export function GroupRow({ deptName, count, collapsed, onToggle, employeesCountL
         <span className="truncate text-[13px] font-semibold text-foreground">{deptName}</span>
         <span className="shrink-0 text-[11px] text-muted-foreground">{employeesCountLabel}</span>
       </button>
+
+      {/* Action buttons — appear on group hover */}
+      {(showAddBtn || showDeptActions) && (
+        <div className="flex items-center gap-0.5 pr-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          {showAddBtn && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onAddEmployee?.() }}
+              title="Add employee"
+              className="rounded p-1 text-muted-foreground hover:bg-background hover:text-foreground"
+            >
+              <Plus size={14} />
+            </button>
+          )}
+          {onRenameDept && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onRenameDept() }}
+              title="Rename department"
+              className="rounded p-1 text-muted-foreground hover:bg-background hover:text-foreground"
+            >
+              <Pencil size={14} />
+            </button>
+          )}
+          {onDeleteDept && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onDeleteDept() }}
+              title="Delete department"
+              className="rounded p-1 text-muted-foreground hover:bg-background hover:text-destructive"
+            >
+              <Trash2 size={14} />
+            </button>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -65,6 +119,8 @@ interface EmployeeRowProps {
    * and the date ISO string. undefined = read-only (no click handler attached).
    */
   onCellClick?: (employeeId: string, dateISO: string, cellEl: HTMLElement) => void
+  /** Called when employee name is clicked — opens edit modal */
+  onEmployeeClick?: (employee: EmployeeRow) => void
 }
 
 export function EmployeeGridRow({
@@ -80,6 +136,7 @@ export function EmployeeGridRow({
   statusById,
   entriesForEmployee,
   onCellClick,
+  onEmployeeClick,
 }: EmployeeRowProps) {
   return (
     <div
@@ -93,9 +150,19 @@ export function EmployeeGridRow({
         className="sticky left-0 z-10 flex shrink-0 flex-col justify-center border-r border-border bg-background px-3"
         style={{ width: NAME_COL_WIDTH, minWidth: NAME_COL_WIDTH }}
       >
-        <span className="truncate text-[13px] font-medium leading-tight text-foreground">
-          {employee.full_name}
-        </span>
+        {onEmployeeClick ? (
+          <button
+            type="button"
+            onClick={() => onEmployeeClick(employee)}
+            className="truncate text-left text-[13px] font-medium leading-tight text-foreground hover:underline focus:outline-none"
+          >
+            {employee.full_name}
+          </button>
+        ) : (
+          <span className="truncate text-[13px] font-medium leading-tight text-foreground">
+            {employee.full_name}
+          </span>
+        )}
         {employee.position && (
           <span className="truncate text-[11px] leading-tight text-muted-foreground">
             {employee.position}
