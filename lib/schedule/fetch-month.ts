@@ -1,5 +1,6 @@
 import { monthRange } from './month'
-import type { MonthData, ScheduleEntryRow } from './types'
+import { AVATAR_BUCKET, AVATAR_SIGNED_URL_TTL_SECONDS } from './avatar'
+import type { EmployeeRow, MonthData, ScheduleEntryRow } from './types'
 import type { Database } from '@/supabase/types'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
@@ -31,6 +32,26 @@ async function fetchAllEntries(supabase: AnySupabase, from: string, to: string):
   return all
 }
 
+/**
+ * В БД employees.avatar_url — путь в приватном бакете; рендеру нужен URL.
+ * Один batch-запрос подписывает все пути сразу (RLS select по членству);
+ * не подписавшийся путь (файл удалён, нет доступа) превращается в null —
+ * Avatar откатывается на инициалы.
+ */
+async function withSignedAvatarUrls(supabase: AnySupabase, employees: EmployeeRow[]): Promise<EmployeeRow[]> {
+  const paths = [...new Set(employees.flatMap((e) => (e.avatar_url ? [e.avatar_url] : [])))]
+  if (paths.length === 0) return employees
+
+  const { data } = await supabase.storage
+    .from(AVATAR_BUCKET)
+    .createSignedUrls(paths, AVATAR_SIGNED_URL_TTL_SECONDS)
+  const urlByPath = new Map(data?.map((item) => [item.path, item.error ? null : item.signedUrl]) ?? [])
+
+  return employees.map((e) =>
+    e.avatar_url ? { ...e, avatar_url: urlByPath.get(e.avatar_url) ?? null } : e,
+  )
+}
+
 /** Единый месяц-фетчер для SSR и клиента: 5 параллельных запросов под RLS. */
 export async function fetchMonthData(supabase: AnySupabase, year: number, month: number): Promise<MonthData> {
   const { from, to } = monthRange(year, month)
@@ -42,7 +63,7 @@ export async function fetchMonthData(supabase: AnySupabase, year: number, month:
     supabase.from('alert_configs').select('*'),
   ])
   return {
-    employees: employees.data ?? [],
+    employees: await withSignedAvatarUrls(supabase, employees.data ?? []),
     departments: departments.data ?? [],
     statusTypes: statusTypes.data ?? [],
     entries,

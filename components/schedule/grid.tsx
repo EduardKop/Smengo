@@ -243,6 +243,7 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
         'invalid_value', 'empty_list',
         'plan_limit_employees', 'invalid_id',
         'unauthorized', 'no_org', 'org_not_found', 'status_in_use',
+        'avatar_invalid_type', 'avatar_too_large', 'avatar_upload_failed',
       ] as const
       type KnownCode = typeof knownCodes[number]
       const isKnown = (knownCodes as readonly string[]).includes(errorCode)

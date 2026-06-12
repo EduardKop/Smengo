@@ -484,7 +484,7 @@ export function EmployeeGridRow({
             minWidth: 0,
           }}
         >
-          <Avatar name={employee.full_name} size={isExt ? 28 : isCompact ? 16 : 20} />
+          <Avatar name={employee.full_name} src={employee.avatar_url} size={isExt ? 28 : isCompact ? 16 : 20} />
 
           {isExt ? (
             <div style={{ minWidth: 0, lineHeight: 1.18 }}>

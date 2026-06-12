@@ -6,8 +6,9 @@
  * Демо — первоисточник дизайна: размеры, шрифты, цвета и тени не менять
  * без синхронного изменения демо.
  *
- * Отличие от демо: вместо стоковых фото (у сотрудников нет поля фото)
- * Avatar рендерит инициалы поверх градиента (правка 4 основателя).
+ * Отличие от демо: вместо стоковых фото Avatar показывает загруженное фото
+ * сотрудника (signed URL из employees.avatar_url), а без фото — инициалы
+ * поверх градиента (правка 4 основателя).
  */
 
 import { useEffect, useRef, useState } from 'react'
@@ -15,7 +16,7 @@ import { createPortal } from 'react-dom'
 import { Check, ChevronDown } from 'lucide-react'
 import type { GridMode } from '@/lib/schedule/types'
 
-// ── Avatar (градиент по stableHash имени; фото в продукте не используем) ──
+// ── Avatar (фото поверх градиента как в демо; без фото — инициалы) ──
 
 export const AVATAR_GRADIENTS = [
   'linear-gradient(135deg, #d8f0a7 0%, #89e8b6 48%, #f6d879 100%)',
@@ -43,7 +44,7 @@ export function nameInitials(name: string): string {
     .join('')
 }
 
-export function Avatar({ name, size = 18 }: { name: string; size?: number }) {
+export function Avatar({ name, src, size = 18 }: { name: string; src?: string | null; size?: number }) {
   const h = stableHash(name)
   const bg = AVATAR_GRADIENTS[h % AVATAR_GRADIENTS.length]
   return (
@@ -52,7 +53,8 @@ export function Avatar({ name, size = 18 }: { name: string; size?: number }) {
       title={name}
       style={{
         width: size, height: size, borderRadius: '50%',
-        backgroundImage: bg,
+        // Фото поверх градиента (как в демо): пока грузится или битый URL — виден градиент
+        backgroundImage: src ? `url("${src}"), ${bg}` : bg,
         backgroundPosition: 'center',
         backgroundSize: 'cover',
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -69,7 +71,7 @@ export function Avatar({ name, size = 18 }: { name: string; size?: number }) {
         userSelect: 'none',
       }}
     >
-      {nameInitials(name)}
+      {src ? null : nameInitials(name)}
     </span>
   )
 }

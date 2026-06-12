@@ -1896,7 +1896,10 @@
         "status_in_use": "Status is used in the schedule — remove it from cells first",
         "unauthorized": "Session expired — please sign in again",
         "no_org": "No active organization — create one in onboarding",
-        "org_not_found": "Organization not found"
+        "org_not_found": "Organization not found",
+        "avatar_invalid_type": "Couldn't read the file — use JPG, PNG, or WebP",
+        "avatar_too_large": "File is too large — up to 2 MB",
+        "avatar_upload_failed": "Couldn't upload the photo. Please try again."
       },
       "quickStart": {
         "title": "Build your first schedule",
@@ -1920,6 +1923,10 @@
       "employeeModalTitleEdit": "Edit employee",
       "deleteEmployee": "Delete employee",
       "deleteEmployeeConfirm": "The employee will be hidden. Data and schedule entries are preserved.",
+      "avatarUpload": "Upload photo",
+      "avatarReplace": "Replace photo",
+      "avatarRemove": "Remove photo",
+      "avatarHint": "JPG, PNG, or WebP. The photo is compressed automatically.",
       "kindStaff": "Staff",
       "kindTrainee": "Trainee",
       "fieldFullName": "Full name",

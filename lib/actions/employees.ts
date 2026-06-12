@@ -7,8 +7,18 @@ import { assertCan } from '@/lib/permissions'
 import { checkPlanLimit } from '@/lib/billing/limits'
 import { EmployeeSchema, ReorderSchema } from '@/lib/validation/schedule'
 import { toClientError } from '@/lib/actions/db-error'
+import {
+  AVATAR_BUCKET,
+  AVATAR_MAX_BYTES,
+  AVATAR_SIGNED_URL_TTL_SECONDS,
+  avatarStoragePath,
+  sniffImageMime,
+} from '@/lib/schedule/avatar'
 
 export type EmpActionResult = { ok: true; id?: string } | { ok: false; error: string }
+
+/** url — свежий signed URL для мгновенного превью без рефетча месяца. */
+export type AvatarActionResult = { ok: true; url: string | null } | { ok: false; error: string }
 
 const UUIDSchema = z.string().uuid()
 
@@ -133,6 +143,96 @@ export async function softDeleteEmployeeAction(employeeId: string): Promise<EmpA
   if (error) return { ok: false, error: toClientError(error) }
 
   revalidatePath('/schedule')
+  return { ok: true }
+}
+
+export async function uploadEmployeeAvatarAction(employeeId: string, formData: FormData): Promise<AvatarActionResult> {
+  if (!UUIDSchema.safeParse(employeeId).success) return { ok: false, error: 'invalid_id' }
+  const res = await getActionContext()
+  if (!res.ok) return { ok: false, error: res.error }
+  const { ctx } = res
+  try {
+    assertCan(ctx.role, 'crud_employees')
+  } catch {
+    return { ok: false, error: 'forbidden' }
+  }
+
+  const file = formData.get('file')
+  if (!(file instanceof File) || file.size === 0) return { ok: false, error: 'avatar_invalid_type' }
+  if (file.size > AVATAR_MAX_BYTES) return { ok: false, error: 'avatar_too_large' }
+
+  // Тип файла — по магическим байтам, клиентскому Content-Type не доверяем
+  const head = new Uint8Array(await file.slice(0, 16).arrayBuffer())
+  const mime = sniffImageMime(head)
+  if (!mime) return { ok: false, error: 'avatar_invalid_type' }
+
+  const { data: employee } = await ctx.supabase
+    .from('employees')
+    .select('id, avatar_url')
+    .eq('id', employeeId)
+    .eq('org_id', ctx.orgId)
+    .is('deleted_at', null)
+    .single()
+  if (!employee) return { ok: false, error: 'invalid_reference' }
+
+  const storage = ctx.supabase.storage.from(AVATAR_BUCKET)
+  const path = avatarStoragePath(ctx.orgId, employeeId, mime)
+  const { error: uploadError } = await storage.upload(path, file, { contentType: mime })
+  if (uploadError) return { ok: false, error: 'avatar_upload_failed' }
+
+  const { error: updateError } = await ctx.supabase
+    .from('employees')
+    .update({ avatar_url: path })
+    .eq('id', employeeId)
+    .eq('org_id', ctx.orgId)
+  if (updateError) {
+    await storage.remove([path]) // не оставляем сироту, исход не важен
+    return { ok: false, error: toClientError(updateError) }
+  }
+
+  if (employee.avatar_url && employee.avatar_url !== path) {
+    await storage.remove([employee.avatar_url]) // best-effort: битая ссылка уже перезаписана
+  }
+
+  const { data: signed } = await storage.createSignedUrl(path, AVATAR_SIGNED_URL_TTL_SECONDS)
+
+  revalidatePath('/schedule')
+  revalidatePath('/employees')
+  return { ok: true, url: signed?.signedUrl ?? null }
+}
+
+export async function removeEmployeeAvatarAction(employeeId: string): Promise<EmpActionResult> {
+  if (!UUIDSchema.safeParse(employeeId).success) return { ok: false, error: 'invalid_id' }
+  const res = await getActionContext()
+  if (!res.ok) return { ok: false, error: res.error }
+  const { ctx } = res
+  try {
+    assertCan(ctx.role, 'crud_employees')
+  } catch {
+    return { ok: false, error: 'forbidden' }
+  }
+
+  const { data: employee } = await ctx.supabase
+    .from('employees')
+    .select('id, avatar_url')
+    .eq('id', employeeId)
+    .eq('org_id', ctx.orgId)
+    .single()
+  if (!employee) return { ok: false, error: 'invalid_reference' }
+
+  if (employee.avatar_url) {
+    const { error } = await ctx.supabase
+      .from('employees')
+      .update({ avatar_url: null })
+      .eq('id', employeeId)
+      .eq('org_id', ctx.orgId)
+    if (error) return { ok: false, error: toClientError(error) }
+    // Файл чистим после успешного обнуления ссылки; сирота не страшнее битой ссылки
+    await ctx.supabase.storage.from(AVATAR_BUCKET).remove([employee.avatar_url])
+  }
+
+  revalidatePath('/schedule')
+  revalidatePath('/employees')
   return { ok: true }
 }
 

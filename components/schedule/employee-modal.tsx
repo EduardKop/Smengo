@@ -3,8 +3,16 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useQueryClient } from '@tanstack/react-query'
-import { createEmployeeAction, updateEmployeeAction, softDeleteEmployeeAction } from '@/lib/actions/employees'
+import {
+  createEmployeeAction,
+  updateEmployeeAction,
+  softDeleteEmployeeAction,
+  uploadEmployeeAvatarAction,
+  removeEmployeeAvatarAction,
+} from '@/lib/actions/employees'
+import { compressAvatarImage } from '@/lib/schedule/avatar-compress'
 import type { EmployeeRow, DepartmentRow } from '@/lib/schedule/types'
+import { Avatar } from './grid-visual'
 
 // ── Modal state shapes ──────────────────────────────────────────────
 
@@ -40,9 +48,15 @@ export function EmployeeModal({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const firstInputRef = useRef<HTMLInputElement>(null)
   const formRef = useRef<HTMLFormElement>(null)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
 
   const isEdit = state.mode === 'edit'
   const employee = isEdit ? state.employee : null
+
+  // avatar_url приходит уже подписанным URL (fetchMonthData); после
+  // upload/remove держим свежее значение локально — без рефетча месяца
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(employee?.avatar_url ?? null)
+  const [avatarPending, setAvatarPending] = useState(false)
 
   // Focus first input on open
   useEffect(() => {
@@ -102,6 +116,49 @@ export function EmployeeModal({
       }
     } finally {
       setIsPending(false)
+    }
+  }
+
+  const handleAvatarPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = '' // повторный выбор того же файла должен снова сработать
+    if (!file || !employee) return
+    setAvatarPending(true)
+    try {
+      let compressed: Blob
+      try {
+        compressed = await compressAvatarImage(file)
+      } catch {
+        onError('avatar_invalid_type')
+        return
+      }
+      const fd = new FormData()
+      fd.append('file', compressed, 'avatar.jpg')
+      const result = await uploadEmployeeAvatarAction(employee.id, fd)
+      if (!result.ok) {
+        onError(result.error)
+      } else {
+        setAvatarUrl(result.url)
+        invalidate()
+      }
+    } finally {
+      setAvatarPending(false)
+    }
+  }
+
+  const handleAvatarRemove = async () => {
+    if (!employee) return
+    setAvatarPending(true)
+    try {
+      const result = await removeEmployeeAvatarAction(employee.id)
+      if (!result.ok) {
+        onError(result.error)
+      } else {
+        setAvatarUrl(null)
+        invalidate()
+      }
+    } finally {
+      setAvatarPending(false)
     }
   }
 
@@ -170,6 +227,43 @@ export function EmployeeModal({
           <form ref={formRef} onSubmit={handleSubmit} noValidate>
             <div className="max-h-[70vh] overflow-y-auto px-6 py-5">
               <div className="flex flex-col gap-4">
+                {/* Фото — только в edit: для upload нужен id сотрудника */}
+                {isEdit && employee && (
+                  <div className="flex items-center gap-3">
+                    <Avatar name={employee.full_name} src={avatarUrl} size={44} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => avatarInputRef.current?.click()}
+                          disabled={avatarPending || isPending}
+                          className="rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-50"
+                        >
+                          {avatarPending ? '…' : avatarUrl ? t('avatarReplace') : t('avatarUpload')}
+                        </button>
+                        {avatarUrl && (
+                          <button
+                            type="button"
+                            onClick={handleAvatarRemove}
+                            disabled={avatarPending || isPending}
+                            className="rounded-md px-2.5 py-1 text-xs font-medium text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                          >
+                            {t('avatarRemove')}
+                          </button>
+                        )}
+                      </div>
+                      <p className="mt-1 text-[11px] text-muted-foreground">{t('avatarHint')}</p>
+                    </div>
+                    <input
+                      ref={avatarInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                      onChange={handleAvatarPick}
+                    />
+                  </div>
+                )}
+
                 {/* full_name */}
                 <div>
                   <label className="mb-1 block text-xs font-medium text-foreground" htmlFor="emp-full_name">
