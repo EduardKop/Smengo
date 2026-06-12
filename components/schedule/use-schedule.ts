@@ -3,7 +3,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import { upsertEntryAction, clearEntryAction } from '@/lib/actions/schedule'
-import { monthRange, monthKey } from '@/lib/schedule/month'
+import { monthKey } from '@/lib/schedule/month'
+import { fetchMonthData } from '@/lib/schedule/fetch-month'
 import type { MonthData, ScheduleEntryRow } from '@/lib/schedule/types'
 
 export function scheduleKey(orgId: string, year: number, month: number) {
@@ -14,22 +15,8 @@ export function useScheduleData(orgId: string, year: number, month: number, init
   return useQuery({
     queryKey: scheduleKey(orgId, year, month),
     initialData,
-    queryFn: async (): Promise<MonthData> => {
-      const supabase = createClient()
-      const { from, to } = monthRange(year, month)
-      const [employees, departments, statusTypes, entries] = await Promise.all([
-        supabase.from('employees').select('*').is('deleted_at', null).order('dept_id').order('sort_order'),
-        supabase.from('departments').select('*').order('name'),
-        supabase.from('status_types').select('*').order('sort_order'),
-        supabase.from('schedule_entries').select('*').gte('entry_date', from).lte('entry_date', to),
-      ])
-      return {
-        employees: employees.data ?? [],
-        departments: departments.data ?? [],
-        statusTypes: statusTypes.data ?? [],
-        entries: entries.data ?? [],
-      }
-    },
+    initialDataUpdatedAt: Date.now(), // SSR-данные свежие на момент гидрации — гасим немедленный фоновый рефетч
+    queryFn: (): Promise<MonthData> => fetchMonthData(createClient(), year, month),
   })
 }
 
@@ -62,7 +49,7 @@ export function useUpsertEntry(orgId: string, year: number, month: number) {
           ...(existing ?? ({
             id: `optimistic-${input.employee_id}-${input.entry_date}`,
             org_id: orgId, note: null, created_by: null, updated_by: null,
-            created_at: '', updated_at: '',
+            created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
           } as ScheduleEntryRow)),
           employee_id: input.employee_id,
           entry_date: input.entry_date,

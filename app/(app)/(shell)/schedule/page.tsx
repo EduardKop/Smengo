@@ -1,9 +1,9 @@
 import { getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import { getAppContext } from '@/lib/auth/context'
-import { monthRange, todayISOInTz } from '@/lib/schedule/month'
+import { todayISOInTz } from '@/lib/schedule/month'
+import { fetchMonthData } from '@/lib/schedule/fetch-month'
 import { ScheduleGrid } from '@/components/schedule/grid'
-import type { MonthData } from '@/lib/schedule/types'
 
 interface PageProps {
   searchParams: Promise<{ m?: string }>
@@ -21,23 +21,7 @@ export default async function SchedulePage({ searchParams }: PageProps) {
   const [yearStr, monthStr] = mParam.split('-')
   const year = Number(yearStr)
   const month = Number(monthStr)
-  const { from, to } = monthRange(year, month)
-
-  const [employees, departments, statusTypes, entries] = await Promise.all([
-    supabase.from('employees').select('*').is('deleted_at', null)
-      .order('dept_id').order('sort_order'),
-    supabase.from('departments').select('*').order('name'),
-    supabase.from('status_types').select('*').order('sort_order'),
-    supabase.from('schedule_entries').select('*')
-      .gte('entry_date', from).lte('entry_date', to),
-  ])
-
-  const initialData: MonthData = {
-    employees: employees.data ?? [],
-    departments: departments.data ?? [],
-    statusTypes: statusTypes.data ?? [],
-    entries: entries.data ?? [],
-  }
+  const initialData = await fetchMonthData(supabase, year, month)
 
   return (
     <>
