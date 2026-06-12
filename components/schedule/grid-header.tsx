@@ -29,6 +29,11 @@ interface GridHeaderProps {
   weekendBg: string
   /** Даты (dateISO) с дефицитом покрытия — «проблемные» колонки */
   problemDays: ReadonlySet<string>
+  /**
+   * Полные демо-визуалы проблемной колонки (тонировка фона + inset-тень).
+   * false (режим просмотра) — остаётся только красное число дня.
+   */
+  problemTint: boolean
   /** Тумблер «Проекты/Телеграм» в шапке колонки сотрудника */
   showTelegram: boolean
   onToggleProjects: () => void
@@ -42,6 +47,7 @@ export function GridHeader({
   cellW,
   weekendBg,
   problemDays,
+  problemTint,
   showTelegram,
   onToggleProjects,
 }: GridHeaderProps) {
@@ -113,6 +119,7 @@ export function GridHeader({
         const weekdayKey = WEEKDAY_KEYS[d.weekday]
         const isWkd = d.isWeekend
         const isProblemCol = problemDays.has(d.dateISO)
+        const isProblemColTinted = problemTint && isProblemCol
         const isWeekBoundary = ci > 0 && (d.weekday === 0 || d.weekday === 5)
 
         return (
@@ -128,7 +135,7 @@ export function GridHeader({
               height: '100%',
               padding: isCompact ? '5px 0' : '8px 4px',
               textAlign: 'center',
-              background: isProblemCol
+              background: isProblemColTinted
                 ? 'var(--grid-problem-col)'
                 : isWkd ? weekendBg : 'var(--grid-cell)',
               color: 'var(--foreground)',
@@ -137,7 +144,7 @@ export function GridHeader({
               borderLeft: isWeekBoundary ? '1px solid var(--border)' : 'none',
               borderRight: d.weekday === 6 ? '1px solid var(--border)' : 'none',
               boxSizing: 'border-box',
-              boxShadow: isProblemCol ? 'inset 0 -2px 0 color-mix(in oklab, var(--st-alert) 55%, transparent)' : 'none',
+              boxShadow: isProblemColTinted ? 'inset 0 -2px 0 color-mix(in oklab, var(--st-alert) 55%, transparent)' : 'none',
               transition: 'background 360ms ease, box-shadow 360ms ease',
             }}
           >

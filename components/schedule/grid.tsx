@@ -76,6 +76,13 @@ const NO_DEPT_KEY = '__no_dept__'
 /** Sentinel value used in URL ?dept= param to mean "no department" group */
 const NO_DEPT_FILTER = 'null'
 
+/**
+ * Пустой набор проблемных дней — стабильная ссылка для режима просмотра.
+ * Вне «Правки» строки и «НА СМЕНЕ» не тонируются и не рисуют dashed-чипы;
+ * красными остаются только число дня в шапке и счётчик «НА СМЕНЕ».
+ */
+const NO_PROBLEM_DAYS: ReadonlySet<string> = new Set()
+
 // ── Display settings (тумблеры «Отображение» из демо; дефолты = демо) ──
 
 interface DisplaySettings {
@@ -382,6 +389,9 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
     }
     return out
   }, [data.entries, data.employees, data.statusTypes, data.alertConfigs, deptFilter, days])
+
+  // Полные демо-визуалы проблемных колонок (тонировка + dashed-чипы) — только в «Правке»
+  const problemDaysVisual = editMode ? problemDays : NO_PROBLEM_DAYS
 
   // ── Grouping ─────────────────────────────────────────────────────
 
@@ -868,6 +878,7 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
               cellW={cellW}
               weekendBg={weekendBg}
               problemDays={problemDays}
+              problemTint={editMode}
               showTelegram={showTelegram}
               onToggleProjects={() => setShowTelegram((v) => !v)}
             />
@@ -952,7 +963,7 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
                           locale={locale}
                           labels={rowLabels}
                           weekendBg={weekendBg}
-                          problemDays={problemDays}
+                          problemDays={problemDaysVisual}
                           showGrid={display.showGrid}
                           showTimes={display.showTimes}
                           merged={display.merged}
@@ -1006,7 +1017,7 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
                 nameColWidth={nameColW}
                 cellW={cellW}
                 weekendBg={weekendBg}
-                problemDays={problemDays}
+                problemDays={problemDaysVisual}
                 showGrid={display.showGrid}
                 counts={onShiftCounts}
                 total={onShiftEmployees.length}
