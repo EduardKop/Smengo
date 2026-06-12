@@ -1891,6 +1891,17 @@
         "status_not_found": "Status not found",
         "invalid_value": "Invalid value",
         "empty_list": "Empty list"
+      },
+      "quickStart": {
+        "title": "Build your first schedule",
+        "step1Title": "Create a department",
+        "step1Desc": "Organise your team into departments — this makes the grid much easier to read.",
+        "step2Title": "Add employees",
+        "step2Desc": "Add team members to the department. They'll appear as rows in the schedule grid.",
+        "step3Title": "Click cells to fill the schedule",
+        "step3Desc": "Click any cell to set a shift, day off, or vacation. Build the whole month in minutes.",
+        "addFirstEmployee": "You have departments — now add your first employee to start building the schedule.",
+        "comingSoon": "Coming soon"
       }
     },
     "employees": {

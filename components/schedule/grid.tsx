@@ -24,6 +24,7 @@ import { MonthNav } from './month-nav'
 import { DeptFilter } from './dept-filter'
 import { ModeSwitcher } from './mode-switcher'
 import { Legend } from './legend'
+import { QuickStart, QuickStartBanner } from './quick-start'
 
 // ── Row height by mode ──────────────────────────────────────────────
 
@@ -351,10 +352,15 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
     [data.statusTypes],
   )
 
+  // ── Computed empty state flags ────────────────────────────────────
+  const isFullyEmpty = data.departments.length === 0 && data.employees.length === 0
+  const hasDeptsNoEmployees = data.departments.length > 0 && data.employees.length === 0
+
   // ── Render ───────────────────────────────────────────────────────
   return (
     <div className="flex flex-col">
-      {/* Toolbar */}
+      {/* Toolbar — hidden when fully empty (month/filters are meaningless) */}
+      {!isFullyEmpty && (
       <div className="mb-3 flex flex-wrap items-center gap-2" data-slot="toolbar">
         {/* Mode switcher — left */}
         <ModeSwitcher value={mode} onChange={handleModeChange} />
@@ -409,108 +415,126 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
           alertConfigs={data.alertConfigs}
         />
       </div>
+      )}
 
-      {/* Scroll container */}
-      <div
-        ref={scrollContainerRef}
-        className="overflow-auto rounded-lg border border-border"
-        style={{ height: 'max(calc(100vh - 220px), 400px)' }}
-      >
-        {/* Sticky header — same totalWidth as spacer guarantees alignment */}
-        <GridHeader
-          days={days}
-          today={today}
-          nameColWidth={NAME_COL_WIDTH}
-          cellW={cellW}
+      {/* Fully empty state — QuickStart replaces the grid entirely */}
+      {isFullyEmpty ? (
+        <QuickStart
+          departmentsCount={data.departments.length}
+          employeesCount={data.employees.length}
+          onCreateDepartment={undefined}
+          onAddEmployee={undefined}
         />
+      ) : (
+        <>
+          {/* Mini-banner: depts exist but no employees yet */}
+          {hasDeptsNoEmployees && (
+            <QuickStartBanner onAddEmployee={undefined} />
+          )}
 
-        {/* Coverage row — sticky below header */}
-        <CoverageRow
-          days={days}
-          entries={data.entries}
-          employees={data.employees}
-          statusTypes={data.statusTypes}
-          alertConfigs={data.alertConfigs}
-          deptId={deptFilter !== NO_DEPT_FILTER ? deptFilter : null}
-          cellW={cellW}
-        />
+          {/* Scroll container */}
+          <div
+            ref={scrollContainerRef}
+            className="overflow-auto rounded-lg border border-border"
+            style={{ height: 'max(calc(100vh - 220px), 400px)' }}
+          >
+            {/* Sticky header — same totalWidth as spacer guarantees alignment */}
+            <GridHeader
+              days={days}
+              today={today}
+              nameColWidth={NAME_COL_WIDTH}
+              cellW={cellW}
+            />
 
-        {/* Virtual rows spacer — explicit width drives horizontal scroll */}
-        <div style={{ height: totalHeight, width: totalWidth, position: 'relative' }}>
-          {items.map((virtualItem) => {
-            const row = virtualRows[virtualItem.index]
-            if (!row) return null
+            {/* Coverage row — sticky below header */}
+            <CoverageRow
+              days={days}
+              entries={data.entries}
+              employees={data.employees}
+              statusTypes={data.statusTypes}
+              alertConfigs={data.alertConfigs}
+              deptId={deptFilter !== NO_DEPT_FILTER ? deptFilter : null}
+              cellW={cellW}
+            />
 
-            if (row.kind === 'group') {
-              const collapsed = isDeptCollapsed(row.deptId)
-              return (
-                <div
-                  key={`group-${row.deptId ?? 'null'}`}
-                  style={{
-                    position: 'absolute',
-                    top: virtualItem.start,
-                    left: 0,
-                    right: 0,
-                    height: virtualItem.size,
-                  }}
-                >
-                  <GroupRow
-                    deptName={row.deptName}
-                    count={row.count}
-                    collapsed={collapsed}
-                    onToggle={() => toggleDept(row.deptId)}
-                    employeesCountLabel={t('employeesCount', { count: row.count })}
-                  />
-                </div>
-              )
-            }
+            {/* Virtual rows spacer — explicit width drives horizontal scroll */}
+            <div style={{ height: totalHeight, width: totalWidth, position: 'relative' }}>
+              {items.map((virtualItem) => {
+                const row = virtualRows[virtualItem.index]
+                if (!row) return null
 
-            const emp = empById.get(row.employeeId)
-            if (!emp) return null
+                if (row.kind === 'group') {
+                  const collapsed = isDeptCollapsed(row.deptId)
+                  return (
+                    <div
+                      key={`group-${row.deptId ?? 'null'}`}
+                      style={{
+                        position: 'absolute',
+                        top: virtualItem.start,
+                        left: 0,
+                        right: 0,
+                        height: virtualItem.size,
+                      }}
+                    >
+                      <GroupRow
+                        deptName={row.deptName}
+                        count={row.count}
+                        collapsed={collapsed}
+                        onToggle={() => toggleDept(row.deptId)}
+                        employeesCountLabel={t('employeesCount', { count: row.count })}
+                      />
+                    </div>
+                  )
+                }
 
-            return (
-              <div
-                key={`emp-${row.employeeId}`}
-                style={{
-                  position: 'absolute',
-                  top: virtualItem.start,
-                  left: 0,
-                  right: 0,
-                  height: virtualItem.size,
-                }}
-              >
-                <EmployeeGridRow
-                  employee={emp}
-                  days={days}
-                  today={today}
-                  rowHeight={virtualItem.size}
-                  cellW={cellW}
-                  mode={mode}
-                  locale={locale}
-                  hourSuffix={hourSuffix}
-                  nightBadge={nightBadge}
-                  scheduleMap={scheduleMap}
-                  statusById={statusById}
-                  entriesForEmployee={scheduleMap.get(emp.id)}
-                  onCellClick={canEdit ? handleCellClick : undefined}
-                />
+                const emp = empById.get(row.employeeId)
+                if (!emp) return null
+
+                return (
+                  <div
+                    key={`emp-${row.employeeId}`}
+                    style={{
+                      position: 'absolute',
+                      top: virtualItem.start,
+                      left: 0,
+                      right: 0,
+                      height: virtualItem.size,
+                    }}
+                  >
+                    <EmployeeGridRow
+                      employee={emp}
+                      days={days}
+                      today={today}
+                      rowHeight={virtualItem.size}
+                      cellW={cellW}
+                      mode={mode}
+                      locale={locale}
+                      hourSuffix={hourSuffix}
+                      nightBadge={nightBadge}
+                      scheduleMap={scheduleMap}
+                      statusById={statusById}
+                      entriesForEmployee={scheduleMap.get(emp.id)}
+                      onCellClick={canEdit ? handleCellClick : undefined}
+                    />
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Filter empty state (search/dept returned nothing) */}
+            {virtualRows.length === 0 && (
+              <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">
+                {qFilter
+                  ? `"${searchParams.get('q')}" — ${t('emptyTitle')}`
+                  : t('emptyTitle')}
               </div>
-            )
-          })}
-        </div>
-
-        {/* Empty state */}
-        {virtualRows.length === 0 && (
-          <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">
-            {qFilter
-              ? `"${searchParams.get('q')}" — ${t('emptyTitle')}`
-              : t('emptyTitle')}
+            )}
           </div>
-        )}
-      </div>
 
-      {/* Legend — status chips below grid */}
-      <Legend statusTypes={data.statusTypes} />
+          {/* Legend — status chips below grid */}
+          <Legend statusTypes={data.statusTypes} />
+        </>
+      )}
 
       {/* Cell editor popover */}
       {editorAnchor && (
