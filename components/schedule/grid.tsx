@@ -29,6 +29,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { GridHeader, TOTALS_OFF_W, TOTALS_HRS_W } from './grid-header'
 import { GroupRow, EmployeeGridRow } from './grid-row'
 import type { GridRowLabels, CellRect } from './grid-row'
+import { OnShiftRow } from './on-shift-row'
 import { AlertsForm } from './settings/alerts-form'
 import { StatusManager } from './settings/status-manager'
 import { CellEditor } from './cell-editor'
@@ -467,6 +468,27 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
     return result
   }, [filteredEmployees, sortedDeptIds, deptMap, t])
 
+  // ── «НА СМЕНЕ»: охват и счётчики по дням ─────────────────────────
+  const [onShiftScope, setOnShiftScope] = useState('all')
+
+  const onShiftEmployees = useMemo(() => {
+    if (onShiftScope === 'all') return filteredEmployees
+    if (onShiftScope === NO_DEPT_KEY) return filteredEmployees.filter((e) => e.dept_id === null)
+    return filteredEmployees.filter((e) => e.dept_id === onShiftScope)
+  }, [filteredEmployees, onShiftScope])
+
+  const onShiftCounts = useMemo(
+    () => coverageByDay(data.entries, onShiftEmployees, data.statusTypes, null),
+    [data.entries, onShiftEmployees, data.statusTypes],
+  )
+
+  const onShiftScopeOptions = useMemo(
+    () => groups
+      .filter((g) => g.employees.length > 0)
+      .map((g) => ({ key: g.deptId ?? NO_DEPT_KEY, name: g.deptName })),
+    [groups],
+  )
+
   // ── Collapsible groups ───────────────────────────────────────────
   const [collapsedDepts, setCollapsedDepts] = useState<Set<string>>(new Set())
 
@@ -893,6 +915,24 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
                   ? `"${searchParams.get('q')}" — ${t('emptyTitle')}`
                   : t('emptyTitle')}
               </div>
+            )}
+
+            {/* «НА СМЕНЕ» — нижняя строка как tfoot демо */}
+            {virtualRows.length > 0 && (
+              <OnShiftRow
+                days={days}
+                mode={mode}
+                nameColWidth={nameColW}
+                cellW={cellW}
+                weekendBg={weekendBg}
+                problemDays={problemDays}
+                showGrid={display.showGrid}
+                counts={onShiftCounts}
+                total={onShiftEmployees.length}
+                scope={onShiftScope}
+                onScopeChange={setOnShiftScope}
+                scopeOptions={onShiftScopeOptions}
+              />
             )}
           </div>
 
