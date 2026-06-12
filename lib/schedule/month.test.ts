@@ -5,13 +5,25 @@ describe('monthDays', () => {
   it('returns 31 days for July 2026 with correct weekdays', () => {
     const days = monthDays(2026, 7)
     expect(days).toHaveLength(31)
-    expect(days[0]).toEqual({ dateISO: '2026-07-01', day: 1, weekday: 2, isWeekend: false }) // ВНИМАНИЕ: проверь календарь — 1 июля 2026 это среда, weekday при 0=понедельник должен быть 2. Если расчёт даёт иное — разберись прежде чем менять ожидание; ожидание в плане могло содержать опечатку, истина — реальный календарь.
+    expect(days[0]).toEqual({ dateISO: '2026-07-01', day: 1, weekday: 2, isWeekend: false }) // 1 июля 2026 — среда
     expect(days[3].isWeekend).toBe(true) // 4 июля 2026 — суббота
   })
 
   it('handles February non-leap (2026) and leap (2028)', () => {
     expect(monthDays(2026, 2)).toHaveLength(28)
     expect(monthDays(2028, 2)).toHaveLength(29)
+  })
+
+  it('handles December (JS month-index boundary)', () => {
+    const days = monthDays(2026, 12)
+    expect(days).toHaveLength(31)
+    expect(days[0].dateISO).toBe('2026-12-01')
+    expect(days[30].dateISO).toBe('2026-12-31')
+  })
+
+  it('throws on invalid month', () => {
+    expect(() => monthDays(2026, 0)).toThrow(RangeError)
+    expect(() => monthDays(2026, 13)).toThrow(RangeError)
   })
 })
 

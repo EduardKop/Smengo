@@ -15,6 +15,7 @@ export function monthKey(year: number, month: number): string {
 }
 
 export function monthDays(year: number, month: number): MonthDay[] {
+  if (month < 1 || month > 12) throw new RangeError(`month must be 1-12, got ${month}`)
   const count = new Date(Date.UTC(year, month, 0)).getUTCDate()
   return Array.from({ length: count }, (_, i) => {
     const day = i + 1
@@ -34,7 +35,10 @@ export function monthRange(year: number, month: number): { from: string; to: str
   return { from: days[0].dateISO, to: days[days.length - 1].dateISO }
 }
 
-/** Дата «сегодня» в таймзоне организации, формат YYYY-MM-DD. */
+/**
+ * Дата «сегодня» в таймзоне организации, формат YYYY-MM-DD.
+ * @throws {RangeError} if timeZone is not a valid IANA zone
+ */
 export function todayISOInTz(timeZone: string, reference = new Date()): string {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone,

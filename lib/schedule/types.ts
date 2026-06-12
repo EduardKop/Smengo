@@ -10,6 +10,7 @@ export type GridMode = 'compact' | 'detail' | 'extended'
 /** employeeId -> dateISO (YYYY-MM-DD) -> entry */
 export type ScheduleMap = Map<string, Map<string, ScheduleEntryRow>>
 
+/** Сырые результаты запросов месяца; entries конвертируются в ScheduleMap перед рендером грида. */
 export interface MonthData {
   employees: EmployeeRow[]
   departments: DepartmentRow[]
