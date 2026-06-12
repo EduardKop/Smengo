@@ -1,5 +1,10 @@
 import type { EmployeeRow, ScheduleEntryRow, ScheduleMap, StatusTypeRow } from './types'
 
+/**
+ * Строит двумерную Map: employee_id → (entry_date → entry).
+ * При дубликате (employee_id, entry_date) побеждает последняя запись
+ * (в БД дубликаты невозможны — unique constraint).
+ */
 export function buildScheduleMap(entries: ScheduleEntryRow[]): ScheduleMap {
   const map: ScheduleMap = new Map()
   for (const e of entries) {
@@ -13,7 +18,14 @@ export function buildScheduleMap(entries: ScheduleEntryRow[]): ScheduleMap {
   return map
 }
 
-/** dateISO -> сколько людей counts_as_present в этот день (опционально в рамках отдела). */
+/**
+ * dateISO → сколько людей counts_as_present в этот день (опционально в рамках отдела).
+ *
+ * Контракт: employees — уже отфильтрованный список активных (deleted_at IS NULL);
+ * записи сотрудников вне списка игнорируются.
+ * Принимает плоский entries сознательно: map и coverage — независимые
+ * O(n)-производные одного источника.
+ */
 export function coverageByDay(
   entries: ScheduleEntryRow[],
   employees: EmployeeRow[],

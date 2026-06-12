@@ -51,6 +51,15 @@ describe('coverageByDay', () => {
     const d1 = coverageByDay(entries, employees, statuses, 'd1')
     expect(d1.get('2026-06-01')).toBe(1) // только emp1
   })
+
+  it('ignores entries of employees not in the list (e.g. soft-deleted)', () => {
+    const withGhost = [
+      ...entries,
+      entry({ employee_id: 'emp-deleted', entry_date: '2026-06-01', status_id: 'work' }),
+    ]
+    const all = coverageByDay(withGhost, employees, statuses, null)
+    expect(all.get('2026-06-01')).toBe(2) // призрак не посчитан
+  })
 })
 
 describe('shortageByDay', () => {
