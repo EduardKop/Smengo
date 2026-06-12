@@ -26,7 +26,7 @@ const ROW_HEIGHT: Record<GridMode, number> = {
 export const CELL_WIDTH: Record<GridMode, number> = {
   compact: 36,
   detail: 48,
-  extended: 72,
+  extended: 84,
 }
 
 const GROUP_ROW_HEIGHT = 36
