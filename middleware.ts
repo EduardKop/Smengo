@@ -1,27 +1,24 @@
 import createMiddleware from 'next-intl/middleware'
 import { NextResponse, type NextRequest } from 'next/server'
 import { routing } from '@/i18n/routing'
-import { updateSession, APP_PREFIXES } from '@/lib/supabase/middleware'
+import { updateSession } from '@/lib/supabase/middleware'
+import { isCookieLocalePath } from '@/lib/routes'
 
 const intlMiddleware = createMiddleware(routing)
-
-const AUTH_PREFIXES = ['/login', '/register', '/forgot-password', '/reset-password', '/invite', '/auth/']
-
-function startsWithAny(pathname: string, prefixes: readonly string[]): boolean {
-  return prefixes.some((p) => pathname === p || pathname.startsWith(p + '/') || pathname.startsWith(p))
-}
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Redirect locale-prefixed auth routes to plain routes, preserving locale in cookie.
-  // e.g. /en/login → /login (NEXT_LOCALE=en), /uk/register → /register (NEXT_LOCALE=uk)
+  // Redirect locale-prefixed auth AND app routes to plain routes, preserving
+  // locale in cookie: /en/login → /login (NEXT_LOCALE=en), /uk/schedule →
+  // /schedule (NEXT_LOCALE=uk). Без этого префиксованные app-URL проваливались
+  // в маркетинг-роутер и отдавали 404.
   const localePrefix = (routing.locales as readonly string[]).find(
     (l) => pathname === `/${l}` || pathname.startsWith(`/${l}/`),
   )
   if (localePrefix) {
     const stripped = pathname.slice(`/${localePrefix}`.length) || '/'
-    if (startsWithAny(stripped, AUTH_PREFIXES)) {
+    if (isCookieLocalePath(stripped)) {
       const url = request.nextUrl.clone()
       url.pathname = stripped
       const response = NextResponse.redirect(url)
@@ -32,7 +29,7 @@ export async function middleware(request: NextRequest) {
 
   // Auth & private app routes: cookie-based locale, no URL prefix.
   // Run Supabase session refresh; forward locale via x-locale header for next-intl.
-  if (startsWithAny(pathname, AUTH_PREFIXES) || startsWithAny(pathname, APP_PREFIXES)) {
+  if (isCookieLocalePath(pathname)) {
     const response = await updateSession(request)
     const cookie = request.cookies.get('NEXT_LOCALE')?.value
     const locale = (routing.locales as readonly string[]).includes(cookie ?? '')

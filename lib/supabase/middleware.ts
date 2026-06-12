@@ -1,12 +1,10 @@
 import { createServerClient } from '@supabase/ssr'
 import { type NextRequest, NextResponse } from 'next/server'
 import type { Database } from '@/supabase/types'
-
-/** App paths that require authentication (but not necessarily an org). Single source of truth — root middleware.ts imports this list too. */
-export const APP_PREFIXES = ['/dashboard', '/onboarding', '/settings', '/employees', '/departments', '/schedule', '/billing']
+import { APP_PREFIXES, startsWithAny } from '@/lib/routes'
 
 function isApp(pathname: string): boolean {
-  return APP_PREFIXES.some((p) => pathname.startsWith(p))
+  return startsWithAny(pathname, APP_PREFIXES)
 }
 
 export async function updateSession(request: NextRequest) {

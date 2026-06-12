@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, useTransition } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { usePathname, getPathname, routing, type Locale } from '@/i18n/routing'
 import { setLocaleCookieAction } from '@/lib/actions/locale'
+import { isCookieLocalePath } from '@/lib/routes'
 
 const LABELS: Record<Locale, string> = {
   ru: 'RU',
@@ -53,8 +54,9 @@ export function LocaleSwitcher() {
     setOpen((v) => !v)
   }
 
-  const AUTH_PATHS = ['/login', '/register', '/forgot-password', '/reset-password', '/invite', '/auth']
-  const isAuthPage = AUTH_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'))
+  // Auth + продукт-зона живут без префикса локали (язык — кука NEXT_LOCALE):
+  // там просто перезагружаемся. Префиксованный URL — только для маркетинга.
+  const isCookieLocaleZone = isCookieLocalePath(pathname)
 
   function switchTo(next: Locale) {
     setOpen(false)
@@ -64,7 +66,7 @@ export function LocaleSwitcher() {
       try {
         await setLocaleCookieAction(next)
       } finally {
-        if (isAuthPage) {
+        if (isCookieLocaleZone) {
           window.location.reload()
         } else {
           window.location.assign(getPathname({ href: pathname, locale: next }))
