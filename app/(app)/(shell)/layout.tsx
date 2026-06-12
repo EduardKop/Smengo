@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
 import { getAppContext } from '@/lib/auth/context'
 import { AppSidebar, type NavItem } from '@/components/app/sidebar'
+import { QueryProvider } from '@/components/providers/query-provider'
 
 export default async function ShellLayout({ children }: { children: ReactNode }) {
   const ctx = await getAppContext()
@@ -36,7 +37,9 @@ export default async function ShellLayout({ children }: { children: ReactNode })
             </Link>
           </div>
         )}
-        <main className="flex-1 px-4 py-6 sm:px-8">{children}</main>
+        <main className="flex-1 px-4 py-6 sm:px-8">
+          <QueryProvider>{children}</QueryProvider>
+        </main>
       </div>
     </div>
   )
