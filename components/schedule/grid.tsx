@@ -111,7 +111,7 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
 
   const resolveErrorMessage = useCallback(
     (errorCode: string): string => {
-      const knownCodes = ['server_error', 'forbidden', 'invalid_reference', 'duplicate', 'status_wrong_org'] as const
+      const knownCodes = ['server_error', 'forbidden', 'invalid_reference', 'duplicate', 'status_wrong_org', 'ids_outside_scope', 'status_not_found', 'invalid_value', 'empty_list'] as const
       type KnownCode = typeof knownCodes[number]
       const isKnown = (knownCodes as readonly string[]).includes(errorCode)
       return isKnown

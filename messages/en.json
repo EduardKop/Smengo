@@ -1869,7 +1869,11 @@
         "forbidden": "Insufficient permissions",
         "invalid_reference": "Reference to a non-existent object",
         "duplicate": "Entry already exists",
-        "status_wrong_org": "Status does not belong to your organisation"
+        "status_wrong_org": "Status does not belong to your organisation",
+        "ids_outside_scope": "Some employees are outside your access scope",
+        "status_not_found": "Status not found",
+        "invalid_value": "Invalid value",
+        "empty_list": "Empty list"
       }
     },
     "employees": {

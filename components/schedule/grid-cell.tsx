@@ -3,7 +3,7 @@
 import { memo } from 'react'
 import type { ScheduleEntryRow, StatusTypeRow, GridMode } from '@/lib/schedule/types'
 import { statusStyle, statusLabel } from './status-style'
-import { shiftDurationHours } from '@/lib/schedule/month'
+import { shiftDurationHours, isNightShift } from '@/lib/schedule/month'
 
 // ── Props ───────────────────────────────────────────────────────────
 
@@ -28,13 +28,6 @@ export interface GridCellProps {
 /** Format time as HH:MM; pass raw 'HH:MM:SS' or 'HH:MM' string */
 function fmtTime(t: string): string {
   return t.slice(0, 5) // 'HH:MM'
-}
-
-/** True if end < start — shift crosses midnight */
-function isNightShift(start: string, end: string): boolean {
-  const [sh = 0, sm = 0] = start.split(':').map(Number)
-  const [eh = 0, em = 0] = end.split(':').map(Number)
-  return eh * 60 + em < sh * 60 + sm
 }
 
 // ── Keyboard handler ─────────────────────────────────────────────────

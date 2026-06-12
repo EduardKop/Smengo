@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { monthDays, monthKey, monthRange, todayISOInTz, shiftDurationHours } from './month'
+import { monthDays, monthKey, monthRange, todayISOInTz, shiftDurationHours, isNightShift } from './month'
 
 describe('monthDays', () => {
   it('returns 31 days for July 2026 with correct weekdays', () => {
@@ -54,5 +54,19 @@ describe('shiftDurationHours', () => {
 
   it('одинаковое время 09:00-09:00 → 24 (полные сутки)', () => {
     expect(shiftDurationHours('09:00', '09:00')).toBe(24)
+  })
+})
+
+describe('isNightShift', () => {
+  it('22:00–06:00 → true (crosses midnight)', () => {
+    expect(isNightShift('22:00', '06:00')).toBe(true)
+  })
+
+  it('16:00–00:00 → false (evening shift ending exactly at midnight)', () => {
+    expect(isNightShift('16:00', '00:00')).toBe(false)
+  })
+
+  it('09:00–17:00 → false (regular day shift)', () => {
+    expect(isNightShift('09:00', '17:00')).toBe(false)
   })
 })

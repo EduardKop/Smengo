@@ -115,6 +115,19 @@ export function CellEditor({
     return () => document.removeEventListener('keydown', handler)
   }, [onClose])
 
+  // ── Close on container scroll or window resize ────────────────────
+
+  useEffect(() => {
+    const container = containerRef.current
+    const close = () => onClose()
+    container?.addEventListener('scroll', close, { passive: true, once: true })
+    window.addEventListener('resize', close, { once: true })
+    return () => {
+      container?.removeEventListener('scroll', close)
+      window.removeEventListener('resize', close)
+    }
+  }, [onClose, containerRef])
+
   // ── Click outside ─────────────────────────────────────────────────
 
   useEffect(() => {

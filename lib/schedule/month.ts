@@ -49,6 +49,19 @@ export function shiftDurationHours(start: string, end: string): number {
 }
 
 /**
+ * True if a shift crosses midnight (end < start by clock time).
+ * 16:00–00:00 is an evening shift ending exactly at midnight — NOT a night shift.
+ */
+export function isNightShift(start: string, end: string): boolean {
+  const [sh = 0, sm = 0] = start.split(':').map(Number)
+  const [eh = 0, em = 0] = end.split(':').map(Number)
+  const startMin = (sh) * 60 + (sm)
+  const endMin = (eh) * 60 + (em)
+  // end === '00:00' means midnight exactly — treat as end-of-day, not overnight
+  return endMin < startMin && end.slice(0, 5) !== '00:00'
+}
+
+/**
  * Дата «сегодня» в таймзоне организации, формат YYYY-MM-DD.
  * @throws {RangeError} if timeZone is not a valid IANA zone
  */
