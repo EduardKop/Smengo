@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-const DateISO = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { message: 'Формат даты: YYYY-MM-DD' })
+const DateISO = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/, { message: 'Формат даты: YYYY-MM-DD' })
 const TimeHM = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, { message: 'Формат времени: HH:MM' })
 
 export const UpsertEntrySchema = z.object({
@@ -9,7 +9,7 @@ export const UpsertEntrySchema = z.object({
   status_id: z.string().uuid(),
   start_time: TimeHM.nullable().optional(),
   end_time: TimeHM.nullable().optional(),
-  note: z.string().max(500).trim().optional().or(z.literal('')),
+  note: z.string().trim().max(500).optional().or(z.literal('')),
 })
 
 export const ClearEntrySchema = z.object({
@@ -18,21 +18,22 @@ export const ClearEntrySchema = z.object({
 })
 
 export const DepartmentSchema = z.object({
-  name: z.string().min(1, { message: 'Укажите название' }).max(80).trim(),
+  name: z.string().trim().min(1, { message: 'Укажите название' }).max(80),
 })
 
 export const EmployeeSchema = z.object({
-  full_name: z.string().min(2, { message: 'Минимум 2 символа' }).max(120).trim(),
-  position: z.string().max(80).trim().optional().or(z.literal('')),
+  full_name: z.string().trim().min(2, { message: 'Минимум 2 символа' }).max(120),
+  position: z.string().trim().max(80).optional().or(z.literal('')),
   dept_id: z.string().uuid().nullable().optional(),
   employment_kind: z.enum(['staff', 'trainee']).default('staff'),
-  phone: z.string().max(30).trim().optional().or(z.literal('')),
-  telegram: z.string().max(60).trim().optional().or(z.literal('')),
-  email: z.string().email().optional().or(z.literal('')),
+  phone: z.string().trim().max(30).optional().or(z.literal('')),
+  telegram: z.string().trim().regex(/^@?[A-Za-z0-9_]{3,32}$/, { message: 'Некорректный Telegram-юзернейм' }).optional().or(z.literal('')),
+  email: z.string().email().optional().or(z.literal('')), // literal('') последним: пустая строка проходит после отказа email()
   birth_date: DateISO.nullable().optional(),
   hired_on: DateISO.nullable().optional(),
 })
 
+/** Транспорт: JSON-аргумент server action (FormData не сериализует массивы). */
 export const ReorderSchema = z.object({
   dept_id: z.string().uuid().nullable(),
   ordered_ids: z.array(z.string().uuid()).min(1).max(500),

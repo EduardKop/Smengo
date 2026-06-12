@@ -53,4 +53,15 @@ describe('DepartmentSchema / ReorderSchema', () => {
     expect(DepartmentSchema.safeParse({ name: '' }).success).toBe(false)
     expect(ReorderSchema.safeParse({ dept_id: null, ordered_ids: ['0b9e9a40-93f9-4df3-9e6c-3a0a2f9a0001'] }).success).toBe(true)
   })
+  it('rejects whitespace-only names', () => {
+    expect(DepartmentSchema.safeParse({ name: '   ' }).success).toBe(false)
+    expect(EmployeeSchema.safeParse({ full_name: '  ', employment_kind: 'staff' }).success).toBe(false)
+  })
+  it('rejects impossible calendar dates', () => {
+    expect(ClearEntrySchema.safeParse({ employee_id: '0b9e9a40-93f9-4df3-9e6c-3a0a2f9a0001', entry_date: '2026-13-45' }).success).toBe(false)
+  })
+  it('validates telegram handle format', () => {
+    expect(EmployeeSchema.safeParse({ full_name: 'Анна Ким', employment_kind: 'staff', telegram: '@anna_kim' }).success).toBe(true)
+    expect(EmployeeSchema.safeParse({ full_name: 'Анна Ким', employment_kind: 'staff', telegram: 'http://evil.com' }).success).toBe(false)
+  })
 })
