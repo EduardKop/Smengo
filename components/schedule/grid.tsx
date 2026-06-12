@@ -23,6 +23,10 @@ const ROW_HEIGHT: Record<GridMode, number> = {
 
 const GROUP_ROW_HEIGHT = 36
 
+// ── Constants ───────────────────────────────────────────────────────
+
+const NO_DEPT_KEY = '__no_dept__'
+
 // ── Virtual row types ───────────────────────────────────────────────
 
 type VirtualRow =
@@ -132,29 +136,27 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
     // "No department" group — only when employees exist without dept_id
     const noDeptEmployees = byDept.get(null)
     if (noDeptEmployees && noDeptEmployees.length > 0 && (!deptFilter || deptFilter === 'null')) {
-      if (!deptFilter) {
-        result.push({ deptId: null, deptName: t('deptNoDept'), employees: noDeptEmployees })
-      }
+      result.push({ deptId: null, deptName: t('deptNoDept'), employees: noDeptEmployees })
     }
 
     return result
   }, [filteredEmployees, sortedDeptIds, deptMap, deptFilter, t])
 
   // ── Collapsible groups ───────────────────────────────────────────
-  const [collapsedDepts, setCollapsedDepts] = useState<Set<string | null>>(new Set())
+  const [collapsedDepts, setCollapsedDepts] = useState<Set<string>>(new Set())
 
   const toggleDept = useCallback((deptId: string | null) => {
     setCollapsedDepts((prev) => {
       const next = new Set(prev)
-      const key = deptId ?? 'null'
-      if (next.has(key as string | null)) next.delete(key as string | null)
-      else next.add(key as string | null)
+      const key = deptId ?? NO_DEPT_KEY
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
       return next
     })
   }, [])
 
   const isDeptCollapsed = (deptId: string | null): boolean =>
-    collapsedDepts.has(deptId ?? 'null' as unknown as null)
+    collapsedDepts.has(deptId ?? NO_DEPT_KEY)
 
   // ── Flat virtual row list ─────────────────────────────────────────
   const virtualRows = useMemo((): VirtualRow[] => {

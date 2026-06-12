@@ -4,7 +4,7 @@ import { ChevronDown, ChevronRight } from 'lucide-react'
 import type { MonthDay } from '@/lib/schedule/month'
 import type { EmployeeRow } from '@/lib/schedule/types'
 
-const NAME_COL_WIDTH = 220
+export const NAME_COL_WIDTH = 220
 
 // ── Group header row ───────────────────────────────────────────────
 
@@ -91,4 +91,3 @@ export function EmployeeGridRow({ employee, days, today, rowHeight }: EmployeeRo
   )
 }
 
-export { NAME_COL_WIDTH }
