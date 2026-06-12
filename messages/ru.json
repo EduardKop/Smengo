@@ -1991,7 +1991,8 @@
       "shiftNight": "Ночь",
       "statusVacShort": "Отп",
       "statusSickShort": "Бол",
-      "statusOffShort": "Вых"
+      "statusOffShort": "Вых",
+      "statusLateShort": "Опозд."
     },
     "employees": {
       "title": "Сотрудники",

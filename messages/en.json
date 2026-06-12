@@ -1992,7 +1992,8 @@
       "shiftNight": "Night",
       "statusVacShort": "Vac",
       "statusSickShort": "Sick",
-      "statusOffShort": "Off"
+      "statusOffShort": "Off",
+      "statusLateShort": "Late"
     },
     "employees": {
       "title": "Employees",

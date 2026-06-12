@@ -7,7 +7,7 @@
  */
 
 import { memo } from 'react'
-import { Sun, Sunset, Moon, TreePalm, Thermometer, CalendarDays, AlertCircle } from 'lucide-react'
+import { Sun, Sunset, Moon, TreePalm, Thermometer, CalendarDays, AlertCircle, AlarmClock } from 'lucide-react'
 import type { ScheduleEntryRow, StatusTypeRow, GridMode } from '@/lib/schedule/types'
 import type { CardVisual } from '@/lib/validation/grid-view'
 import type { SiteTone } from '@/lib/schedule/card-visual'
@@ -37,7 +37,94 @@ export interface ChipLabels {
   vacShort: string
   sickShort: string
   offShort: string
+  /** Короткая форма «Опоздание» для бейджа extended-карточки */
+  lateShort: string
   hourSuffix: string
+}
+
+// ── Бейдж опоздания поверх рабочей карточки ─────────────────────────
+// Опоздание — это рабочий день: ячейка рендерит обычную work-карточку
+// со временем, а статус показывается бейджем (язык demo CellBadgePill).
+// Цвета: фон var(--chip-l-fg) (слива/лаванда по теме), текст var(--grid-cell)
+// — автоинверсия контраста в обеих темах.
+
+const LATE_BADGE_SHADOW = '0 1px 2px rgba(0,0,0,0.18), inset 0 0 0 1px rgba(255,255,255,0.14)'
+
+/** Extended: текстовая пилюля в нижнем ряду карточки (точная геометрия demo CellBadgePill). */
+function LateBadgePill({ short, full }: { short: string; full: string }) {
+  return (
+    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3, minWidth: 0, maxWidth: '100%' }}>
+      <span
+        title={full}
+        aria-label={full}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          minWidth: 0,
+          maxWidth: '100%',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          padding: '2px 7px',
+          borderRadius: 999,
+          background: 'var(--chip-l-fg)',
+          color: 'var(--grid-cell)',
+          fontSize: 8.6,
+          fontWeight: 750,
+          lineHeight: 1.2,
+          letterSpacing: '0.02em',
+          boxShadow: LATE_BADGE_SHADOW,
+        }}
+      >
+        {short}
+      </span>
+    </span>
+  )
+}
+
+/** Detail: круглая икон-пилюля 14px в правом верхнем углу карточки. */
+function LateCornerBadge({ full }: { full: string }) {
+  return (
+    <span
+      title={full}
+      aria-label={full}
+      style={{
+        position: 'absolute',
+        top: 2,
+        right: 2,
+        width: 14,
+        height: 14,
+        borderRadius: 999,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'var(--chip-l-fg)',
+        color: 'var(--grid-cell)',
+        boxShadow: LATE_BADGE_SHADOW,
+      }}
+    >
+      <AlarmClock size={8.5} strokeWidth={2.6} />
+    </span>
+  )
+}
+
+/** Compact: минимальный маркер-точка в углу (тултип — на чипе целиком). */
+function LateDotBadge() {
+  return (
+    <span
+      aria-hidden="true"
+      style={{
+        position: 'absolute',
+        top: 2.5,
+        right: 2.5,
+        width: 5,
+        height: 5,
+        borderRadius: '50%',
+        background: 'var(--chip-l-fg)',
+        boxShadow: '0 0 0 1.5px var(--grid-cell)',
+      }}
+    />
+  )
 }
 
 // ── Work-карточка: метаданные смены из времени записи ───────────────
@@ -226,7 +313,7 @@ function CustomStatusChip({
 
 // ── Extended-режим ──────────────────────────────────────────────────
 
-function ExtWorkCard({ entry, status, showTimes, labels }: { entry: ScheduleEntryRow; status: StatusTypeRow; showTimes: boolean; labels: ChipLabels }) {
+function ExtWorkCard({ entry, status, showTimes, labels, lateFull }: { entry: ScheduleEntryRow; status: StatusTypeRow; showTimes: boolean; labels: ChipLabels; lateFull?: string }) {
   const wm = workMetaOf(entry, status, labels)
   const ShiftIcon = wm.kind === 'night' ? Moon : Sun
   return (
@@ -294,6 +381,7 @@ function ExtWorkCard({ entry, status, showTimes, labels }: { entry: ScheduleEntr
           </>
         ) : wm.name}
       </span>
+      {lateFull && <LateBadgePill short={labels.lateShort} full={lateFull} />}
     </div>
   )
 }
@@ -416,7 +504,7 @@ function ExtLateCard({ label }: { label: string }) {
 
 // ── Detail-режим ────────────────────────────────────────────────────
 
-function DetailWorkChip({ entry, status, showTimes, labels }: { entry: ScheduleEntryRow; status: StatusTypeRow; showTimes: boolean; labels: ChipLabels }) {
+function DetailWorkChip({ entry, status, showTimes, labels, lateFull }: { entry: ScheduleEntryRow; status: StatusTypeRow; showTimes: boolean; labels: ChipLabels; lateFull?: string }) {
   const wm = workMetaOf(entry, status, labels)
   const WIcon = wm.kind === 'morning' ? Sun : wm.kind === 'evening' ? Sunset : Moon
   return (
@@ -450,6 +538,7 @@ function DetailWorkChip({ entry, status, showTimes, labels }: { entry: ScheduleE
           {wm.hours}{labels.hourSuffix}{showTimes ? ` · ${wm.name}` : ''}
         </span>
       )}
+      {lateFull && <LateCornerBadge full={lateFull} />}
     </div>
   )
 }
@@ -505,6 +594,7 @@ function CompactChip({
   labels,
   full,
   short,
+  lateFull,
 }: {
   code: Exclude<DemoStatusCode, 'CUSTOM'>
   entry: ScheduleEntryRow
@@ -514,6 +604,8 @@ function CompactChip({
   labels: ChipLabels
   full: string
   short: string
+  /** Опоздание поверх work-чипа: маркер-точка + тултип полного лейбла */
+  lateFull?: string
 }) {
   const wm = code === 'W' ? workMetaOf(entry, status, labels) : null
   const shiftParts = code === 'W' && showTimes && wm?.start && wm?.end
@@ -525,6 +617,7 @@ function CompactChip({
   return (
     <div
       className={`smengo-schedule-chip${isLeave ? ' smengo-leave-chip' : ''}`}
+      title={lateFull}
       style={{
         display: 'inline-flex',
         alignItems: 'center',
@@ -554,6 +647,7 @@ function CompactChip({
       ) : isLeave ? (
         <ScheduleLeaveLabelText full={full} short={short} />
       ) : null}
+      {lateFull && <LateDotBadge />}
     </div>
   )
 }
@@ -596,8 +690,12 @@ export const StatusChip = memo(function StatusChip({
   // Приоритет (правило основателя): если у ЗАПИСИ задано время смены —
   // рендерится карточка времени (Утро/Вечер/Ночь как в демо), а кастомный
   // «Визуал» игнорируется. Кастом применяется только к записям без времени.
+  // «Опоздание» со временем — тоже рабочая карточка (с бейджем опоздания).
   const hasEntryTime = Boolean(entry.start_time && entry.end_time)
-  const rendersShiftTimeCard = code === 'W' && hasEntryTime
+  const rendersShiftTimeCard = (code === 'W' || code === 'L') && hasEntryTime
+  // Опоздание со временем: рабочая карточка + бейдж (визуальный слой,
+  // статус записи в БД остаётся late). Без времени — статусная карточка.
+  const lateFull = code === 'L' && hasEntryTime ? full : undefined
 
   // Кастомизированный вид статуса перекрывает остальной дефолтный рендер;
   // minHeight по режимам — как у существующих кастомных чипов (46/36/34)
@@ -626,13 +724,20 @@ export const StatusChip = memo(function StatusChip({
   if (mode === 'extended') {
     if (code === 'W') return <ExtWorkCard entry={entry} status={status} showTimes={showTimes} labels={labels} />
     if (code === 'D') return <ExtDayoffCard label={full} />
-    if (code === 'L') return <ExtLateCard label={full} />
+    if (code === 'L') {
+      return lateFull
+        ? <ExtWorkCard entry={entry} status={status} showTimes={showTimes} labels={labels} lateFull={lateFull} />
+        : <ExtLateCard label={full} />
+    }
     if (code === 'V' || code === 'S') return <ExtLeaveCard code={code} span={span} full={full} short={short} />
     return null
   }
 
   if (mode === 'detail') {
     if (code === 'W') return <DetailWorkChip entry={entry} status={status} showTimes={showTimes} labels={labels} />
+    if (code === 'L' && lateFull) {
+      return <DetailWorkChip entry={entry} status={status} showTimes={showTimes} labels={labels} lateFull={lateFull} />
+    }
     if (code === 'V' || code === 'S') {
       const StIcon = code === 'V' ? TreePalm : Thermometer
       return (
@@ -658,7 +763,8 @@ export const StatusChip = memo(function StatusChip({
 
   return (
     <CompactChip
-      code={code}
+      // Опоздание со временем в компакте — обычный work-чип + маркер-точка
+      code={lateFull ? 'W' : code}
       entry={entry}
       status={status}
       isRun={isRun}
@@ -666,6 +772,7 @@ export const StatusChip = memo(function StatusChip({
       labels={labels}
       full={full}
       short={short}
+      lateFull={lateFull}
     />
   )
 })

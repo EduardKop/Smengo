@@ -132,6 +132,7 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
     vacShort: t('statusVacShort'),
     sickShort: t('statusSickShort'),
     offShort: t('statusOffShort'),
+    lateShort: t('statusLateShort'),
     hourSuffix: t('hourSuffix'),
     telegramLabel: t('telegramBtn'),
     colOffDays: t('colOffDays'),
