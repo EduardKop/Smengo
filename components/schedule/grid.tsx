@@ -20,7 +20,7 @@ import type { UserRole } from '@/supabase/types'
 import type { MonthData, GridMode, ScheduleEntryRow, StatusTypeRow } from '@/lib/schedule/types'
 import { monthDays } from '@/lib/schedule/month'
 import { buildScheduleMap, coverageByDay, aggregateMinPresent, shortageByDay } from '@/lib/schedule/map'
-import { nameColumnWidth, useViewportWidth, deptColor } from './grid-visual'
+import { nameColumnWidth, useViewportWidth, deptColor, AppleHScrollbar } from './grid-visual'
 import { can } from '@/lib/permissions'
 import { useScheduleData, useUpsertEntry, useClearEntry } from './use-schedule'
 import type { UpsertInput } from './use-schedule'
@@ -846,6 +846,12 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
               </button>
             )}
           </div>
+
+          {/* macOS-style оверлей-скроллбар над гридом (demo AppleHScrollbar) */}
+          <AppleHScrollbar
+            scrollerRef={scrollContainerRef}
+            style={{ marginLeft: nameColW, marginRight: 6 }}
+          />
 
           {/* Scroll container */}
           <div

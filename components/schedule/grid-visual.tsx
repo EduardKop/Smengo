@@ -648,6 +648,107 @@ export function useViewportWidth(): number {
   return width
 }
 
+// ── macOS-style overlay-скроллбар (demo AppleHScrollbar) ────────────
+
+export function AppleHScrollbar({
+  scrollerRef,
+  size = 'md',
+  style,
+}: {
+  scrollerRef: { current: HTMLElement | null }
+  size?: 'sm' | 'md'
+  style?: React.CSSProperties
+}) {
+  const trackRef = useRef<HTMLDivElement | null>(null)
+  const thumbRef = useRef<HTMLDivElement | null>(null)
+  const dragRef = useRef<{ pointerId: number; startX: number; startScroll: number } | null>(null)
+
+  useEffect(() => {
+    const track = trackRef.current
+    const thumb = thumbRef.current
+    if (!track || !thumb) return
+    let raf = 0
+    const tick = () => {
+      const el = scrollerRef.current
+      if (el && el.isConnected) {
+        const sw = el.scrollWidth
+        const cw = el.clientWidth
+        const need = sw > cw + 2
+        if (track.dataset.active !== String(need)) track.dataset.active = String(need)
+        if (need) {
+          const tw = track.clientWidth
+          const w = Math.max(40, Math.round((cw / sw) * tw))
+          const max = sw - cw
+          const x = max > 0 ? (el.scrollLeft / max) * (tw - w) : 0
+          if (thumb.style.width !== `${w}px`) thumb.style.width = `${w}px`
+          thumb.style.transform = `translate3d(${x}px, 0, 0)`
+        }
+      } else if (track.dataset.active !== 'false') {
+        track.dataset.active = 'false'
+      }
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [scrollerRef])
+
+  function scrollFromDrag(clientX: number) {
+    const drag = dragRef.current
+    const el = scrollerRef.current
+    const track = trackRef.current
+    const thumb = thumbRef.current
+    if (!drag || !el || !track || !thumb) return
+    const span = track.clientWidth - thumb.clientWidth
+    if (span <= 0) return
+    const max = el.scrollWidth - el.clientWidth
+    el.scrollLeft = drag.startScroll + (clientX - drag.startX) * (max / span)
+  }
+
+  return (
+    <div
+      ref={trackRef}
+      className={`smengo-hscroll smengo-hscroll--${size}`}
+      data-active="false"
+      style={style}
+      onPointerDown={(e) => {
+        const el = scrollerRef.current
+        const track = trackRef.current
+        const thumb = thumbRef.current
+        if (!el || !track || !thumb) return
+        e.preventDefault()
+        track.setPointerCapture(e.pointerId)
+        track.setAttribute('data-dragging', 'true')
+        if (e.target !== thumb) {
+          // Jump so the thumb centers on the pointer, then drag from there.
+          const rect = track.getBoundingClientRect()
+          const span = track.clientWidth - thumb.clientWidth
+          const max = el.scrollWidth - el.clientWidth
+          if (span > 0) {
+            const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left - thumb.clientWidth / 2) / span))
+            el.scrollLeft = ratio * max
+          }
+        }
+        dragRef.current = { pointerId: e.pointerId, startX: e.clientX, startScroll: el.scrollLeft }
+      }}
+      onPointerMove={(e) => {
+        if (dragRef.current && e.pointerId === dragRef.current.pointerId) scrollFromDrag(e.clientX)
+      }}
+      onPointerUp={(e) => {
+        if (dragRef.current?.pointerId === e.pointerId) {
+          dragRef.current = null
+          trackRef.current?.removeAttribute('data-dragging')
+        }
+      }}
+      onPointerCancel={() => {
+        dragRef.current = null
+        trackRef.current?.removeAttribute('data-dragging')
+      }}
+    >
+      <div ref={thumbRef} className="smengo-hscroll-thumb" />
+    </div>
+  )
+}
+
 // ── Клик-таргетинг по merge-прогону (demo scheduleRunClickTarget) ───
 
 export function scheduleRunClickTarget(e: React.MouseEvent<HTMLElement>, indices: number[]) {
