@@ -17,6 +17,8 @@ interface OnShiftRowProps {
   mode: GridMode
   nameColWidth: number
   cellW: number
+  /** Полная ширина контента грида в px — единая для всех трёх слоёв (см. GridHeader). */
+  totalWidth: number
   weekendBg: string
   problemDays: ReadonlySet<string>
   showGrid: boolean
@@ -34,6 +36,7 @@ export function OnShiftRow({
   mode,
   nameColWidth,
   cellW,
+  totalWidth,
   weekendBg,
   problemDays,
   showGrid,
@@ -56,7 +59,8 @@ export function OnShiftRow({
       style={{
         borderTop: '1px solid var(--border)',
         background: 'var(--grid-cell)',
-        width: 'max-content',
+        // Явная px-ширина — та же, что у шапки и спейсера строк (см. GridHeader)
+        width: totalWidth,
         minWidth: '100%',
       }}
     >

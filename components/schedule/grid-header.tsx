@@ -25,6 +25,13 @@ interface GridHeaderProps {
   nameColWidth: number
   /** Deterministic cell width in px (from CELL_WIDTH[mode]) */
   cellW: number
+  /**
+   * Полная ширина контента грида в px (nameColW + days×cellW + итоги).
+   * Все три слоя (шапка, строки, «НА СМЕНЕ») задают её явно — intrinsic
+   * max-content зависел бы от контента ячеек (1px бордеры «Сетки» раздували
+   * строки тела) и ломал выравнивание колонок между слоями.
+   */
+  totalWidth: number
   /** Фон выходных колонок (зависит от настройки «Выделять выходные») */
   weekendBg: string
   /** Даты (dateISO) с дефицитом покрытия — «проблемные» колонки */
@@ -45,6 +52,7 @@ export function GridHeader({
   mode,
   nameColWidth,
   cellW,
+  totalWidth,
   weekendBg,
   problemDays,
   problemTint,
@@ -67,7 +75,9 @@ export function GridHeader({
         height: headerHeight,
         borderBottom: '1px solid var(--border)',
         background: 'var(--grid-cell)',
-        width: 'max-content',
+        // Явная px-ширина (не max-content): геометрия колонок не должна
+        // зависеть от intrinsic-ширины контента ячеек ни в одном слое.
+        width: totalWidth,
         minWidth: '100%',
       }}
     >

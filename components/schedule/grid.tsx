@@ -803,6 +803,7 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
               mode={mode}
               nameColWidth={nameColW}
               cellW={cellW}
+              totalWidth={totalWidth}
               weekendBg={weekendBg}
               problemDays={problemDays}
               problemTint={editMode}
@@ -822,7 +823,10 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
                 items={data.employees.map((e) => e.id)}
                 strategy={verticalListSortingStrategy}
               >
-                <div style={{ height: totalHeight, width: totalWidth, position: 'relative' }}>
+                {/* width+minWidth: спейсер тянется до clientWidth скроллера,
+                    как шапка/«НА СМЕНЕ» (minWidth 100%) — иначе на широких
+                    экранах строки компактного режима не растягивались бы. */}
+                <div style={{ height: totalHeight, width: totalWidth, minWidth: '100%', position: 'relative' }}>
                   {items.map((virtualItem) => {
                     const row = virtualRows[virtualItem.index]
                     if (!row) return null
@@ -945,6 +949,7 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
                 mode={mode}
                 nameColWidth={nameColW}
                 cellW={cellW}
+                totalWidth={totalWidth}
                 weekendBg={weekendBg}
                 problemDays={problemDaysVisual}
                 showGrid={view.showGrid}

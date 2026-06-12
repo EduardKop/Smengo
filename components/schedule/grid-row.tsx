@@ -382,8 +382,10 @@ export function EmployeeGridRow({
       className="group flex"
       style={{
         height: rowHeight,
-        width: 'max-content',
-        minWidth: '100%',
+        // 100% ширины спейсера (= max(totalWidth, clientWidth) скроллера):
+        // intrinsic max-content раздувался контентом ячеек (1px бордеры
+        // «Сетки») и смещал колонки тела относительно шапки/«НА СМЕНЕ».
+        width: '100%',
         borderBottom: '1px solid var(--grid-row-divider)',
         transform: transformStyle,
         transition,
