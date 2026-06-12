@@ -139,6 +139,7 @@ export type Database = {
           deleted_at: string | null
           dept_id: string | null
           email: string | null
+          employment_kind: string
           full_name: string
           hired_on: string | null
           id: string
@@ -156,6 +157,7 @@ export type Database = {
           deleted_at?: string | null
           dept_id?: string | null
           email?: string | null
+          employment_kind?: string
           full_name: string
           hired_on?: string | null
           id?: string
@@ -173,6 +175,7 @@ export type Database = {
           deleted_at?: string | null
           dept_id?: string | null
           email?: string | null
+          employment_kind?: string
           full_name?: string
           hired_on?: string | null
           id?: string
