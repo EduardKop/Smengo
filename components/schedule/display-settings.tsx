@@ -44,6 +44,11 @@ export function DisplaySettingsButton({
 }) {
   const t = useTranslations('app.schedule')
   const [open, setOpen] = useState(false)
+  /**
+   * Куда раскрывать панель: при переносе тулбара кнопка может оказаться слева,
+   * и right-0-панель срезается overflow:hidden карточки грида.
+   */
+  const [alignLeft, setAlignLeft] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -59,7 +64,14 @@ export function DisplaySettingsButton({
     <div ref={ref} className="relative">
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={(e) => {
+          // Не хватает места слева от кнопки (панель 288px) — раскрываем вправо
+          const btnRect = e.currentTarget.getBoundingClientRect()
+          const card = e.currentTarget.closest('[data-grid-topbar]')?.parentElement
+          const boundary = card ? card.getBoundingClientRect().left : 0
+          setAlignLeft(btnRect.right - 288 < boundary + 8)
+          setOpen((v) => !v)
+        }}
         aria-label={t('displayLabel')}
         aria-expanded={open}
         className="smengo-tool smengo-tool--icon"
@@ -67,7 +79,13 @@ export function DisplaySettingsButton({
         <Settings2 className="h-4 w-4" />
       </button>
       {open && (
-        <div className="smengo-pop absolute right-0 z-30 mt-2 w-72 p-1.5 text-[13px] max-sm:right-auto max-sm:left-1/2 max-sm:-translate-x-1/2">
+        /* z-50: липкая шапка грида (z-30) и sticky-колонка имён рисуются позже
+           в DOM и при равном z перекрывали поповер — заголовок «ОТОБРАЖЕНИЕ»
+           становился «тёмным на тёмном» в тёмной теме. */
+        <div
+          className={`smengo-pop absolute z-50 mt-2 w-72 p-1.5 text-[13px] max-sm:right-auto max-sm:left-1/2 max-sm:-translate-x-1/2 ${alignLeft ? 'left-0' : 'right-0'}`}
+          style={{ ['--pop-origin' as string]: alignLeft ? 'top left' : 'top right' }}
+        >
           <div className="smengo-pop-label">{t('displayLabel')}</div>
           {toggles.map((toggle) => (
             <SettingRow

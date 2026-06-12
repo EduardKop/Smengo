@@ -64,7 +64,8 @@ export function DeptFilter({ departments, employees, value, onChange }: DeptFilt
       </button>
       {open && (
         <div
-          className="smengo-pop absolute left-0 z-30 mt-1.5 w-48 p-1.5"
+          /* z-50 — выше липкой шапки грида (z-30), иначе она перекрывает меню */
+          className="smengo-pop absolute left-0 z-50 mt-1.5 w-48 p-1.5"
           style={{ ['--pop-origin' as string]: 'top left' }}
         >
           {options.map((o) => {
