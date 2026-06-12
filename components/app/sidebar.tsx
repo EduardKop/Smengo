@@ -28,6 +28,29 @@ const ICONS: Record<NavItem['key'], LucideIcon> = {
   dashboard: LayoutDashboard,
 }
 
+/**
+ * Фирменный знак (геометрия public/lockup-{light,dark}.svg 1:1): плитка
+ * с тремя «строками графика». Светлая тема — тёмная плитка, тёмная —
+ * кремовая, как в шапке лендинга. Инлайн-SVG вместо icon-*.png: PNG-плитки
+ * названы по цвету плитки и на кремовом фоне сайдбара сливаются.
+ */
+function SmengoMark({ size = 36 }: { size?: number }) {
+  const tile = (fill: string, topBar: string) => (
+    <svg width={size} height={size} viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect width="64" height="64" rx="18" fill={fill} />
+      <rect x="14" y="18" width="30" height="9" rx="4.5" fill={topBar} />
+      <rect x="22" y="29.5" width="30" height="9" rx="4.5" fill="#e0a96d" />
+      <rect x="14" y="41" width="30" height="9" rx="4.5" fill="#9b8b73" />
+    </svg>
+  )
+  return (
+    <span role="img" aria-label="Smengo" className="shrink-0">
+      <span className="block dark:hidden">{tile('#1f1e1c', '#f5f3ef')}</span>
+      <span className="hidden dark:block">{tile('#f5f3ef', '#1f1e1c')}</span>
+    </span>
+  )
+}
+
 interface AppSidebarProps {
   items: NavItem[]
   roleLabel: string
@@ -75,15 +98,10 @@ export function AppSidebar({ items, roleLabel, userEmail, logoutLabel }: AppSide
         {/* transition-all вместо transition-[width,box-shadow]: arbitrary-значение
             с запятой не генерируется Tailwind v4 (проверено в живом превью) */}
         <div className="group/sb absolute inset-y-0 left-0 flex w-16 flex-col overflow-hidden border-r border-border bg-background px-3 py-5 transition-all duration-300 ease-out hover:w-60 hover:shadow-xl has-[:focus-visible]:w-60 has-[:focus-visible]:shadow-xl">
-          {/* Лого: свёрнуто — только знак; раскрыто — знак + «Smengo» */}
+          {/* Лого: свёрнуто — только фирменный знак; раскрыто — знак + wordmark */}
           <div className="mb-8 flex items-center gap-2.5 px-0.5">
-            <span
-              aria-hidden="true"
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent text-base font-bold text-accent-foreground"
-            >
-              S
-            </span>
-            <p className={cn(expandedText, 'text-[17px] font-bold tracking-tight text-foreground')}>Smengo</p>
+            <SmengoMark size={36} />
+            <p className={cn(expandedText, 'text-[17px] font-semibold tracking-[-0.02em] text-foreground')}>smengo</p>
           </div>
 
           {nav}
@@ -114,13 +132,8 @@ export function AppSidebar({ items, roleLabel, userEmail, logoutLabel }: AppSide
       {/* Mobile top bar */}
       <header className="fixed inset-x-0 top-0 z-40 flex items-center justify-between gap-2 border-b border-border bg-background px-4 py-2 md:hidden">
         <div className="flex items-center gap-2">
-          <span
-            aria-hidden="true"
-            className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-sm font-bold text-accent-foreground"
-          >
-            S
-          </span>
-          <p className="text-base font-bold tracking-tight text-foreground">Smengo</p>
+          <SmengoMark size={28} />
+          <p className="text-base font-semibold tracking-[-0.02em] text-foreground">smengo</p>
         </div>
         <div className="flex items-center gap-1 overflow-x-auto">
           {items.map((item) => {
