@@ -605,6 +605,10 @@ export type Database = {
         Args: { p_org_id: string; p_user_id: string }
         Returns: undefined
       }
+      reorder_employees: {
+        Args: { p_dept_id: string | null; p_ordered_ids: string[] }
+        Returns: undefined
+      }
       update_member_role: {
         Args: {
           p_org_id: string

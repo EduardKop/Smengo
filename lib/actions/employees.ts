@@ -38,13 +38,15 @@ export async function createEmployeeAction(formData: FormData): Promise<EmpActio
   const parsed = parseEmployee(formData)
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message }
 
+  // TODO: TOCTOU допустим на целевом масштабе (15-300, ручное добавление); при злоупотреблении — перенести лимит в БД-триггер
   // Финальная проверка лимита плана — на сервере
   const { data: org } = await ctx.supabase
     .from('organizations').select('plan').eq('id', ctx.orgId).single()
-  const limit = await checkPlanLimit(ctx.supabase, ctx.orgId, org?.plan ?? 'start', 'employees')
+  if (!org) return { ok: false, error: 'org_not_found' }
+  const limit = await checkPlanLimit(ctx.supabase, ctx.orgId, org.plan, 'employees')
   if (!limit.allowed) return { ok: false, error: 'plan_limit_employees' }
 
-  // sort_order = в конец своего отдела
+  // sort_order: глобально-монотонный хвост; первый ручной reorder перенумерует внутри отдела
   const { count } = await ctx.supabase
     .from('employees')
     .select('id', { count: 'exact', head: true })
@@ -146,15 +148,11 @@ export async function reorderEmployeesAction(input: { dept_id: string | null; or
   const parsed = ReorderSchema.safeParse(input)
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message }
 
-  // Последовательные update под RLS; порядок — позиция в массиве
-  for (let i = 0; i < parsed.data.ordered_ids.length; i++) {
-    const { error } = await ctx.supabase
-      .from('employees')
-      .update({ sort_order: i + 1 })
-      .eq('id', parsed.data.ordered_ids[i])
-      .eq('org_id', ctx.orgId)
-    if (error) return { ok: false, error: error.message }
-  }
+  const { error } = await ctx.supabase.rpc('reorder_employees', {
+    p_dept_id: parsed.data.dept_id as string | null,
+    p_ordered_ids: parsed.data.ordered_ids,
+  })
+  if (error) return { ok: false, error: error.message.includes('ids_outside_scope') ? 'ids_outside_scope' : error.message }
 
   revalidatePath('/schedule')
   return { ok: true }
