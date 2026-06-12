@@ -1035,6 +1035,7 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
           entry={editorEntry}
           statusTypes={data.statusTypes}
           workStatus={workStatus}
+          employeeName={empById.get(editorAnchor.employeeId)?.full_name ?? ''}
           onUpsert={handleUpsert}
           onClear={handleClear}
           onClose={handleEditorClose}
