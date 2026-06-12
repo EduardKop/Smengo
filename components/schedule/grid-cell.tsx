@@ -593,9 +593,15 @@ export const StatusChip = memo(function StatusChip({
   const full = statusLabel(status, locale)
   const short = code === 'V' ? labels.vacShort : code === 'S' ? labels.sickShort : full
 
-  // Кастомизированный вид статуса перекрывает любой дефолтный рендер;
+  // Приоритет (правило основателя): если у ЗАПИСИ задано время смены —
+  // рендерится карточка времени (Утро/Вечер/Ночь как в демо), а кастомный
+  // «Визуал» игнорируется. Кастом применяется только к записям без времени.
+  const hasEntryTime = Boolean(entry.start_time && entry.end_time)
+  const rendersShiftTimeCard = code === 'W' && hasEntryTime
+
+  // Кастомизированный вид статуса перекрывает остальной дефолтный рендер;
   // minHeight по режимам — как у существующих кастомных чипов (46/36/34)
-  if (cardVisual) {
+  if (cardVisual && !rendersShiftTimeCard) {
     return (
       <CardVisualChip
         config={cardVisual}
