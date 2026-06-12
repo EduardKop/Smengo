@@ -30,7 +30,6 @@ import { GridHeader, TOTALS_OFF_W, TOTALS_HRS_W } from './grid-header'
 import { GroupRow, EmployeeGridRow } from './grid-row'
 import type { GridRowLabels, CellRect } from './grid-row'
 import { OnShiftRow } from './on-shift-row'
-import { GridTabs } from './grid-tabs'
 import { DisplaySettingsButton, type DisplayToggle } from './display-settings'
 import { AlertsForm } from './settings/alerts-form'
 import { StatusManager } from './settings/status-manager'
@@ -48,8 +47,6 @@ import { EmployeeModal } from './employee-modal'
 import type { EmployeeModalState } from './employee-modal'
 import type { EmployeeRow } from '@/lib/schedule/types'
 import { reorderEmployeesAction } from '@/lib/actions/employees'
-import { EmployeesTab } from './employees-tab'
-import type { EmployeeView } from './employees-tab'
 import { EmployeeOverlay } from './employees-tab/employee-overlay'
 
 // ── Row height by mode (сняты с живого демо: compact 43.5, detail 56.6, ext 79.8) ──
@@ -164,11 +161,8 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
   const mode: GridMode = (['compact', 'detail', 'extended'].includes(searchParams.get('mode') ?? '')
     ? (searchParams.get('mode') as GridMode)
     : 'detail')
-
-  // Tab: schedule | employees
-  const activeTab = searchParams.get('tab') === 'employees' ? 'employees' : 'schedule'
-  // Employee tab view: cards | list
-  const empView: EmployeeView = searchParams.get('view') === 'list' ? 'list' : 'cards'
+  // NOTE: устаревший параметр ?tab= (вкладка «Сотрудники») игнорируется —
+  // раздел сотрудников живёт на /employees.
 
   // Local search input state — debounced 200ms before pushing to URL
   const [searchInput, setSearchInput] = useState(searchParams.get('q') ?? '')
@@ -420,18 +414,14 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
     return m
   }, [data.alertConfigs])
 
-  // Filter employees by search query (and dept filter for the Employees tab).
-  // NOTE: the schedule-tab groups useMemo applies dept filtering independently,
-  // so we only add dept filtering here — filteredEmployees is used by EmployeesTab.
+  // Filter employees by search query + dept filter.
+  // The groups useMemo below buckets filteredEmployees by dept without
+  // re-applying the dept filter (it is already applied here).
   const filteredEmployees = useMemo(() => {
     let list = data.employees
     if (qFilter) {
       list = list.filter((e) => e.full_name.toLowerCase().includes(qFilter))
     }
-    // Dept filter — applied here so EmployeesTab respects it too.
-    // The schedule-tab groups useMemo below also filters by dept directly
-    // (it operates on filteredEmployees which already has q-filter applied),
-    // so we must NOT add dept-filtering there again.
     if (deptFilter === NO_DEPT_FILTER) {
       list = list.filter((e) => e.dept_id === null)
     } else if (deptFilter) {
@@ -643,76 +633,6 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
   return (
     <div className="flex flex-col">
 
-      {/* Tab switcher — пилюли DemoTabs-стиля (демо 3771–3833) */}
-      <div className="mb-3 flex items-center">
-        <GridTabs
-          active={activeTab}
-          onChange={(tab) => setShallowParam('tab', tab === 'schedule' ? null : tab)}
-        />
-      </div>
-
-      {/* Toolbar вкладки «Сотрудники» — лёгкий ряд над контентом */}
-      {!isFullyEmpty && activeTab === 'employees' && (
-        <div className="mb-3 flex flex-wrap items-center gap-2" data-slot="toolbar">
-          <DeptFilter
-            departments={data.departments}
-            employees={data.employees}
-            value={deptFilter}
-            onChange={handleDeptChange}
-          />
-          <div className="relative flex items-center">
-            <Search
-              size={13}
-              className="pointer-events-none absolute left-2.5 text-muted-foreground"
-            />
-            <input
-              type="text"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.currentTarget.value)}
-              placeholder={t('searchPlaceholder')}
-              aria-label={t('searchPlaceholder')}
-              className="smengo-tool"
-              style={{ minWidth: 160, cursor: 'text', justifyContent: 'flex-start', paddingLeft: 30, paddingRight: 26 }}
-            />
-            {searchInput && (
-              <button
-                type="button"
-                aria-label={t('clearSearch')}
-                onClick={() => setSearchInput('')}
-                className="absolute right-2 text-muted-foreground hover:text-foreground"
-              >
-                <X size={13} />
-              </button>
-            )}
-          </div>
-          <div style={{ flex: 1 }} />
-          {canCrudEmployees && (
-            <button
-              type="button"
-              onClick={() => setEmployeeModal({ mode: 'create' })}
-              className="smengo-tool smengo-tool--primary"
-            >
-              {t('addEmployee')}
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* Employees tab content */}
-      {activeTab === 'employees' && (
-        <EmployeesTab
-          employees={filteredEmployees}
-          departments={data.departments}
-          today={today}
-          view={empView}
-          onViewChange={(v) => setShallowParam('view', v === 'cards' ? null : v)}
-          onEdit={canCrudEmployees ? (emp) => setEmployeeModal({ mode: 'edit', employee: emp }) : undefined}
-        />
-      )}
-
-      {/* Schedule tab content */}
-      {activeTab === 'schedule' && (
-      <>
       {/* Fully empty state — QuickStart replaces the grid entirely */}
       {isFullyEmpty ? (
         <QuickStart
@@ -1034,10 +954,7 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
           <Legend statusTypes={data.statusTypes} />
         </>
       )}
-      {/* end schedule tab: isFullyEmpty ternary */}
-      </>
-      )}
-      {/* end activeTab === 'schedule' */}
+      {/* end isFullyEmpty ternary */}
 
       {/* Cell editor popover */}
       {editorAnchor && (
