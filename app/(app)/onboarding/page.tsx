@@ -3,7 +3,6 @@ import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { Check } from 'lucide-react'
 import { logoutAction } from '@/lib/actions/auth'
-import { SmengoMark } from '@/components/app/sidebar'
 import { CreateOrgForm, type OnboardingPrefill } from '@/components/onboarding/create-org-form'
 
 export default async function OnboardingPage() {
@@ -40,45 +39,62 @@ export default async function OnboardingPage() {
   const t = await getTranslations('onboarding')
 
   return (
-    <main className="grid min-h-screen lg:grid-cols-[2fr_3fr]">
-      {/* Левая фирменная панель (правка 7, референс 7shifts):
-          честные value-props вместо тестимониалов — фейковый social proof снят с лендинга */}
-      <aside className="hidden flex-col justify-between bg-background p-10 lg:flex">
-        <div className="flex items-center gap-3">
-          <SmengoMark size={36} />
-          <span className="text-lg font-semibold tracking-[-0.02em] text-foreground">smengo</span>
+    <main className="grid min-h-screen lg:grid-cols-[38fr_62fr]">
+      {/* Левая тёмная фирменная панель (редакторский стиль): знак, value-props.
+          Честные обещания вместо фейковых тестимониалов. */}
+      <aside
+        className="hidden flex-col justify-between p-10 lg:flex xl:p-12"
+        style={{ background: 'var(--account-hero-bg)', color: 'var(--account-hero-fg)' }}
+      >
+        <div className="flex items-center gap-2.5">
+          <span className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-accent text-lg font-extrabold text-accent-foreground">
+            S
+          </span>
+          <span className="text-lg font-semibold tracking-[-0.02em]">smengo</span>
         </div>
-        <div className="max-w-sm">
-          <p className="text-3xl font-bold leading-tight tracking-tight text-foreground">
+
+        <div className="max-w-md">
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-accent">{t('trialBadge')}</p>
+          <p className="mt-6 text-[clamp(34px,3.6vw,52px)] font-extrabold leading-[1.02] tracking-[-0.02em]">
             {t('panelHeadline')}
           </p>
-          <ul className="mt-8 flex flex-col gap-4">
+          <ul className="mt-9 flex flex-col gap-4">
             {[t('vp1'), t('vp2'), t('vp3')].map((vp) => (
-              <li key={vp} className="flex items-center gap-3 text-sm font-medium text-foreground">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-soft">
-                  <Check className="h-3.5 w-3.5 text-accent" strokeWidth={2.5} />
+              <li key={vp} className="flex items-center gap-3 text-[15px] font-medium">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-accent text-accent-foreground">
+                  <Check className="h-3.5 w-3.5" strokeWidth={3} />
                 </span>
                 {vp}
               </li>
             ))}
           </ul>
         </div>
-        <p className="text-xs text-muted-foreground">© Smengo</p>
+
+        <p className="text-[10px] font-bold uppercase tracking-[0.16em]" style={{ opacity: 0.45 }}>
+          SMENGO · SHIFT SCHEDULING
+        </p>
       </aside>
 
-      {/* Правая колонка: форма */}
-      <div className="flex flex-col items-center justify-center bg-muted/40 p-4 py-10">
-        <div className="w-full max-w-lg space-y-3">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">{t('headline')}</h1>
-            <p className="mt-1.5 text-sm text-muted-foreground">{t('subheadline')}</p>
+      {/* Правая колонка: форма на фоне страницы */}
+      <div className="flex flex-col justify-center bg-[var(--background)] px-5 py-10 sm:px-10 lg:px-14">
+        <div className="mx-auto w-full max-w-xl">
+          {/* Надзаголовок: шаг настройки + раздел */}
+          <div className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.16em]">
+            <span className="text-accent">{t('setupStep')}</span>
+            <span className="h-px w-8 bg-border" />
+            <span className="text-muted-foreground">{t('setupSection')}</span>
           </div>
+          <h1 className="mb-8 mt-4 text-[clamp(28px,3.4vw,42px)] font-extrabold leading-[1.05] tracking-[-0.02em] text-foreground">
+            {t('headline')}
+          </h1>
+
           <CreateOrgForm userEmail={user.email ?? ''} prefill={prefill} />
-          <form action={logoutAction} className="text-center text-sm text-muted-foreground">
+
+          <form action={logoutAction} className="mt-6 text-sm text-muted-foreground">
             {t('signedInAs')} <span className="font-medium text-foreground">{user.email}</span>
             {' · '}
             {t('wrongAccount')}{' '}
-            <button type="submit" className="font-medium text-foreground underline underline-offset-4">
+            <button type="submit" className="cursor-pointer font-medium text-foreground underline underline-offset-4">
               {t('signOut')}
             </button>
           </form>
