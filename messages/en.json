@@ -98,7 +98,10 @@
     "subheadline": "Set up your company so the trial goes to what matters",
     "teamSizeLabel": "How many employees do you have?",
     "logoLabel": "Company logo",
-    "logoUpload": "Upload"
+    "logoUpload": "Upload",
+    "trialBadge": "14-day trial",
+    "setupStep": "Setup № 01",
+    "setupSection": "Company"
   },
   "marketing": {
     "comingSoon": {

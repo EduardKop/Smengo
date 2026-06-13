@@ -98,7 +98,10 @@
     "subheadline": "Настройте компанию, чтобы потратить триал на главное",
     "teamSizeLabel": "Сколько сотрудников в компании?",
     "logoLabel": "Логотип компании",
-    "logoUpload": "Загрузить"
+    "logoUpload": "Загрузить",
+    "trialBadge": "14 дней триала",
+    "setupStep": "Настройка № 01",
+    "setupSection": "Компания"
   },
   "marketing": {
     "comingSoon": {
