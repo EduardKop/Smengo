@@ -2120,7 +2120,9 @@
       "detailsTitle": "Назва та часовий пояс",
       "detailsDesc": "Часовий пояс використовується для дат і часу змін у графіку.",
       "previewLabel": "У сайдбарі",
-      "timezoneHint": "Для змін"
+      "timezoneHint": "Для змін",
+      "eyebrowWord": "Організація",
+      "uploadShort": "Завантажити"
     },
     "billingPage": {
       "title": "Плани та оплата",
@@ -2176,6 +2178,11 @@
       "schedule": "Планування",
       "dashboard": "Огляд",
       "employees": "Команда"
+    },
+    "pageShort": {
+      "account": "Акаунт",
+      "billing": "Оплата",
+      "company": "Компанія"
     }
   },
   "legal": {

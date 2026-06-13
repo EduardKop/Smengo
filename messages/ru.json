@@ -2120,7 +2120,9 @@
       "detailsTitle": "Название и часовой пояс",
       "detailsDesc": "Часовой пояс используется для дат и времени смен в графике.",
       "previewLabel": "В сайдбаре",
-      "timezoneHint": "Для смен"
+      "timezoneHint": "Для смен",
+      "eyebrowWord": "Организация",
+      "uploadShort": "Загрузить"
     },
     "billingPage": {
       "title": "Планы и оплата",
@@ -2176,6 +2178,11 @@
       "schedule": "Планирование",
       "dashboard": "Обзор",
       "employees": "Команда"
+    },
+    "pageShort": {
+      "account": "Аккаунт",
+      "billing": "Оплата",
+      "company": "Компания"
     }
   },
   "legal": {

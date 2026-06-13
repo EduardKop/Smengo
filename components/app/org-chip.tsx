@@ -78,14 +78,17 @@ export function OrgChip({ orgName, memberships, activeOrgId, switcherLabel, logo
   }
 
   return (
-    <div className="relative flex min-w-0 items-center gap-2.5">
+    // Плажка с названием проекта: фон — как у бокового меню (--sidebar), компактная
+    <div className="relative flex min-w-0 items-center gap-2 rounded-lg border border-border bg-sidebar py-1 pl-1 pr-2.5">
       {logoUrl ? (
+        // Логотип — квадрат со скруглением (как OrgMark), не круг: rounded-lg в этой
+        // теме = 16px и на 24px давал круг — поэтому фиксированный радиус 7px (~28%)
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={logoUrl} alt="" aria-hidden="true" className="h-7 w-7 shrink-0 rounded-lg object-cover" />
+        <img src={logoUrl} alt="" aria-hidden="true" className="h-6 w-6 shrink-0 rounded-[7px] object-cover" />
       ) : (
-        <OrgMark orgId={activeOrgId} orgName={orgName} />
+        <OrgMark orgId={activeOrgId} orgName={orgName} size={24} />
       )}
-      <span className="truncate text-sm font-semibold tracking-tight text-foreground">{orgName}</span>
+      <span className="truncate text-[13px] font-semibold tracking-tight text-foreground">{orgName}</span>
       {multi && (
         <>
           <ChevronDown aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />

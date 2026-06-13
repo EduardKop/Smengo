@@ -125,8 +125,9 @@ export function AccountForm({
   const displayName = fullName.trim() || email
 
   const orgGlyph = orgLogoUrl ? (
+    // Квадрат со скруглением (как OrgMark), не круг — фикс радиуса под 36px
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={orgLogoUrl} alt="" aria-hidden="true" className="h-9 w-9 rounded-lg object-cover" />
+    <img src={orgLogoUrl} alt="" aria-hidden="true" className="h-9 w-9 rounded-[10px] object-cover" />
   ) : (
     <OrgMark orgId={orgId} orgName={orgName} size={36} />
   )

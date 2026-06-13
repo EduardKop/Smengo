@@ -2121,7 +2121,9 @@
       "detailsTitle": "Name and timezone",
       "detailsDesc": "The timezone is used for dates and shift times in the schedule.",
       "previewLabel": "In the sidebar",
-      "timezoneHint": "For shifts"
+      "timezoneHint": "For shifts",
+      "eyebrowWord": "Organization",
+      "uploadShort": "Upload"
     },
     "billingPage": {
       "title": "Plans & Pricing",
@@ -2177,6 +2179,11 @@
       "schedule": "Planning",
       "dashboard": "Overview",
       "employees": "Team"
+    },
+    "pageShort": {
+      "account": "Account",
+      "billing": "Billing",
+      "company": "Company"
     }
   },
   "legal": {
