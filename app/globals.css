@@ -54,6 +54,9 @@ html {
      меняется только цвет текста на ней) */
   --billing-hero-bg: #f5421e;
   --billing-hero-fg: #ffffff;
+  /* Аккаунт — левая тёмная панель (как на скриншоте) */
+  --account-hero-bg: #1b1916;
+  --account-hero-fg: #f3f1ea;
 
   /* Radius — 12px */
   --radius: 0.75rem;
@@ -1079,6 +1082,9 @@ tr:hover > .smengo-schedule-cell::before {
   /* Биллинг: ярче и с тёмным текстом (как на скриншоте тёмной темы) */
   --billing-hero-bg: #ff5a2c;
   --billing-hero-fg: #16130f;
+  /* Аккаунт: чуть темнее фона страницы — приподнятая чёрная панель */
+  --account-hero-bg: #06070a;
+  --account-hero-fg: #f3f1ea;
   --sidebar: #141821;
   --sidebar-foreground: #e8e7e3;
   --sidebar-accent: #242a36;

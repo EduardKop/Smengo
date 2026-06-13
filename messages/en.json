@@ -2098,7 +2098,11 @@
       "statusActive": "Active",
       "workspaceTitle": "Workspace",
       "workspaceDesc": "Organizations and workspaces you belong to.",
-      "currentOrg": "Current organization"
+      "currentOrg": "Current organization",
+      "sectionAccess": "Sign-in · Workspace",
+      "orgLabel": "organization",
+      "loginLabel": "sign-in",
+      "eyebrowWord": "Account"
     },
     "company": {
       "title": "Company Settings",

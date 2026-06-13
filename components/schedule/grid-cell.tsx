@@ -82,7 +82,8 @@ function LateBadgePill({ short, full }: { short: string; full: string }) {
   )
 }
 
-/** Detail: круглая икон-пилюля 14px в правом верхнем углу карточки. */
+/** Detail: круглая икон-пилюля 14px, вынесена выше-правее за угол карточки,
+ *  чтобы не перекрывать почасовку (правка основателя; чип — overflow:visible). */
 function LateCornerBadge({ full }: { full: string }) {
   return (
     <span
@@ -90,8 +91,8 @@ function LateCornerBadge({ full }: { full: string }) {
       aria-label={full}
       style={{
         position: 'absolute',
-        top: 2,
-        right: 2,
+        top: -7,
+        right: -5,
         width: 14,
         height: 14,
         borderRadius: 999,
@@ -144,17 +145,17 @@ function LateStandalonePill({ label, full, compact }: { label: string; full: str
   )
 }
 
-/** Compact: минимальный маркер-точка в углу (тултип — на чипе целиком). */
+/** Compact: минимальный маркер-точка, смещён в самый угол за карточку. */
 function LateDotBadge() {
   return (
     <span
       aria-hidden="true"
       style={{
         position: 'absolute',
-        top: 2.5,
-        right: 2.5,
-        width: 5,
-        height: 5,
+        top: -3,
+        right: -3,
+        width: 6,
+        height: 6,
         borderRadius: '50%',
         background: 'var(--chip-l-fg)',
         boxShadow: '0 0 0 1.5px var(--grid-cell)',
@@ -532,6 +533,8 @@ function DetailWorkChip({ entry, status, showTimes, labels, lateFull }: { entry:
         minWidth: 0,
         minHeight: 36,
         whiteSpace: 'nowrap',
+        // Бейдж опоздания вынесен за угол → даём ему «вытечь» из чипа
+        overflow: lateFull ? 'visible' : undefined,
       }}
     >
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3.5, fontSize: 10.5, fontWeight: 750, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
@@ -644,7 +647,8 @@ function CompactChip({
         textAlign: 'center',
         minHeight: 34,
         whiteSpace: shiftParts ? 'normal' : 'nowrap',
-        overflow: 'hidden',
+        // Бейдж опоздания вынесен в угол → не обрезаем его
+        overflow: lateFull ? 'visible' : 'hidden',
       }}
     >
       {shiftParts ? (

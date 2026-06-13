@@ -5,11 +5,9 @@ import { can } from '@/lib/permissions'
 import { AVATAR_SIGNED_URL_TTL_SECONDS } from '@/lib/schedule/avatar'
 import { ORG_LOGO_BUCKET, PROFILE_AVATAR_BUCKET } from '@/lib/app/avatars'
 import { AccountForm } from '@/components/app/account-form'
-import { PageHeader } from '@/components/app/page-header'
 
 export default async function MyAccountPage() {
   const ctx = await getAppContext()
-  const t = await getTranslations('app.account')
   const tRoles = await getTranslations('app.roles')
 
   const supabase = await createClient()
@@ -40,8 +38,7 @@ export default async function MyAccountPage() {
   const googleConnected = providers.includes('google')
 
   return (
-    <div className="mx-auto w-full max-w-4xl">
-      <PageHeader title={t('title')} subtitle={t('subtitle')} />
+    <div className="mx-auto w-full max-w-5xl">
       <AccountForm
         initialFullName={profile?.full_name ?? ''}
         email={ctx.userEmail}

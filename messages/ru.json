@@ -2097,7 +2097,11 @@
       "statusActive": "Активно",
       "workspaceTitle": "Рабочая область",
       "workspaceDesc": "Организация и рабочие области, в которых вы участвуете.",
-      "currentOrg": "Текущая организация"
+      "currentOrg": "Текущая организация",
+      "sectionAccess": "Вход · Рабочая область",
+      "orgLabel": "организация",
+      "loginLabel": "вход в систему",
+      "eyebrowWord": "Аккаунт"
     },
     "company": {
       "title": "Настройки компании",
