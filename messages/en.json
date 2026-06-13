@@ -89,7 +89,16 @@
     "createButton": "Create company",
     "signedInAs": "Signed in as",
     "wrongAccount": "Wrong account?",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "panelHeadline": "Your whole team and schedule on one screen",
+    "vp1": "14 days free",
+    "vp2": "Cancel anytime",
+    "vp3": "No card required",
+    "headline": "A couple of minutes until you're in the app",
+    "subheadline": "Set up your company so the trial goes to what matters",
+    "teamSizeLabel": "How many employees do you have?",
+    "logoLabel": "Company logo",
+    "logoUpload": "Upload"
   },
   "marketing": {
     "comingSoon": {

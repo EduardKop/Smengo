@@ -12,4 +12,9 @@ export const CreateOrgSchema = z.object({
   // Terms are validated in the action: required only when the user
   // has not accepted them earlier (e.g. Google OAuth sign-up).
   terms: z.string().optional(),
+  // Кол-во сотрудников (правка 7) — чипы онбординга, опционально
+  team_size: z.preprocess(
+    (v) => (v === null || v === '' ? undefined : v),
+    z.enum(['1-15', '16-50', '51-150', '150+']).optional(),
+  ),
 })

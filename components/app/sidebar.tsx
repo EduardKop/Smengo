@@ -34,7 +34,7 @@ const ICONS: Record<NavItem['key'], LucideIcon> = {
  * кремовая, как в шапке лендинга. Инлайн-SVG вместо icon-*.png: PNG-плитки
  * названы по цвету плитки и на кремовом фоне сайдбара сливаются.
  */
-function SmengoMark({ size = 36 }: { size?: number }) {
+export function SmengoMark({ size = 36 }: { size?: number }) {
   const tile = (fill: string, topBar: string) => (
     <svg width={size} height={size} viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <rect width="64" height="64" rx="18" fill={fill} />
