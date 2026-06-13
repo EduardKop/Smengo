@@ -2016,6 +2016,15 @@
         "errorLimit": "Your plan employee limit would be exceeded",
         "errorInvalid": "Check the filled rows — there are errors",
         "errorGeneric": "Could not add employees"
+      },
+      "publish": {
+        "button": "Publish schedule",
+        "dialogTitle": "Who would you like to notify?",
+        "notifyAll": "Notify everyone",
+        "notifyNone": "Don't notify anyone",
+        "publishNow": "Publish now",
+        "success": "Schedule published",
+        "error": "Could not publish the schedule"
       }
     },
     "employees": {

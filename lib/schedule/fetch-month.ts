@@ -55,12 +55,21 @@ async function withSignedAvatarUrls(supabase: AnySupabase, employees: EmployeeRo
 /** Единый месяц-фетчер для SSR и клиента: 5 параллельных запросов под RLS. */
 export async function fetchMonthData(supabase: AnySupabase, year: number, month: number): Promise<MonthData> {
   const { from, to } = monthRange(year, month)
-  const [employees, departments, statusTypes, entries, alertConfigs] = await Promise.all([
+  const [employees, departments, statusTypes, entries, alertConfigs, changeMark, lastPub] = await Promise.all([
     supabase.from('employees').select('*').is('deleted_at', null).order('dept_id').order('sort_order'),
     supabase.from('departments').select('*').order('name'),
     supabase.from('status_types').select('*').order('sort_order'),
     fetchAllEntries(supabase, from, to),
     supabase.from('alert_configs').select('*'),
+    // Состояние публикации месяца (правка 7): метка правок + последняя публикация
+    supabase.from('schedule_change_marks').select('last_change_at').eq('month', from).maybeSingle(),
+    supabase
+      .from('schedule_publications')
+      .select('published_at')
+      .eq('month', from)
+      .order('published_at', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ])
   return {
     employees: await withSignedAvatarUrls(supabase, employees.data ?? []),
@@ -68,5 +77,7 @@ export async function fetchMonthData(supabase: AnySupabase, year: number, month:
     statusTypes: statusTypes.data ?? [],
     entries,
     alertConfigs: alertConfigs.data ?? [],
+    lastChangeAt: changeMark.data?.last_change_at ?? null,
+    lastPublishedAt: lastPub.data?.published_at ?? null,
   }
 }

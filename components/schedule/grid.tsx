@@ -49,6 +49,7 @@ import { DeptModal } from './dept-modal'
 import type { DeptModalState } from './dept-modal'
 import { EmployeeModal } from './employee-modal'
 import { BulkEmployeeModal } from './bulk-employee-modal'
+import { PublishButton } from './publish-button'
 import type { EmployeeModalState } from './employee-modal'
 import type { EmployeeRow } from '@/lib/schedule/types'
 import { reorderEmployeesAction } from '@/lib/actions/employees'
@@ -275,6 +276,10 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
    */
   const [editorAnchor, setEditorAnchor] = useState<CellEditorAnchor | null>(null)
 
+  // Счётчик локальных правок ячеек (правка 7): кнопка «Опубликовать график»
+  // появляется сразу после первой мутации, не дожидаясь рефетча метки
+  const [dirtySignal, setDirtySignal] = useState(0)
+
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   const canEdit = !isReadOnly && can(role, 'edit_schedule')
@@ -323,6 +328,7 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
 
   const handleUpsert = useCallback(
     (input: UpsertInput) => {
+      setDirtySignal((n) => n + 1)
       upsertMutation.mutate(input, {
         onError: (err) => {
           pushToast(resolveErrorMessage(err.message))
@@ -334,6 +340,7 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
 
   const handleClear = useCallback(() => {
     if (!editorAnchor) return
+    setDirtySignal((n) => n + 1)
     clearMutation.mutate(
       { employee_id: editorAnchor.employeeId, entry_date: editorAnchor.dateISO },
       {
@@ -803,6 +810,19 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
             <DisplaySettingsButton
               toggles={displayToggles}
               onToggle={handleDisplayToggle}
+            />
+
+            {/* Publish schedule (правка 7) */}
+            <PublishButton
+              year={year}
+              month={month}
+              canEdit={canEdit}
+              serverDirty={Boolean(
+                data.lastChangeAt &&
+                (!data.lastPublishedAt || Date.parse(data.lastChangeAt) > Date.parse(data.lastPublishedAt)),
+              )}
+              dirtySignal={dirtySignal}
+              onToast={pushToast}
             />
 
             {/* Add employee */}
