@@ -6,6 +6,7 @@ import { getActionContext } from '@/lib/actions/context'
 import { assertCan } from '@/lib/permissions'
 import { checkPlanLimit } from '@/lib/billing/limits'
 import { EmployeeSchema, ReorderSchema } from '@/lib/validation/schedule'
+import { BulkEmployeesSchema } from '@/lib/validation/bulk-employees'
 import { toClientError } from '@/lib/actions/db-error'
 import {
   AVATAR_BUCKET,
@@ -86,6 +87,75 @@ export async function createEmployeeAction(formData: FormData): Promise<EmpActio
 
   revalidatePath('/schedule')
   return { ok: true, id: data.id }
+}
+
+export type BulkCreateResult =
+  | { ok: true; created: number }
+  | { ok: false; error: string }
+
+/**
+ * Bulk-добавление из модалки-таблицы (правка 7): вся пачка либо вставляется
+ * целиком, либо отклоняется (валидация любой строки / лимит плана / чужой отдел).
+ */
+export async function bulkCreateEmployeesAction(input: unknown): Promise<BulkCreateResult> {
+  const parsed = BulkEmployeesSchema.safeParse(input)
+  if (!parsed.success) return { ok: false, error: 'invalid_input' }
+
+  const res = await getActionContext()
+  if (!res.ok) return { ok: false, error: res.error }
+  const { ctx } = res
+  try {
+    assertCan(ctx.role, 'crud_employees')
+  } catch {
+    return { ok: false, error: 'forbidden' }
+  }
+
+  const rows = parsed.data.rows
+
+  // Финальная проверка лимита плана на ВСЮ пачку — на сервере
+  // (TOCTOU допустим, как у createEmployeeAction)
+  const { data: org } = await ctx.supabase
+    .from('organizations').select('plan').eq('id', ctx.orgId).single()
+  if (!org) return { ok: false, error: 'org_not_found' }
+  const limit = await checkPlanLimit(ctx.supabase, ctx.orgId, org.plan, 'employees')
+  if (limit.limit !== Infinity && limit.current + rows.length > limit.limit) {
+    return { ok: false, error: 'plan_limit_employees' }
+  }
+
+  // Все указанные отделы обязаны принадлежать активной организации
+  const deptIds = [...new Set(rows.map((r) => r.dept_id).filter((id): id is string => id !== null))]
+  if (deptIds.length > 0) {
+    const { data: depts } = await ctx.supabase
+      .from('departments')
+      .select('id')
+      .eq('org_id', ctx.orgId)
+      .in('id', deptIds)
+    if ((depts?.length ?? 0) !== deptIds.length) return { ok: false, error: 'invalid_reference' }
+  }
+
+  // sort_order: глобально-монотонный хвост, как у одиночного создания
+  const { count } = await ctx.supabase
+    .from('employees')
+    .select('id', { count: 'exact', head: true })
+    .eq('org_id', ctx.orgId)
+    .is('deleted_at', null)
+
+  const { error } = await ctx.supabase.from('employees').insert(
+    rows.map((r, i) => ({
+      org_id: ctx.orgId,
+      full_name: r.full_name,
+      dept_id: r.dept_id,
+      position: r.position,
+      email: r.email,
+      phone: r.phone,
+      sort_order: (count ?? 0) + i + 1,
+    })),
+  )
+  if (error) return { ok: false, error: toClientError(error) }
+
+  revalidatePath('/schedule')
+  revalidatePath('/employees')
+  return { ok: true, created: rows.length }
 }
 
 export async function updateEmployeeAction(employeeId: string, formData: FormData): Promise<EmpActionResult> {
