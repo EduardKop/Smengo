@@ -1,128 +1,123 @@
 import { redirect } from 'next/navigation'
 import { getFormatter, getTranslations } from 'next-intl/server'
-import { ArrowRight, Building2, Check, Layers, ShieldCheck, Sparkles, Users } from 'lucide-react'
 import { getAppContext } from '@/lib/auth/context'
 import { can } from '@/lib/permissions'
 import { PLAN_LIMITS } from '@/lib/billing/types'
 import { trialDaysLeft } from '@/lib/billing/trial'
 import type { PlanTier } from '@/supabase/types'
-import { PageHeader } from '@/components/app/page-header'
-import { SettingsCard } from '@/components/app/settings-card'
-import { ShimmerButton } from '@/components/app/shimmer-button'
+import { BillingView, type BillingViewProps } from '@/components/app/billing-view'
 
 const TRIAL_DAYS = 14
+const MS_PER_DAY = 86_400_000
+const PLAN_ORDER = ['start', 'team', 'business'] as const
+/** Тариф → префикс ключей marketing.plans (start/team/biz) */
+const MK: Record<PlanTier, 'start' | 'team' | 'biz'> = { start: 'start', team: 'team', business: 'biz' }
+
+/** Дополнение нулём до 2 знаков для < 100, ∞ для безлимита */
+function fmtStat(n: number): string {
+  if (n === Infinity) return '∞'
+  return n < 100 ? String(n).padStart(2, '0') : String(n)
+}
+
+/** Булевые фичи по тарифам (start, team, business) — как в сравнении тарифов */
+const FEATURES: ReadonlyArray<readonly [string, readonly [boolean, boolean, boolean]]> = [
+  ['featGrid', [true, true, true]],
+  ['featExport', [true, true, true]],
+  ['featAlerts', [false, true, true]],
+  ['featAnalytics', [false, true, true]],
+  ['featTelegram', [false, true, true]],
+  ['featPortal', [false, false, true]],
+  ['featApi', [false, false, true]],
+  ['featPriority', [false, false, true]],
+]
 
 /**
- * Планы и оплата (owner-only): карточка текущего плана с обратным отсчётом
- * триала и составом тарифа. Подключение Paddle-чекаута придёт с этапом биллинга
- * — сюда же ведёт баннер истёкшего триала (trialExpired → goToBilling).
+ * Планы и оплата (owner-only): данные тарифа/триала → презентационный
+ * BillingView (редакторская двухпанельная вёрстка по макету основателя).
+ * Подключение Paddle-чекаута придёт с этапом биллинга.
  */
 export default async function BillingPage() {
   const ctx = await getAppContext()
   if (!can(ctx.role, 'billing')) redirect('/dashboard')
 
   const t = await getTranslations('app.billingPage')
+  const tp = await getTranslations('marketing.plans')
   const format = await getFormatter()
 
   const plan = ctx.org.plan as PlanTier
   const limits = PLAN_LIMITS[plan]
+  const planName = tp(`${MK[plan]}Name`)
 
-  // Обратный отсчёт триала (в таймзоне сервера достаточно — точность в днях)
+  // ── Обратный отсчёт триала ───────────────────────────────────────
   const trialEnds = ctx.org.trialEndsAt ? new Date(ctx.org.trialEndsAt) : null
   const daysLeft = trialDaysLeft(ctx.org.trialEndsAt)
   const onTrial = daysLeft !== null && daysLeft > 0
   const expired = daysLeft !== null && daysLeft <= 0
-  const progress = onTrial ? Math.min(100, Math.max(6, ((TRIAL_DAYS - daysLeft) / TRIAL_DAYS) * 100)) : 100
+  const trialStart = trialEnds ? new Date(trialEnds.getTime() - TRIAL_DAYS * MS_PER_DAY) : null
+  const elapsed = daysLeft !== null ? Math.min(TRIAL_DAYS, Math.max(0, TRIAL_DAYS - daysLeft)) : 0
 
-  const status = expired ? 'expired' : onTrial ? 'trial' : 'active'
-  const statusLabel = t(status === 'expired' ? 'statusExpired' : status === 'trial' ? 'statusTrial' : 'statusActive')
-  const statusTone =
-    status === 'expired'
-      ? 'bg-destructive/12 text-destructive'
-      : status === 'trial'
-        ? 'bg-accent-soft text-accent'
-        : 'bg-success/15 text-success'
+  const statusLabel = t(expired ? 'statusExpired' : onTrial ? 'statusTrial' : 'statusActive')
+  const bigValue = onTrial ? String(daysLeft) : expired ? '0' : '∞'
+  const bigLabel = onTrial ? t('daysLeftLabel', { days: daysLeft as number }) : expired ? t('trialOver') : statusLabel
 
-  const deptLabel =
-    limits.departments === Infinity ? t('featDepartmentsUnlimited') : t('featDepartments', { n: limits.departments })
+  const trialMeta: BillingViewProps['trialMeta'] = trialEnds
+    ? {
+        elapsed,
+        total: TRIAL_DAYS,
+        startedLabel: `${t('startedOn')} ${trialStart ? format.dateTime(trialStart, { day: 'numeric', month: 'long' }) : ''}`,
+        untilLabel: `${t('trialUntil')} ${format.dateTime(trialEnds, { day: 'numeric', month: 'long', year: 'numeric' })}`,
+      }
+    : null
 
-  const features = [
-    { icon: Users, label: t('featEmployees', { n: limits.employees }) },
-    { icon: Layers, label: deptLabel },
-    { icon: ShieldCheck, label: t('featManagers', { n: limits.managers }) },
+  const stats = [
+    { value: fmtStat(limits.employees), label: t('statEmployees', { n: limits.employees === Infinity ? 5 : limits.employees }) },
+    { value: fmtStat(limits.departments), label: t('statDepartments', { n: limits.departments === Infinity ? 5 : limits.departments }) },
+    { value: fmtStat(limits.managers), label: t('statManagers', { n: limits.managers === Infinity ? 5 : limits.managers }) },
   ]
 
+  const planCards = PLAN_ORDER.map((p) => ({
+    name: tp(`${MK[p]}Name`),
+    price: tp(`${MK[p]}Price`),
+    current: p === plan,
+  }))
+
+  const compareHeaders = PLAN_ORDER.map((p) => ({ name: tp(`${MK[p]}Name`), current: p === plan }))
+
+  const numericRows = [
+    { label: t('compareEmployees'), vals: PLAN_ORDER.map((p) => t('compareUpTo', { n: PLAN_LIMITS[p].employees })) },
+    {
+      label: t('compareDepartments'),
+      vals: PLAN_ORDER.map((p) =>
+        PLAN_LIMITS[p].departments === Infinity ? t('compareUnlimited') : String(PLAN_LIMITS[p].departments),
+      ),
+    },
+    { label: t('compareManagers'), vals: PLAN_ORDER.map((p) => String(PLAN_LIMITS[p].managers)) },
+  ]
+
+  const featureRows = FEATURES.map(([key, flags]) => ({ label: t(key), flags: [...flags] }))
+
   return (
-    <div className="mx-auto w-full max-w-2xl">
-      <PageHeader title={t('title')} subtitle={t('subtitle')} />
-
-      <div className="flex flex-col gap-5">
-        <SettingsCard>
-          {/* Шапка плана */}
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-accent-soft text-accent">
-                <Sparkles className="h-5 w-5" strokeWidth={1.9} />
-              </span>
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--subtle)]">
-                  {t('currentPlan')}
-                </p>
-                <p className="text-xl font-bold tracking-tight text-foreground">{t(`planNames.${plan}`)}</p>
-              </div>
-            </div>
-            <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${statusTone}`}>
-              {statusLabel}
-            </span>
-          </div>
-
-          {/* Прогресс триала */}
-          {daysLeft !== null && (
-            <div className="rounded-xl border border-border bg-[var(--surface)] p-4">
-              <div className="mb-2 flex items-baseline justify-between gap-2">
-                <span className="text-sm font-semibold text-foreground">
-                  {expired ? t('trialOver') : t('trialDaysLeft', { days: daysLeft })}
-                </span>
-                {trialEnds && (
-                  <span className="text-xs text-muted-foreground">
-                    {t('trialUntil')} {format.dateTime(trialEnds, { dateStyle: 'long' })}
-                  </span>
-                )}
-              </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                <div
-                  className={`h-full rounded-full ${expired ? 'bg-destructive' : 'bg-accent'}`}
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Что входит */}
-          <div>
-            <p className="mb-3 text-[13px] font-semibold text-foreground">{t('included')}</p>
-            <ul className="grid gap-2.5">
-              {features.map(({ icon: Icon, label }) => (
-                <li key={label} className="flex items-center gap-2.5 text-sm text-foreground">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-success/15 text-success">
-                    <Check className="h-3 w-3" strokeWidth={3} />
-                  </span>
-                  <Icon className="h-4 w-4 text-muted-foreground" strokeWidth={1.9} />
-                  {label}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </SettingsCard>
-
-        {/* CTA: выбор тарифа (чекаут — этап биллинга) */}
-        <SettingsCard icon={Building2} title={t('upgradeTitle')} description={t('comingSoon')}>
-          <ShimmerButton href="/pricing" className="w-fit">
-            {t('viewPlans')}
-            <ArrowRight className="h-4 w-4" />
-          </ShimmerButton>
-        </SettingsCard>
-      </div>
-    </div>
+    <BillingView
+      tariffLabel={t('tariff')}
+      planName={planName}
+      statusLabel={statusLabel}
+      bigValue={bigValue}
+      bigLabel={bigLabel}
+      trialMeta={trialMeta}
+      includedLabel={t('sectionIncluded', { plan: planName })}
+      stats={stats}
+      upgradeLabel={t('upgradeTitle')}
+      currentTag={t('current')}
+      planTag={t('planTag')}
+      perMonth={t('perMonth')}
+      planCards={planCards}
+      comingSoon={t('comingSoon')}
+      viewPlansLabel={t('viewPlans')}
+      viewPlansHref="/pricing"
+      compareTitle={t('compareTitle')}
+      compareHeaders={compareHeaders}
+      numericRows={numericRows}
+      featureRows={featureRows}
+    />
   )
 }

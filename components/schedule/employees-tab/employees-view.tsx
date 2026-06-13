@@ -10,7 +10,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Search, X } from 'lucide-react'
-import { PageHeader } from '@/components/app/page-header'
 
 import type { UserRole } from '@/supabase/types'
 import type { MonthData, EmployeeRow, StatusTypeRow } from '@/lib/schedule/types'
@@ -129,25 +128,9 @@ export function EmployeesView({ orgId, role, isReadOnly, year, month, today, ini
   const [overlayEmployee, setOverlayEmployee] = useState<EmployeeRow | null>(null)
 
   // ── Render ───────────────────────────────────────────────────────
+  // Заголовок страницы — в шапке шелла («Организация / Команда»); здесь только тулбар.
   return (
     <div className="flex flex-col">
-      <PageHeader
-        eyebrow={te('eyebrow')}
-        title={te('title')}
-        subtitle={te('subtitle')}
-        actions={
-          canCrudEmployees ? (
-            <button
-              type="button"
-              onClick={() => setEmployeeModal({ mode: 'create' })}
-              className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground transition-colors hover:bg-[var(--accent-hover)]"
-            >
-              {t('addEmployee')}
-            </button>
-          ) : undefined
-        }
-      />
-
       {/* Toolbar — пилюли smengo-tool, как в бывшей вкладке */}
       <div className="mb-3 flex flex-wrap items-center gap-2" data-slot="toolbar">
         <DeptFilter
@@ -185,6 +168,15 @@ export function EmployeesView({ orgId, role, isReadOnly, year, month, today, ini
         <span className="text-[13px] font-medium text-muted-foreground tabular-nums">
           {te('count', { n: filteredEmployees.length })}
         </span>
+        {canCrudEmployees && (
+          <button
+            type="button"
+            onClick={() => setEmployeeModal({ mode: 'create' })}
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition-colors hover:bg-[var(--accent-hover)]"
+          >
+            {t('addEmployee')}
+          </button>
+        )}
       </div>
 
       {/* Cards / list (переключатель видов — внутри EmployeesTab) */}

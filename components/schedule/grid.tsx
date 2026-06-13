@@ -50,7 +50,6 @@ import type { DeptModalState } from './dept-modal'
 import { EmployeeModal } from './employee-modal'
 import { BulkEmployeeModal } from './bulk-employee-modal'
 import { PublishButton } from './publish-button'
-import { PageHeader } from '@/components/app/page-header'
 import type { EmployeeModalState } from './employee-modal'
 import type { EmployeeRow } from '@/lib/schedule/types'
 import { reorderEmployeesAction } from '@/lib/actions/employees'
@@ -682,29 +681,9 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
   }, [setStrongWeekend, setToggle])
 
   // ── Render ───────────────────────────────────────────────────────
+  // Заголовок страницы — в шапке шелла («Организация / Планирование»).
   return (
     <div className="flex flex-col">
-
-      {/* Шапка страницы: заголовок + «Опубликовать график» справа сверху
-          (правка основателя — кнопка-плажка переехала из тулбара в шапку) */}
-      <PageHeader
-        className="mb-4"
-        eyebrow={t('eyebrow')}
-        title={t('title')}
-        actions={
-          <PublishButton
-            year={year}
-            month={month}
-            canEdit={canEdit}
-            serverDirty={Boolean(
-              data.lastChangeAt &&
-              (!data.lastPublishedAt || Date.parse(data.lastChangeAt) > Date.parse(data.lastPublishedAt)),
-            )}
-            dirtySignal={dirtySignal}
-            onToast={pushToast}
-          />
-        }
-      />
 
       {/* Fully empty state — QuickStart replaces the grid entirely */}
       {isFullyEmpty ? (
@@ -723,22 +702,13 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
             />
           )}
 
-          {/* Карточка грида: топбар + скролл-контейнер («окно» демо от тулбара вниз) */}
-          <div
-            style={{
-              background: 'var(--grid-cell)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius)',
-              overflow: 'hidden',
-            }}
-          >
-          {/* App topbar (демо 3041–3165) */}
+          {/* Тулбар вынесен НАД карточку (правка основателя): месяц/отдел +
+              все действия + «Опубликовать график» — сверху, где раньше была шапка */}
           <div
             data-grid-topbar
             style={{
               display: 'flex', alignItems: 'center', gap: 8,
-              padding: '10px 14px', borderBottom: '1px solid var(--border)',
-              background: 'var(--grid-cell)', flexWrap: 'wrap',
+              flexWrap: 'wrap', marginBottom: 12,
             }}
           >
             {/* Month switcher */}
@@ -857,6 +827,15 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
             )}
           </div>
 
+          {/* Карточка грида: скролл-контейнер («окно» демо от тулбара вниз) */}
+          <div
+            style={{
+              background: 'var(--grid-cell)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius)',
+              overflow: 'hidden',
+            }}
+          >
           {/* macOS-style оверлей-скроллбар над гридом (demo AppleHScrollbar) */}
           <AppleHScrollbar
             scrollerRef={scrollContainerRef}
@@ -1125,6 +1104,18 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
           onClose={() => setOverlayEmployee(null)}
         />
       )}
+
+      {/* Плавающая «Опубликовать график» внизу справа: появляется после первой
+          правки текущей сессии (serverDirty намеренно false — правка основателя:
+          плажка висит после изменения, а не статично при заходе на страницу) */}
+      <PublishButton
+        year={year}
+        month={month}
+        canEdit={canEdit}
+        serverDirty={false}
+        dirtySignal={dirtySignal}
+        onToast={pushToast}
+      />
 
       {/* Toast notifications */}
       <ToastViewport toasts={toasts} onDismiss={dismissToast} />

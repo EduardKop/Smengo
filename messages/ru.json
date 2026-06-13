@@ -2142,7 +2142,36 @@
         "start": "Старт",
         "team": "Команда",
         "business": "Бизнес"
-      }
+      },
+      "tariff": "Тариф",
+      "daysLeftLabel": "{days, plural, one {день остался} few {дня осталось} many {дней осталось} other {дня осталось}}",
+      "startedOn": "Начат",
+      "sectionIncluded": "Что входит в {plan}",
+      "statEmployees": "{n, plural, one {сотрудник} few {сотрудника} many {сотрудников} other {сотрудника}}",
+      "statDepartments": "{n, plural, one {отдел} few {отдела} many {отделов} other {отдела}}",
+      "statManagers": "{n, plural, one {менеджер} few {менеджера} many {менеджеров} other {менеджера}}",
+      "perMonth": "/мес",
+      "current": "Текущий",
+      "planTag": "План",
+      "compareTitle": "Сравнение тарифов",
+      "compareEmployees": "Сотрудники",
+      "compareDepartments": "Отделы",
+      "compareManagers": "Менеджеры",
+      "compareUpTo": "до {n}",
+      "compareUnlimited": "Без ограничений",
+      "featGrid": "Grid-вид по месяцу",
+      "featExport": "Экспорт PDF / PNG",
+      "featAlerts": "Алерты покрытия",
+      "featAnalytics": "Аналитика присутствия",
+      "featTelegram": "Telegram-бот",
+      "featPortal": "Портал сотрудника",
+      "featApi": "API-доступ",
+      "featPriority": "Приоритетная поддержка"
+    },
+    "pageNames": {
+      "schedule": "Планирование",
+      "dashboard": "Обзор",
+      "employees": "Команда"
     }
   },
   "legal": {

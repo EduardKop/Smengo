@@ -7,6 +7,7 @@ import { AVATAR_SIGNED_URL_TTL_SECONDS } from '@/lib/schedule/avatar'
 import { ORG_LOGO_BUCKET, PROFILE_AVATAR_BUCKET } from '@/lib/app/avatars'
 import { AppSidebar, type NavItem } from '@/components/app/sidebar'
 import { OrgChip } from '@/components/app/org-chip'
+import { PageBreadcrumb } from '@/components/app/page-breadcrumb'
 import { UserMenu } from '@/components/app/user-menu'
 import { Announcements } from '@/components/app/announcements'
 import { QueryProvider } from '@/components/providers/query-provider'
@@ -63,13 +64,16 @@ export default async function ShellLayout({ children }: { children: ReactNode })
             анонсы + меню пользователя. Выезжающая панель сайдбара накрывает
             чип, не сдвигая. h-16 — вертикальная ось знака в рейке (y=32). */}
         <header className="hidden h-16 shrink-0 items-center justify-between gap-4 px-6 md:flex">
-          <OrgChip
-            orgName={ctx.org.name}
-            memberships={ctx.memberships.map((m) => ({ orgId: m.orgId, orgName: m.orgName }))}
-            activeOrgId={ctx.org.id}
-            switcherLabel={t('sidebar.orgSwitcher')}
-            logoUrl={orgLogoUrl}
-          />
+          <div className="flex min-w-0 items-center gap-2">
+            <OrgChip
+              orgName={ctx.org.name}
+              memberships={ctx.memberships.map((m) => ({ orgId: m.orgId, orgName: m.orgName }))}
+              activeOrgId={ctx.org.id}
+              switcherLabel={t('sidebar.orgSwitcher')}
+              logoUrl={orgLogoUrl}
+            />
+            <PageBreadcrumb />
+          </div>
           <div className="flex items-center gap-1.5">
             <Announcements
               labels={{

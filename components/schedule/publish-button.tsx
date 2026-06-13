@@ -73,16 +73,24 @@ export function PublishButton({ year, month, canEdit, serverDirty, dirtySignal, 
   }
 
   return (
-    <div ref={wrapperRef} className="relative">
+    /* Плавающая «плажка» внизу справа поверх сайта (правка основателя):
+       появляется анимированно после первой правки, нажать можно в любой момент */
+    <div ref={wrapperRef} className="animate-publish-in fixed bottom-6 right-6 z-50">
       <button
         type="button"
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
         className="smengo-tool smengo-tool--primary"
-        style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+          padding: '10px 16px',
+          boxShadow: '0 12px 30px -8px rgba(0,0,0,0.45), 0 2px 6px rgba(0,0,0,0.2)',
+        }}
       >
-        <Send size={13} strokeWidth={2.2} />
+        <Send size={14} strokeWidth={2.2} />
         {t('button')}
       </button>
 
@@ -90,7 +98,7 @@ export function PublishButton({ year, month, canEdit, serverDirty, dirtySignal, 
         <div
           role="dialog"
           aria-label={t('dialogTitle')}
-          className="absolute right-0 top-full z-50 mt-2 w-72 rounded-xl border border-border bg-background p-4 shadow-[0_12px_32px_rgba(0,0,0,0.12)]"
+          className="absolute bottom-full right-0 z-50 mb-2 w-72 rounded-xl border border-border bg-background p-4 shadow-[0_12px_32px_rgba(0,0,0,0.2)]"
         >
           <p className="mb-3 text-sm font-semibold text-foreground">{t('dialogTitle')}</p>
           <div className="mb-4 flex flex-col gap-2">

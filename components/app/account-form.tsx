@@ -21,6 +21,7 @@ import { UserAvatar } from '@/components/app/user-menu'
 import { OrgMark } from '@/components/app/org-chip'
 import { SettingsCard, FieldLabel, appInputClass } from '@/components/app/settings-card'
 import { ShimmerButton } from '@/components/app/shimmer-button'
+import { FlickeringGrid } from '@/components/app/flickering-grid'
 
 interface AccountFormProps {
   initialFullName: string
@@ -134,19 +135,19 @@ export function AccountForm({
     <div className="flex flex-col gap-5">
       {/* Профиль-герой */}
       <div className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-sm)] sm:flex-row">
-        {/* Декоративная панель */}
-        <div className="relative hidden w-44 shrink-0 overflow-hidden border-r border-border bg-accent-soft/50 sm:block">
+        {/* Декоративная панель — мерцающая сетка (magicui FlickeringGrid) */}
+        <div className="relative hidden w-44 shrink-0 overflow-hidden border-r border-border bg-accent-soft/40 sm:block">
+          <FlickeringGrid
+            className="absolute inset-0"
+            color="var(--accent)"
+            squareSize={3}
+            gridGap={5}
+            flickerChance={0.22}
+            maxOpacity={0.38}
+          />
           <span className="absolute left-5 top-5 z-10 text-[10px] font-semibold uppercase tracking-[0.22em] text-accent/80">
             PROFILE
           </span>
-          <div
-            className="absolute inset-0 opacity-[0.13]"
-            style={{
-              backgroundImage: 'radial-gradient(var(--accent) 0.8px, transparent 0.8px)',
-              backgroundSize: '14px 14px',
-            }}
-            aria-hidden="true"
-          />
         </div>
 
         {/* Идентичность + управление фото */}

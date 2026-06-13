@@ -2142,7 +2142,36 @@
         "start": "Старт",
         "team": "Команда",
         "business": "Бізнес"
-      }
+      },
+      "tariff": "Тариф",
+      "daysLeftLabel": "{days, plural, one {день залишився} few {дні залишилось} many {днів залишилось} other {дня залишилось}}",
+      "startedOn": "Розпочато",
+      "sectionIncluded": "Що входить у {plan}",
+      "statEmployees": "{n, plural, one {співробітник} few {співробітники} many {співробітників} other {співробітника}}",
+      "statDepartments": "{n, plural, one {відділ} few {відділи} many {відділів} other {відділу}}",
+      "statManagers": "{n, plural, one {менеджер} few {менеджери} many {менеджерів} other {менеджера}}",
+      "perMonth": "/міс",
+      "current": "Поточний",
+      "planTag": "План",
+      "compareTitle": "Порівняння тарифів",
+      "compareEmployees": "Співробітники",
+      "compareDepartments": "Відділи",
+      "compareManagers": "Менеджери",
+      "compareUpTo": "до {n}",
+      "compareUnlimited": "Без обмежень",
+      "featGrid": "Grid-вид по місяцю",
+      "featExport": "Експорт PDF / PNG",
+      "featAlerts": "Алерти покриття",
+      "featAnalytics": "Аналітика присутності",
+      "featTelegram": "Telegram-бот",
+      "featPortal": "Портал співробітника",
+      "featApi": "API-доступ",
+      "featPriority": "Пріоритетна підтримка"
+    },
+    "pageNames": {
+      "schedule": "Планування",
+      "dashboard": "Огляд",
+      "employees": "Команда"
     }
   },
   "legal": {

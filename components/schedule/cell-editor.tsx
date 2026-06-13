@@ -178,8 +178,16 @@ export function CellEditor({
     (status: StatusTypeRow) => {
       setActiveStatus(status)
       // Use status defaults unless user has already customised times
-      const st = toHHMM(status.start_time)
-      const et = toHHMM(status.end_time)
+      let st = toHHMM(status.start_time)
+      let et = toHHMM(status.end_time)
+      // «Опоздание» — это рабочий день с бейджем ПОВЕРХ карточки, а не отдельная
+      // плашка «Опозд.». Поэтому при выборе сразу гарантируем время смены (так
+      // карточка рисуется во всех режимах): текущее время ячейки → дефолт
+      // work-статуса → утренний пресет. Один клик вместо двух (правка основателя).
+      if (demoCode(status) === 'L' && (!st || !et)) {
+        st = toHHMM(entry?.start_time) || toHHMM(workStatus?.start_time) || PRESETS.morning[0]
+        et = toHHMM(entry?.end_time) || toHHMM(workStatus?.end_time) || PRESETS.morning[1]
+      }
       setStartTime(st)
       setEndTime(et)
       onUpsert({
@@ -192,7 +200,7 @@ export function CellEditor({
       })
       onClose()
     },
-    [anchor, entry, onUpsert, onClose],
+    [anchor, entry, workStatus, onUpsert, onClose],
   )
 
   const handlePreset = useCallback(
