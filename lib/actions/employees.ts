@@ -2,8 +2,10 @@
 
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database, PlanTier } from '@/supabase/types'
 import { getActionContext } from '@/lib/actions/context'
-import { assertCan } from '@/lib/permissions'
+import { assertCan, can } from '@/lib/permissions'
 import { checkPlanLimit } from '@/lib/billing/limits'
 import { EmployeeSchema, ReorderSchema } from '@/lib/validation/schedule'
 import { BulkEmployeesSchema } from '@/lib/validation/bulk-employees'
@@ -90,7 +92,7 @@ export async function createEmployeeAction(formData: FormData): Promise<EmpActio
 }
 
 export type BulkCreateResult =
-  | { ok: true; created: number }
+  | { ok: true; created: number; invited: number }
   | { ok: false; error: string }
 
 /**
@@ -111,6 +113,14 @@ export async function bulkCreateEmployeesAction(input: unknown): Promise<BulkCre
   }
 
   const rows = parsed.data.rows
+
+  // Строки с приглашением: указан уровень доступа И email. Право invite_users
+  // проверяем ДО вставки сотрудников (менеджер может крудить, но не приглашать)
+  // — иначе бы создали сотрудников, а пригласить не смогли.
+  const inviteRows = rows.filter((r) => r.access_role && r.email)
+  if (inviteRows.length > 0 && !can(ctx.role, 'invite_users')) {
+    return { ok: false, error: 'forbidden_invite' }
+  }
 
   // Финальная проверка лимита плана на ВСЮ пачку — на сервере
   // (TOCTOU допустим, как у createEmployeeAction)
@@ -153,9 +163,67 @@ export async function bulkCreateEmployeesAction(input: unknown): Promise<BulkCre
   )
   if (error) return { ok: false, error: toClientError(error) }
 
+  // Приглашения (best-effort): сотрудники уже созданы, поэтому сбой отдельного
+  // инвайта не откатывает пачку. Каждый инвайт идёт через тот же SECURITY
+  // DEFINER RPC create_invitation, что и одиночное приглашение (валидация роли
+  // и токена — на сервере), затем письмо Resend.
+  const invited = inviteRows.length > 0
+    ? await sendBulkInvitations(ctx.supabase, ctx.orgId, org.plan, inviteRows)
+    : 0
+
   revalidatePath('/schedule')
   revalidatePath('/employees')
-  return { ok: true, created: rows.length }
+  return { ok: true, created: rows.length, invited }
+}
+
+/**
+ * Отправляет приглашения для строк bulk-добавления с уровнем доступа.
+ * Возвращает число успешно отправленных. Лимит менеджеров на плане проверяется
+ * перед каждым manager-инвайтом (как в createInvitationAction).
+ */
+async function sendBulkInvitations(
+  supabase: SupabaseClient<Database>,
+  orgId: string,
+  plan: PlanTier,
+  rows: Array<{ email: string | null; access_role?: 'admin' | 'manager' | 'viewer' | null }>,
+): Promise<number> {
+  const { Resend } = await import('resend')
+  const apiKey = process.env.RESEND_API_KEY
+  const from = process.env.RESEND_FROM_EMAIL
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL
+  const resend = apiKey ? new Resend(apiKey) : null
+
+  let sent = 0
+  for (const r of rows) {
+    if (!r.email || !r.access_role) continue
+    try {
+      // Лимит менеджеров — на сервере, как при одиночном приглашении
+      if (r.access_role === 'manager') {
+        const mgr = await checkPlanLimit(supabase, orgId, plan, 'managers')
+        if (!mgr.allowed) continue
+      }
+      const { data: token, error } = await supabase.rpc('create_invitation', {
+        p_org_id: orgId,
+        p_email: r.email,
+        p_role: r.access_role,
+      })
+      if (error || !token) continue
+      if (resend && from && appUrl) {
+        await resend.emails.send({
+          from,
+          to: r.email,
+          subject: 'Приглашение в Smengo',
+          html: `<p>Вас пригласили в команду Smengo.</p>
+                 <p><a href="${appUrl}/invite/${token}">Принять приглашение</a></p>
+                 <p>Ссылка действительна 7 дней.</p>`,
+        })
+      }
+      sent += 1
+    } catch {
+      // best-effort: одно неудачное приглашение не валит пачку
+    }
+  }
+  return sent
 }
 
 export async function updateEmployeeAction(employeeId: string, formData: FormData): Promise<EmpActionResult> {

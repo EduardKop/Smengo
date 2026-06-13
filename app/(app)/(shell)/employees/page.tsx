@@ -1,4 +1,3 @@
-import { getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import { getAppContext } from '@/lib/auth/context'
 import { todayISOInTz } from '@/lib/schedule/month'
@@ -7,7 +6,6 @@ import { EmployeesView } from '@/components/schedule/employees-tab/employees-vie
 
 export default async function EmployeesPage() {
   const ctx = await getAppContext()
-  const t = await getTranslations('app.employees')
   const supabase = await createClient()
 
   // Текущий месяц организации — записи нужны для мини-календаря оверлея
@@ -18,7 +16,6 @@ export default async function EmployeesPage() {
 
   return (
     <>
-      <h1 className="mb-4 text-2xl font-bold tracking-tight text-foreground">{t('title')}</h1>
       <EmployeesView
         orgId={ctx.org.id}
         role={ctx.role}

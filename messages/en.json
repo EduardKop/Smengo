@@ -2024,7 +2024,12 @@
         "addN": "Add {count, plural, =0 {employees} one {# employee} other {# employees}}",
         "errorLimit": "Your plan employee limit would be exceeded",
         "errorInvalid": "Check the filled rows — there are errors",
-        "errorGeneric": "Could not add employees"
+        "errorGeneric": "Could not add employees",
+        "colAccess": "Access level",
+        "noAccess": "No access",
+        "accessHint": "Setting an access level emails the employee an invitation to sign in.",
+        "accessNeedsEmail": "Email required to invite",
+        "errorForbiddenInvite": "You don't have permission to invite users"
       },
       "publish": {
         "button": "Publish schedule",
@@ -2034,12 +2039,17 @@
         "publishNow": "Publish now",
         "success": "Schedule published",
         "error": "Could not publish the schedule"
-      }
+      },
+      "eyebrow": "Planning",
+      "groupByDeptLabel": "Group by department"
     },
     "employees": {
       "title": "Employees",
       "emptyTitle": "No employees yet",
-      "emptyText": "Adding employees and departments is coming here very soon — this section is in active development."
+      "emptyText": "Adding employees and departments is coming here very soon — this section is in active development.",
+      "eyebrow": "Team",
+      "subtitle": "Employee cards, contacts and departments.",
+      "count": "{n, plural, =0 {no employees} one {# employee} other {# employees}}"
     },
     "dashboard": {
       "title": "Dashboard",
@@ -2072,7 +2082,23 @@
       "save": "Save",
       "saved": "Saved",
       "errorSave": "Could not save",
-      "errorPhoto": "Could not update photo"
+      "errorPhoto": "Could not update photo",
+      "subtitle": "Profile, sign-in and workspace settings.",
+      "detailsTitle": "Personal details",
+      "detailsDesc": "Name and contact info used across your organization.",
+      "emailLocked": "Can't be changed",
+      "changePhoto": "Change photo",
+      "profileNote": "Primary profile and workspace",
+      "saveChanges": "Save changes",
+      "securityTitle": "Sign-in & security",
+      "securityDesc": "Sign-in methods and security status.",
+      "googleConnected": "Google account connected",
+      "emailSignin": "Email sign-in",
+      "signinDesc": "Used to sign in",
+      "statusActive": "Active",
+      "workspaceTitle": "Workspace",
+      "workspaceDesc": "Organizations and workspaces you belong to.",
+      "currentOrg": "Current organization"
     },
     "company": {
       "title": "Company Settings",
@@ -2084,13 +2110,40 @@
       "save": "Save",
       "saved": "Saved",
       "errorSave": "Could not save",
-      "errorLogo": "Could not update logo"
+      "errorLogo": "Could not update logo",
+      "eyebrow": "Settings",
+      "subtitle": "How your company looks and which timezone it runs in.",
+      "logoDesc": "PNG, JPG or WebP. A square image looks best.",
+      "detailsTitle": "Name and timezone",
+      "detailsDesc": "The timezone is used for dates and shift times in the schedule.",
+      "previewLabel": "In the sidebar",
+      "timezoneHint": "For shifts"
     },
     "billingPage": {
       "title": "Plans & Pricing",
       "currentPlan": "Current plan",
       "trialEnds": "Trial until",
-      "comingSoon": "Payment setup will appear here with the billing stage — for now the plan is managed within the trial."
+      "comingSoon": "Payment setup will appear here with the billing stage — for now the plan is managed within the trial.",
+      "eyebrow": "Settings",
+      "subtitle": "Your current plan, limits and trial period.",
+      "statusTrial": "Trial",
+      "statusActive": "Active",
+      "statusExpired": "Expired",
+      "trialDaysLeft": "{days, plural, one {# day left} other {# days left}}",
+      "trialOver": "Trial has ended",
+      "trialUntil": "until",
+      "included": "What's included",
+      "featEmployees": "Up to {n} employees",
+      "featDepartments": "Up to {n} departments",
+      "featDepartmentsUnlimited": "Unlimited departments",
+      "featManagers": "Up to {n} managers",
+      "upgradeTitle": "Change plan",
+      "viewPlans": "View plans",
+      "planNames": {
+        "start": "Start",
+        "team": "Team",
+        "business": "Business"
+      }
     }
   },
   "legal": {

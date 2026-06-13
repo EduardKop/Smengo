@@ -49,6 +49,7 @@ html {
   --destructive-foreground: #ffffff;
   --success: #4a9b6f;
   --warning: #e09b3a;
+  --info: #4a83c7;
 
   /* Radius — 12px */
   --radius: 0.75rem;
@@ -233,6 +234,23 @@ html {
   --animate-gradient: gradient 4s ease-in-out infinite alternate;
   --animate-marquee: marquee var(--duration) infinite linear;
   --animate-marquee-vertical: marquee-vertical var(--duration) linear infinite;
+  /* Shimmer button (magicui) — var(--speed) задаётся на самой кнопке */
+  --animate-shimmer-slide: shimmer-slide var(--speed) ease-in-out infinite alternate;
+  --animate-spin-around: spin-around calc(var(--speed) * 2) infinite linear;
+}
+
+@keyframes shimmer-slide {
+  to { transform: translate(calc(100cqw - 100%), 0); }
+}
+@keyframes spin-around {
+  0% { transform: translateZ(0) rotate(0); }
+  15%, 35% { transform: translateZ(0) rotate(90deg); }
+  65%, 85% { transform: translateZ(0) rotate(270deg); }
+  100% { transform: translateZ(0) rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-shimmer-slide,
+  .animate-spin-around { animation: none !important; }
 }
 
 @keyframes gradient {
@@ -1045,6 +1063,7 @@ tr:hover > .smengo-schedule-cell::before {
   --border: #242a36;
   --input: #242a36;
   --accent-soft: #3a2620;
+  --info: #6ba3e5;
   --sidebar: #141821;
   --sidebar-foreground: #e8e7e3;
   --sidebar-accent: #242a36;

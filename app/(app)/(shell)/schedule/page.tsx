@@ -1,4 +1,3 @@
-import { getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import { getAppContext } from '@/lib/auth/context'
 import { todayISOInTz } from '@/lib/schedule/month'
@@ -12,7 +11,6 @@ interface PageProps {
 
 export default async function SchedulePage({ searchParams }: PageProps) {
   const ctx = await getAppContext()
-  const t = await getTranslations('app.schedule')
   const supabase = await createClient()
 
   const { m } = await searchParams
@@ -39,7 +37,6 @@ export default async function SchedulePage({ searchParams }: PageProps) {
 
   return (
     <>
-      <h1 className="mb-4 text-2xl font-bold tracking-tight text-foreground">{t('title')}</h1>
       <ScheduleGrid
         orgId={ctx.org.id}
         role={ctx.role}

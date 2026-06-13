@@ -17,6 +17,8 @@ export interface GridViewToggles {
   showTimes: boolean
   merged: boolean
   showGrid: boolean
+  /** true — строки сгруппированы по отделам; false — единый список */
+  groupByDept: boolean
   showEmployeeDepartment: boolean
   showEmployeeRole: boolean
   showEmployeeDot: boolean
@@ -31,6 +33,7 @@ export const DEFAULT_GRID_VIEW: ResolvedGridView = {
   showTimes: true,
   merged: false,
   showGrid: false,
+  groupByDept: true,
   showEmployeeDepartment: true,
   showEmployeeRole: true,
   showEmployeeDot: true,
@@ -43,6 +46,7 @@ export function resolveGridView(settings: GridViewSettings | null | undefined): 
     showTimes: settings?.showTimes ?? DEFAULT_GRID_VIEW.showTimes,
     merged: settings?.merged ?? DEFAULT_GRID_VIEW.merged,
     showGrid: settings?.showGrid ?? DEFAULT_GRID_VIEW.showGrid,
+    groupByDept: settings?.groupByDept ?? DEFAULT_GRID_VIEW.groupByDept,
     showEmployeeDepartment: settings?.showEmployeeDepartment ?? DEFAULT_GRID_VIEW.showEmployeeDepartment,
     showEmployeeRole: settings?.showEmployeeRole ?? DEFAULT_GRID_VIEW.showEmployeeRole,
     showEmployeeDot: settings?.showEmployeeDot ?? DEFAULT_GRID_VIEW.showEmployeeDot,
@@ -55,6 +59,7 @@ function toSettings(view: ResolvedGridView): GridViewSettings {
     showTimes: view.showTimes,
     merged: view.merged,
     showGrid: view.showGrid,
+    groupByDept: view.groupByDept,
     showEmployeeDepartment: view.showEmployeeDepartment,
     showEmployeeRole: view.showEmployeeRole,
     showEmployeeDot: view.showEmployeeDot,

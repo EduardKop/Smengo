@@ -14,6 +14,10 @@ export const BulkEmployeeRowSchema = z.object({
   position: z.preprocess(emptyToNull, z.string().trim().max(120).nullable()),
   email: z.preprocess(emptyToNull, z.string().trim().email().max(255).nullable()),
   phone: z.preprocess(emptyToNull, z.string().trim().max(32).nullable()),
+  // Уровень доступа: при наличии email сотруднику отправляется приглашение
+  // в систему с этой ролью (owner назначить нельзя — только админ приглашает).
+  // Опционально: строки без доступа — просто строки графика.
+  access_role: z.preprocess(emptyToNull, z.enum(['admin', 'manager', 'viewer']).nullable().optional()),
 })
 
 export const BulkEmployeesSchema = z.object({

@@ -6,6 +6,7 @@ import { can } from '@/lib/permissions'
 import { AVATAR_SIGNED_URL_TTL_SECONDS } from '@/lib/schedule/avatar'
 import { ORG_LOGO_BUCKET } from '@/lib/app/avatars'
 import { CompanyForm } from '@/components/app/company-form'
+import { PageHeader } from '@/components/app/page-header'
 
 export default async function CompanySettingsPage() {
   const ctx = await getAppContext()
@@ -29,7 +30,7 @@ export default async function CompanySettingsPage() {
 
   return (
     <div className="mx-auto w-full max-w-2xl">
-      <h1 className="mb-6 text-2xl font-bold tracking-tight text-foreground">{t('title')}</h1>
+      <PageHeader title={t('title')} subtitle={t('subtitle')} />
       <CompanyForm
         orgId={ctx.org.id}
         initialName={org?.name ?? ctx.org.name}

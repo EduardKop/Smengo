@@ -20,6 +20,8 @@ interface RowDraft {
   position: string
   email: string
   phone: string
+  /** '' = без доступа (просто строка графика); admin/manager/viewer = приглашение по email */
+  access_role: string
 }
 
 const emptyRow = (deptId: string): RowDraft => ({
@@ -28,6 +30,7 @@ const emptyRow = (deptId: string): RowDraft => ({
   position: '',
   email: '',
   phone: '',
+  access_role: '',
 })
 
 interface BulkEmployeeModalProps {
@@ -41,6 +44,7 @@ interface BulkEmployeeModalProps {
 export function BulkEmployeeModal({ orgId, departments, preselectedDeptId, onClose }: BulkEmployeeModalProps) {
   const t = useTranslations('app.schedule.bulkAdd')
   const tc = useTranslations('common')
+  const tr = useTranslations('app.roles')
   const qc = useQueryClient()
 
   const initialDept = preselectedDeptId ?? ''
@@ -88,6 +92,7 @@ export function BulkEmployeeModal({ orgId, departments, preselectedDeptId, onClo
         position: r.position,
         email: r.email,
         phone: r.phone,
+        access_role: r.access_role || null,
       }))
     if (payload.length === 0) return
     setIsPending(true)
@@ -101,9 +106,11 @@ export function BulkEmployeeModal({ orgId, departments, preselectedDeptId, onClo
       setError(
         res.error === 'plan_limit_employees'
           ? t('errorLimit')
-          : res.error === 'invalid_input'
-            ? t('errorInvalid')
-            : t('errorGeneric'),
+          : res.error === 'forbidden_invite'
+            ? t('errorForbiddenInvite')
+            : res.error === 'invalid_input'
+              ? t('errorInvalid')
+              : t('errorGeneric'),
       )
     }
   }
@@ -118,14 +125,17 @@ export function BulkEmployeeModal({ orgId, departments, preselectedDeptId, onClo
         if (e.target === e.currentTarget) onClose()
       }}
     >
-      <div className="relative flex w-full max-w-3xl flex-col rounded-xl border border-border bg-card shadow-lg">
-        <div className="flex items-center justify-between border-b border-border px-6 py-4">
-          <h2 className="text-base font-semibold text-foreground">{t('title')}</h2>
+      <div className="relative flex w-full max-w-4xl flex-col rounded-xl border border-border bg-card shadow-lg">
+        <div className="flex items-start justify-between border-b border-border px-6 py-4">
+          <div className="min-w-0">
+            <h2 className="text-base font-semibold text-foreground">{t('title')}</h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">{t('accessHint')}</p>
+          </div>
           <button
             type="button"
             aria-label={tc('close')}
             onClick={onClose}
-            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
+            className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
           >
             <X className="h-4 w-4" />
           </button>
@@ -140,6 +150,7 @@ export function BulkEmployeeModal({ orgId, departments, preselectedDeptId, onClo
                 <th className="pb-1 pr-2">{t('colPosition')}</th>
                 <th className="pb-1 pr-2">{t('colEmail')}</th>
                 <th className="pb-1 pr-2">{t('colPhone')}</th>
+                <th className="pb-1 pr-2">{t('colAccess')}</th>
                 <th className="pb-1 w-8" />
               </tr>
             </thead>
@@ -197,6 +208,21 @@ export function BulkEmployeeModal({ orgId, departments, preselectedDeptId, onClo
                       onChange={(e) => setField(idx, 'phone', e.target.value)}
                       className={cellInput}
                     />
+                  </td>
+                  <td className="pr-2" style={{ minWidth: 140 }}>
+                    <select
+                      value={row.access_role}
+                      onChange={(e) => setField(idx, 'access_role', e.target.value)}
+                      aria-label={t('colAccess')}
+                      className={cellInput}
+                      style={row.access_role && !row.email.trim() ? { borderColor: 'var(--warning)' } : undefined}
+                      title={row.access_role && !row.email.trim() ? t('accessNeedsEmail') : undefined}
+                    >
+                      <option value="">{t('noAccess')}</option>
+                      <option value="admin">{tr('admin')}</option>
+                      <option value="manager">{tr('manager')}</option>
+                      <option value="viewer">{tr('viewer')}</option>
+                    </select>
                   </td>
                   <td className="w-8">
                     {rows.length > 1 && (

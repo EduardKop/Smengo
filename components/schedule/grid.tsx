@@ -50,6 +50,7 @@ import type { DeptModalState } from './dept-modal'
 import { EmployeeModal } from './employee-modal'
 import { BulkEmployeeModal } from './bulk-employee-modal'
 import { PublishButton } from './publish-button'
+import { PageHeader } from '@/components/app/page-header'
 import type { EmployeeModalState } from './employee-modal'
 import type { EmployeeRow } from '@/lib/schedule/types'
 import { reorderEmployeesAction } from '@/lib/actions/employees'
@@ -530,6 +531,16 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
   // ── Flat virtual row list ─────────────────────────────────────────
   const virtualRows = useMemo((): VirtualRow[] => {
     const rows: VirtualRow[] = []
+    // Единый список без отделов («все в одном графике»): только строки
+    // сотрудников в том же порядке (отдел→sort_order), без заголовков групп.
+    if (!view.groupByDept) {
+      for (const group of groups) {
+        for (const emp of group.employees) {
+          rows.push({ kind: 'employee', employeeId: emp.id })
+        }
+      }
+      return rows
+    }
     for (const group of groups) {
       rows.push({ kind: 'group', deptId: group.deptId, deptName: group.deptName, count: group.employees.length })
       if (!isDeptCollapsed(group.deptId)) {
@@ -544,7 +555,7 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
     }
     return rows
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [groups, collapsedDepts, canCrudEmployees])
+  }, [groups, collapsedDepts, canCrudEmployees, view.groupByDept])
 
   // Employee lookup map for O(1) access in render
   const empById = useMemo(() => {
@@ -656,6 +667,7 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
     { key: 'showTimes', label: t('showTimesLabel'), value: view.showTimes, disabled: !canCustomize },
     { key: 'merged', label: t('mergedLabel'), value: view.merged, disabled: !canCustomize },
     { key: 'showGrid', label: t('gridLabel'), value: view.showGrid, disabled: !canCustomize },
+    { key: 'groupByDept', label: t('groupByDeptLabel'), value: view.groupByDept, disabled: !canCustomize },
     { key: 'showEmployeeDepartment', label: t('showEmployeeDepartmentLabel'), value: view.showEmployeeDepartment, disabled: !canCustomize || mode === 'compact' },
     { key: 'showEmployeeRole', label: t('showEmployeeRoleLabel'), value: view.showEmployeeRole, disabled: !canCustomize || mode === 'compact' },
     { key: 'showEmployeeDot', label: t('showEmployeeDotLabel'), value: view.showEmployeeDot, disabled: !canCustomize },
@@ -672,6 +684,27 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
   // ── Render ───────────────────────────────────────────────────────
   return (
     <div className="flex flex-col">
+
+      {/* Шапка страницы: заголовок + «Опубликовать график» справа сверху
+          (правка основателя — кнопка-плажка переехала из тулбара в шапку) */}
+      <PageHeader
+        className="mb-4"
+        eyebrow={t('eyebrow')}
+        title={t('title')}
+        actions={
+          <PublishButton
+            year={year}
+            month={month}
+            canEdit={canEdit}
+            serverDirty={Boolean(
+              data.lastChangeAt &&
+              (!data.lastPublishedAt || Date.parse(data.lastChangeAt) > Date.parse(data.lastPublishedAt)),
+            )}
+            dirtySignal={dirtySignal}
+            onToast={pushToast}
+          />
+        }
+      />
 
       {/* Fully empty state — QuickStart replaces the grid entirely */}
       {isFullyEmpty ? (
@@ -810,19 +843,6 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
             <DisplaySettingsButton
               toggles={displayToggles}
               onToggle={handleDisplayToggle}
-            />
-
-            {/* Publish schedule (правка 7) */}
-            <PublishButton
-              year={year}
-              month={month}
-              canEdit={canEdit}
-              serverDirty={Boolean(
-                data.lastChangeAt &&
-                (!data.lastPublishedAt || Date.parse(data.lastChangeAt) > Date.parse(data.lastPublishedAt)),
-              )}
-              dirtySignal={dirtySignal}
-              onToast={pushToast}
             />
 
             {/* Add employee */}

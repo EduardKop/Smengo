@@ -10,6 +10,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Search, X } from 'lucide-react'
+import { PageHeader } from '@/components/app/page-header'
 
 import type { UserRole } from '@/supabase/types'
 import type { MonthData, EmployeeRow, StatusTypeRow } from '@/lib/schedule/types'
@@ -41,6 +42,7 @@ export interface EmployeesViewProps {
 
 export function EmployeesView({ orgId, role, isReadOnly, year, month, today, initialData }: EmployeesViewProps) {
   const t = useTranslations('app.schedule')
+  const te = useTranslations('app.employees')
 
   // ── URL state (dept, q, view) — shallow, как в гриде ─────────────
   const searchParams = useSearchParams()
@@ -129,6 +131,23 @@ export function EmployeesView({ orgId, role, isReadOnly, year, month, today, ini
   // ── Render ───────────────────────────────────────────────────────
   return (
     <div className="flex flex-col">
+      <PageHeader
+        eyebrow={te('eyebrow')}
+        title={te('title')}
+        subtitle={te('subtitle')}
+        actions={
+          canCrudEmployees ? (
+            <button
+              type="button"
+              onClick={() => setEmployeeModal({ mode: 'create' })}
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground transition-colors hover:bg-[var(--accent-hover)]"
+            >
+              {t('addEmployee')}
+            </button>
+          ) : undefined
+        }
+      />
+
       {/* Toolbar — пилюли smengo-tool, как в бывшей вкладке */}
       <div className="mb-3 flex flex-wrap items-center gap-2" data-slot="toolbar">
         <DeptFilter
@@ -163,15 +182,9 @@ export function EmployeesView({ orgId, role, isReadOnly, year, month, today, ini
           )}
         </div>
         <div style={{ flex: 1 }} />
-        {canCrudEmployees && (
-          <button
-            type="button"
-            onClick={() => setEmployeeModal({ mode: 'create' })}
-            className="smengo-tool smengo-tool--primary"
-          >
-            {t('addEmployee')}
-          </button>
-        )}
+        <span className="text-[13px] font-medium text-muted-foreground tabular-nums">
+          {te('count', { n: filteredEmployees.length })}
+        </span>
       </div>
 
       {/* Cards / list (переключатель видов — внутри EmployeesTab) */}

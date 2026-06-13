@@ -127,7 +127,8 @@ export async function resetPasswordAction(
 export async function logoutAction(): Promise<void> {
   const supabase = await createClient()
   await supabase.auth.signOut()
-  redirect('/login')
+  // После выхода — на главную (лендинг), а не на /login (правка основателя)
+  redirect('/')
 }
 
 export async function loginWithGoogleAction(): Promise<void> {

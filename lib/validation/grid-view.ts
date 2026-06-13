@@ -35,6 +35,9 @@ export const GridViewSettingsSchema = z.object({
   showTimes: z.boolean().optional(),
   merged: z.boolean().optional(),
   showGrid: z.boolean().optional(),
+  // Группировка строк по отделам. false = единый список всех сотрудников без
+  // заголовков отделов (как «все в одном графике» в демо). По умолчанию true.
+  groupByDept: z.boolean().optional(),
   showEmployeeDepartment: z.boolean().optional(),
   showEmployeeRole: z.boolean().optional(),
   showEmployeeDot: z.boolean().optional(),
