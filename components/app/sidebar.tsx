@@ -97,11 +97,12 @@ export function AppSidebar({ items, roleLabel, userEmail, logoutLabel }: AppSide
       <aside className="sticky top-0 z-40 hidden h-screen w-16 shrink-0 md:block">
         {/* transition-all вместо transition-[width,box-shadow]: arbitrary-значение
             с запятой не генерируется Tailwind v4 (проверено в живом превью) */}
-        <div className="group/sb absolute inset-y-0 left-0 flex w-16 flex-col overflow-hidden border-r border-border bg-background px-3 py-5 transition-all duration-300 ease-out hover:w-60 hover:shadow-xl has-[:focus-visible]:w-60 has-[:focus-visible]:shadow-xl">
+        <div className="group/sb absolute inset-y-0 left-0 flex w-16 flex-col overflow-hidden border-r border-border bg-background px-3 py-4 transition-all duration-300 ease-out hover:w-60 hover:shadow-xl has-[:focus-visible]:w-60 has-[:focus-visible]:shadow-xl">
           {/* Лого: свёрнуто — только фирменный знак; раскрыто — знак + wordmark.
-              Знак в боксе w-10 — центр совпадает с центрами иконок навигации */}
-          <div className="mb-8 flex items-center gap-2">
-            <span className="flex w-10 shrink-0 justify-center">
+              Бокс w-10 h-8 + py-4 панели: центр знака (32,32) — горизонтально
+              на оси иконок навигации, вертикально на оси шапки контента (h-16) */}
+          <div className="mb-8 flex h-8 items-center gap-2">
+            <span className="flex h-8 w-10 shrink-0 items-center justify-center">
               <SmengoMark size={30} />
             </span>
             <p className={cn(expandedText, 'text-[17px] font-semibold tracking-[-0.02em] text-foreground')}>smengo</p>

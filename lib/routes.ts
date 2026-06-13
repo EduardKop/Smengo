@@ -14,6 +14,7 @@ export const APP_PREFIXES = [
   '/departments',
   '/schedule',
   '/billing',
+  '/my_account',
 ] as const
 
 export const AUTH_PREFIXES = [

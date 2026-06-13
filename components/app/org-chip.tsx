@@ -33,16 +33,22 @@ function stableHash(value: string): number {
   return h
 }
 
-function OrgMark({ orgId, orgName }: { orgId: string; orgName: string }) {
+export function OrgMark({ orgId, orgName, size = 28 }: { orgId: string; orgName: string; size?: number }) {
   const bg = ORG_MARK_GRADIENTS[stableHash(orgId) % ORG_MARK_GRADIENTS.length]
   return (
     <span
       aria-hidden="true"
-      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold text-white"
+      className="flex shrink-0 items-center justify-center font-bold text-white"
       style={{
+        width: size,
+        height: size,
+        // Радиус ≈28% стороны — пропорция плитки фирменного знака (rx 18/64)
+        borderRadius: Math.round(size * 0.28),
+        fontSize: Math.max(Math.round(size * 0.42), 10),
         backgroundImage: bg,
         boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.22), 0 1px 2px rgba(0,0,0,0.10)',
         textShadow: '0 1px 2px rgba(0,0,0,0.35)',
+        lineHeight: 1,
         userSelect: 'none',
       }}
     >
@@ -56,9 +62,11 @@ interface OrgChipProps {
   memberships: { orgId: string; orgName: string }[]
   activeOrgId: string
   switcherLabel: string
+  /** Signed URL загруженного лого организации; null — генеративный OrgMark */
+  logoUrl?: string | null
 }
 
-export function OrgChip({ orgName, memberships, activeOrgId, switcherLabel }: OrgChipProps) {
+export function OrgChip({ orgName, memberships, activeOrgId, switcherLabel, logoUrl }: OrgChipProps) {
   const [, startTransition] = useTransition()
   const multi = memberships.length > 1
 
@@ -71,7 +79,12 @@ export function OrgChip({ orgName, memberships, activeOrgId, switcherLabel }: Or
 
   return (
     <div className="relative flex min-w-0 items-center gap-2.5">
-      <OrgMark orgId={activeOrgId} orgName={orgName} />
+      {logoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={logoUrl} alt="" aria-hidden="true" className="h-7 w-7 shrink-0 rounded-lg object-cover" />
+      ) : (
+        <OrgMark orgId={activeOrgId} orgName={orgName} />
+      )}
       <span className="truncate text-sm font-semibold tracking-tight text-foreground">{orgName}</span>
       {multi && (
         <>

@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react'
 import { Moon, Sun } from 'lucide-react'
 
-type Theme = 'light' | 'dark'
+// Хелперы экспортируются для меню пользователя (user-menu.tsx) —
+// единая логика темы: localStorage + кука + класс dark на html.
+export type Theme = 'light' | 'dark'
 const THEME_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 
 function getCookieTheme(): Theme | null {
@@ -16,7 +18,7 @@ function getCookieTheme(): Theme | null {
   return value === 'light' || value === 'dark' ? value : null
 }
 
-function getInitial(): Theme {
+export function getInitialTheme(): Theme {
   if (typeof window === 'undefined') return 'light'
   try {
     const saved = localStorage.getItem('theme') as Theme | null
@@ -37,7 +39,7 @@ function hasStoredTheme() {
   }
 }
 
-function persist(theme: Theme) {
+export function persistTheme(theme: Theme) {
   try {
     localStorage.setItem('theme', theme)
   } catch {
@@ -46,7 +48,7 @@ function persist(theme: Theme) {
   document.cookie = `theme=${theme}; path=/; max-age=${THEME_COOKIE_MAX_AGE}; SameSite=Lax`
 }
 
-function apply(theme: Theme) {
+export function applyTheme(theme: Theme) {
   const root = document.documentElement
   // Disable all transitions for one frame so the switch is instant
   root.style.setProperty('--transition-override', 'none')
@@ -68,19 +70,19 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    const t = getInitial()
+    const t = getInitialTheme()
     // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage unavailable in SSR; must hydrate after mount
     setTheme(t)
-    apply(t)
-    if (hasStoredTheme() || getCookieTheme()) persist(t)
+    applyTheme(t)
+    if (hasStoredTheme() || getCookieTheme()) persistTheme(t)
     setMounted(true)
   }, [])
 
   function toggle() {
     const next: Theme = theme === 'dark' ? 'light' : 'dark'
     setTheme(next)
-    apply(next)
-    persist(next)
+    applyTheme(next)
+    persistTheme(next)
   }
 
   return (

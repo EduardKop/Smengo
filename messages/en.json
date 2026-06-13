@@ -2012,6 +2012,51 @@
       "emptyTitle": "Team metrics will appear here",
       "emptyText": "Hours, coverage and team events will be calculated from the shift schedule. Start with the schedule.",
       "cta": "Go to schedule"
+    },
+    "header": {
+      "announcements": "Announcements",
+      "announcementsPausedTitle": "Section on pause",
+      "announcementsPausedDescription": "Soon owners and managers will be able to post updates here for the whole organization.",
+      "close": "Close",
+      "userMenu": "User menu"
+    },
+    "userMenu": {
+      "myAccount": "My Account",
+      "plans": "Plans & Pricing",
+      "companySettings": "Company Settings",
+      "theme": "Theme",
+      "themeLight": "Light",
+      "themeDark": "Dark"
+    },
+    "account": {
+      "title": "My Account",
+      "photo": "Profile photo",
+      "uploadPhoto": "Upload photo",
+      "removePhoto": "Remove",
+      "fullName": "Full name",
+      "email": "Email",
+      "save": "Save",
+      "saved": "Saved",
+      "errorSave": "Could not save",
+      "errorPhoto": "Could not update photo"
+    },
+    "company": {
+      "title": "Company Settings",
+      "logo": "Logo",
+      "uploadLogo": "Upload logo",
+      "removeLogo": "Remove",
+      "name": "Company name",
+      "timezone": "Timezone",
+      "save": "Save",
+      "saved": "Saved",
+      "errorSave": "Could not save",
+      "errorLogo": "Could not update logo"
+    },
+    "billingPage": {
+      "title": "Plans & Pricing",
+      "currentPlan": "Current plan",
+      "trialEnds": "Trial until",
+      "comingSoon": "Payment setup will appear here with the billing stage — for now the plan is managed within the trial."
     }
   },
   "legal": {

@@ -10,10 +10,13 @@ export type Action =
   | 'manage_status_types'
   | 'customize_view'
   | 'view_grid'
+  /** Настройки организации (название/таймзона/лого) — зеркало RLS org_update (owner-only) */
+  | 'manage_org'
 
 const PERMISSIONS: Record<UserRole, ReadonlySet<Action>> = {
   owner: new Set([
     'billing',
+    'manage_org',
     'invite_users',
     'manage_departments',
     'crud_employees',

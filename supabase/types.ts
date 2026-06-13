@@ -346,6 +346,7 @@ export type Database = {
           created_at: string
           default_locale: string
           id: string
+          logo_url: string | null
           name: string
           plan: Database["public"]["Enums"]["plan_tier"]
           slug: string
@@ -359,6 +360,7 @@ export type Database = {
           created_at?: string
           default_locale?: string
           id?: string
+          logo_url?: string | null
           name: string
           plan?: Database["public"]["Enums"]["plan_tier"]
           slug: string
@@ -372,6 +374,7 @@ export type Database = {
           created_at?: string
           default_locale?: string
           id?: string
+          logo_url?: string | null
           name?: string
           plan?: Database["public"]["Enums"]["plan_tier"]
           slug?: string

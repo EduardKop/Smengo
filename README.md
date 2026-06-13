@@ -34,3 +34,18 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+---
+
+## Анонсы (Announcements) — на паузе
+
+Кнопка-рупор в шапке продукт-зоны открывает панель «Анонсы», выезжающую справа
+(зеркало левого сайдбара). Функционал поставлен на паузу решением основателя
+(2026-06-13) — сейчас панель показывает пустое состояние.
+
+Концепция на будущее:
+- владельцы и менеджеры публикуют новости/объявления организации;
+- все участники организации видят ленту анонсов в этой панели;
+- потребуется таблица `announcements` (org_id, author_id, title, body,
+  created_at + RLS: читают члены организации, пишут owner/admin/manager)
+  и, позже, отметки о прочтении.
