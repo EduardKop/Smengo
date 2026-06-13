@@ -33,7 +33,7 @@ const ICONS: Record<NavItem['key'], LucideIcon> = {
  * кремовая, как в шапке лендинга. Инлайн-SVG вместо icon-*.png: PNG-плитки
  * названы по цвету плитки и на кремовом фоне сайдбара сливаются.
  */
-export function SmengoMark({ size = 36 }: { size?: number }) {
+export function SmengoMark({ size = 36, variant = 'auto' }: { size?: number; variant?: 'auto' | 'onLight' | 'onDark' }) {
   const tile = (fill: string, topBar: string) => (
     <svg width={size} height={size} viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <rect width="64" height="64" rx="18" fill={fill} />
@@ -42,10 +42,15 @@ export function SmengoMark({ size = 36 }: { size?: number }) {
       <rect x="14" y="41" width="30" height="9" rx="4.5" fill="#9b8b73" />
     </svg>
   )
+  const onLight = tile('#1f1e1c', '#f5f3ef') // тёмная плитка — для светлого фона
+  const onDark = tile('#f5f3ef', '#1f1e1c') // кремовая плитка — для тёмного фона
+  // Фиксированный вариант (напр. всегда тёмная панель онбординга, вне зависимости от темы)
+  if (variant === 'onLight') return <span role="img" aria-label="Smengo" className="shrink-0">{onLight}</span>
+  if (variant === 'onDark') return <span role="img" aria-label="Smengo" className="shrink-0">{onDark}</span>
   return (
     <span role="img" aria-label="Smengo" className="shrink-0">
-      <span className="block dark:hidden">{tile('#1f1e1c', '#f5f3ef')}</span>
-      <span className="hidden dark:block">{tile('#f5f3ef', '#1f1e1c')}</span>
+      <span className="block dark:hidden">{onLight}</span>
+      <span className="hidden dark:block">{onDark}</span>
     </span>
   )
 }

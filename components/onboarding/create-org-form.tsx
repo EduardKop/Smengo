@@ -42,8 +42,8 @@ const TIMEZONES = [
 ]
 
 const fieldClass =
-  'w-full rounded-xl border border-border bg-muted/50 px-4 py-3 text-[15px] text-foreground outline-none transition-[border-color,box-shadow] placeholder:text-muted-foreground/55 focus:border-accent focus:ring-2 focus:ring-accent/20'
-const labelClass = 'mb-2 block text-sm font-semibold text-foreground'
+  'w-full rounded-xl border border-border bg-muted/50 px-3.5 py-2.5 text-sm text-foreground outline-none transition-[border-color,box-shadow] placeholder:text-muted-foreground/55 focus:border-accent focus:ring-2 focus:ring-accent/20'
+const labelClass = 'mb-1.5 block text-[13px] font-semibold text-foreground'
 
 export function CreateOrgForm({ userEmail, prefill }: Props) {
   const t = useTranslations('onboarding')
@@ -53,9 +53,9 @@ export function CreateOrgForm({ userEmail, prefill }: Props) {
   const [teamSize, setTeamSize] = useState<string>('')
 
   return (
-    <form action={action} className="space-y-5">
+    <form action={action} className="space-y-3">
       {/* Имя / Фамилия */}
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2">
         <div>
           <label htmlFor="first_name" className={labelClass}>{tAuth('firstName')}</label>
           <input
@@ -117,7 +117,7 @@ export function CreateOrgForm({ userEmail, prefill }: Props) {
                 type="button"
                 aria-pressed={active}
                 onClick={() => setTeamSize((cur) => (cur === size ? '' : size))}
-                className={`cursor-pointer rounded-xl border px-2 py-2.5 text-sm font-semibold transition-colors ${
+                className={`cursor-pointer rounded-xl border px-2 py-2 text-sm font-semibold transition-colors ${
                   active
                     ? 'border-accent bg-accent-soft text-accent'
                     : 'border-border bg-[var(--surface)] text-muted-foreground hover:border-foreground/25 hover:text-foreground'
@@ -131,7 +131,7 @@ export function CreateOrgForm({ userEmail, prefill }: Props) {
       </div>
 
       {/* Часовой пояс / Язык */}
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2">
         <div>
           <label htmlFor="timezone" className={labelClass}>{t('timezone')}</label>
           <div className="relative">
@@ -222,12 +222,11 @@ export function CreateOrgForm({ userEmail, prefill }: Props) {
         <p className="rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive">{state.message}</p>
       )}
 
-      <ShimmerButton type="submit" disabled={pending} className="w-full justify-center py-3.5 text-[15px]">
+      <ShimmerButton type="submit" disabled={pending} className="w-full justify-center py-3 text-sm">
         {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
         {t('createButton')}
         {!pending && <ArrowRight className="h-4 w-4" />}
       </ShimmerButton>
-      <p className="text-center text-xs text-muted-foreground">{tAuth('noCard')}</p>
     </form>
   )
 }
