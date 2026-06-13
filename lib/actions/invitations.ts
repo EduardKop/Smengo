@@ -123,7 +123,7 @@ export async function acceptInvitationAction(
   })
   if (error) return { message: dbErrorCode(error.message) }
 
-  redirect('/dashboard')
+  redirect('/schedule')
 }
 
 export async function revokeInvitationAction(

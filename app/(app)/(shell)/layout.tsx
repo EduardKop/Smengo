@@ -40,20 +40,16 @@ export default async function ShellLayout({ children }: { children: ReactNode })
 
   const userName = profileRes.data?.full_name?.trim() || ctx.userEmail
 
+  // Порядок (правка 7): Дашборд → График → Сотрудники
   const navItems: NavItem[] = [
+    { key: 'dashboard', href: '/dashboard', label: t('nav.dashboard') },
     { key: 'schedule', href: '/schedule', label: t('nav.schedule') },
     { key: 'employees', href: '/employees', label: t('nav.employees') },
-    { key: 'dashboard', href: '/dashboard', label: t('nav.dashboard') },
   ]
 
   return (
     <div className="flex min-h-screen bg-muted/40 font-app">
-      <AppSidebar
-        items={navItems}
-        roleLabel={t(`roles.${ctx.role}`)}
-        userEmail={ctx.userEmail}
-        logoutLabel={t('sidebar.logout')}
-      />
+      <AppSidebar items={navItems} logoutLabel={t('sidebar.logout')} />
       <div className="flex min-w-0 flex-1 flex-col pt-12 md:pt-0">
         {ctx.isReadOnly && (
           <div className="sticky top-0 z-50 w-full bg-destructive px-4 py-2 text-center text-sm font-medium text-destructive-foreground">

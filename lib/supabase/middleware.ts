@@ -43,10 +43,10 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Authenticated user on login/register → /dashboard
+  // Authenticated user on login/register → /schedule (правка 7)
   if (user && (pathname === '/login' || pathname === '/register')) {
     const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
+    url.pathname = '/schedule'
     return NextResponse.redirect(url)
   }
 

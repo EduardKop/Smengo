@@ -13,7 +13,6 @@ import { usePathname } from 'next/navigation'
 import { CalendarDays, LayoutDashboard, LogOut, Users, type LucideIcon } from 'lucide-react'
 import { logoutAction } from '@/lib/actions/auth'
 import { LocaleSwitcher } from '@/components/locale-switcher'
-import { ThemeToggle } from '@/components/theme-toggle'
 import { cn } from '@/lib/utils'
 
 export interface NavItem {
@@ -53,12 +52,11 @@ export function SmengoMark({ size = 36 }: { size?: number }) {
 
 interface AppSidebarProps {
   items: NavItem[]
-  roleLabel: string
-  userEmail: string
+  /** Только для мобильной шапки (десктоп-выход — в меню профиля) */
   logoutLabel: string
 }
 
-export function AppSidebar({ items, roleLabel, userEmail, logoutLabel }: AppSidebarProps) {
+export function AppSidebar({ items, logoutLabel }: AppSidebarProps) {
   const pathname = usePathname()
 
   // Подпись, которая плавно проявляется при выезде панели (collapsed → текст
@@ -110,25 +108,12 @@ export function AppSidebar({ items, roleLabel, userEmail, logoutLabel }: AppSide
 
           {nav}
 
-          <div className="mt-auto flex flex-col gap-3 border-t border-border pt-4">
-            <div className={cn(expandedText, 'flex items-center gap-2')}>
+          {/* Низ (правка 7): профиль/тема/выход переехали в меню профиля
+              справа сверху — остаётся только переключатель языка */}
+          <div className="mt-auto border-t border-border pt-4">
+            <div className={cn(expandedText, 'flex items-center px-1.5')}>
               <LocaleSwitcher />
-              <ThemeToggle />
             </div>
-            <div className={cn(expandedText, 'min-w-0')}>
-              <p className="truncate text-xs text-muted-foreground">{userEmail}</p>
-              <p className="text-xs font-medium text-foreground">{roleLabel}</p>
-            </div>
-            <form action={logoutAction}>
-              <button
-                type="submit"
-                title={logoutLabel}
-                className="flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium text-muted-foreground transition-colors duration-150 hover:text-destructive"
-              >
-                <LogOut className="h-5 w-5 shrink-0" strokeWidth={1.75} />
-                <span className={cn(expandedText, 'truncate')}>{logoutLabel}</span>
-              </button>
-            </form>
           </div>
         </div>
       </aside>
