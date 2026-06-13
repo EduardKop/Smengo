@@ -1074,6 +1074,7 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
           orgId={orgId}
           departments={data.departments}
           preselectedDeptId={bulkAdd.deptId}
+          existingPositions={[...new Set(data.employees.map((e) => e.position).filter((p): p is string => Boolean(p)))]}
           onClose={() => setBulkAdd(null)}
         />
       )}

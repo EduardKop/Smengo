@@ -158,6 +158,7 @@ export async function bulkCreateEmployeesAction(input: unknown): Promise<BulkCre
       position: r.position,
       email: r.email,
       phone: r.phone,
+      telegram: r.telegram ?? null,
       sort_order: (count ?? 0) + i + 1,
     })),
   )

@@ -2031,7 +2031,9 @@
         "noAccess": "Без доступа",
         "accessHint": "Уровень доступа отправит сотруднику приглашение в систему по email.",
         "accessNeedsEmail": "Нужен email для приглашения",
-        "errorForbiddenInvite": "У вас нет прав приглашать пользователей"
+        "errorForbiddenInvite": "У вас нет прав приглашать пользователей",
+        "colTelegram": "Telegram",
+        "telegramPlaceholder": "@username"
       },
       "publish": {
         "button": "Опубликовать график",
