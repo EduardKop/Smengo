@@ -48,6 +48,7 @@ import { QuickStart, QuickStartBanner } from './quick-start'
 import { DeptModal } from './dept-modal'
 import type { DeptModalState } from './dept-modal'
 import { EmployeeModal } from './employee-modal'
+import { BulkEmployeeModal } from './bulk-employee-modal'
 import type { EmployeeModalState } from './employee-modal'
 import type { EmployeeRow } from '@/lib/schedule/types'
 import { reorderEmployeesAction } from '@/lib/actions/employees'
@@ -347,6 +348,8 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
 
   const [deptModal, setDeptModal] = useState<DeptModalState | null>(null)
   const [employeeModal, setEmployeeModal] = useState<EmployeeModalState | null>(null)
+  // Bulk-добавление таблицей (правка 7): null = закрыто, deptId — предвыбранный отдел
+  const [bulkAdd, setBulkAdd] = useState<{ deptId: string | null } | null>(null)
   // Employee overlay (click on name in grid → sheet)
   const [overlayEmployee, setOverlayEmployee] = useState<EmployeeRow | null>(null)
 
@@ -669,14 +672,14 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
           departmentsCount={data.departments.length}
           employeesCount={data.employees.length}
           onCreateDepartment={canManageDepts ? () => setDeptModal({ mode: 'create' }) : undefined}
-          onAddEmployee={canCrudEmployees ? () => setEmployeeModal({ mode: 'create' }) : undefined}
+          onAddEmployee={canCrudEmployees ? () => setBulkAdd({ deptId: null }) : undefined}
         />
       ) : (
         <>
           {/* Mini-banner: depts exist but no employees yet */}
           {hasDeptsNoEmployees && (
             <QuickStartBanner
-              onAddEmployee={canCrudEmployees ? () => setEmployeeModal({ mode: 'create' }) : undefined}
+              onAddEmployee={canCrudEmployees ? () => setBulkAdd({ deptId: null }) : undefined}
             />
           )}
 
@@ -806,7 +809,7 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
             {canCrudEmployees && (
               <button
                 type="button"
-                onClick={() => setEmployeeModal({ mode: 'create' })}
+                onClick={() => setBulkAdd({ deptId: null })}
                 className="smengo-tool smengo-tool--primary"
               >
                 {t('addEmployee')}
@@ -885,7 +888,7 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
                             nameColWidth={nameColW}
                             mode={mode}
                             onAddEmployee={canCrudEmployees
-                              ? () => setEmployeeModal({ mode: 'create', deptId: row.deptId })
+                              ? () => setBulkAdd({ deptId: row.deptId })
                               : undefined}
                             onRenameDept={canManageDepts && dept
                               ? () => setDeptModal({ mode: 'rename', dept })
@@ -913,7 +916,7 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
                           <AddEmployeeRow
                             label={t('emptyDeptAddEmployee')}
                             nameColWidth={nameColW}
-                            onClick={() => setEmployeeModal({ mode: 'create', deptId: row.deptId })}
+                            onClick={() => setBulkAdd({ deptId: row.deptId })}
                           />
                         </div>
                       )
@@ -1043,6 +1046,16 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
           orgId={orgId}
           onClose={() => setDeptModal(null)}
           onError={handleModalError}
+        />
+      )}
+
+      {/* Bulk add modal (create); одиночная модалка остаётся для редактирования */}
+      {bulkAdd && (
+        <BulkEmployeeModal
+          orgId={orgId}
+          departments={data.departments}
+          preselectedDeptId={bulkAdd.deptId}
+          onClose={() => setBulkAdd(null)}
         />
       )}
 

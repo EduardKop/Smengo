@@ -10,7 +10,8 @@
     "back": "Назад",
     "next": "Далі",
     "yes": "Так",
-    "no": "Ні"
+    "no": "Ні",
+    "close": "Закрити"
   },
   "nav": {
     "dashboard": "Розклад",
@@ -1999,7 +2000,22 @@
       "statusVacShort": "Від",
       "statusSickShort": "Хвор",
       "statusOffShort": "Вих",
-      "statusLateShort": "Запізн."
+      "statusLateShort": "Запізн.",
+      "bulkAdd": {
+        "title": "Додати співробітників",
+        "colName": "Ім'я та прізвище",
+        "colDept": "Відділ",
+        "colPosition": "Посада",
+        "colEmail": "Email",
+        "colPhone": "Телефон",
+        "namePlaceholder": "Ім'я Прізвище",
+        "noDept": "Без відділу",
+        "removeRow": "Видалити рядок",
+        "addN": "Додати {count, plural, =0 {співробітників} one {# співробітника} few {# співробітників} many {# співробітників} other {# співробітника}}",
+        "errorLimit": "Перевищено ліміт співробітників вашого плану",
+        "errorInvalid": "Перевірте заповнені рядки — є помилки",
+        "errorGeneric": "Не вдалося додати співробітників"
+      }
     },
     "employees": {
       "title": "Співробітники",

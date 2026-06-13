@@ -10,7 +10,8 @@
     "back": "Назад",
     "next": "Далее",
     "yes": "Да",
-    "no": "Нет"
+    "no": "Нет",
+    "close": "Закрыть"
   },
   "nav": {
     "dashboard": "Расписание",
@@ -1999,7 +2000,22 @@
       "statusVacShort": "Отп",
       "statusSickShort": "Бол",
       "statusOffShort": "Вых",
-      "statusLateShort": "Опозд."
+      "statusLateShort": "Опозд.",
+      "bulkAdd": {
+        "title": "Добавить сотрудников",
+        "colName": "Имя и фамилия",
+        "colDept": "Отдел",
+        "colPosition": "Должность",
+        "colEmail": "Email",
+        "colPhone": "Телефон",
+        "namePlaceholder": "Имя Фамилия",
+        "noDept": "Без отдела",
+        "removeRow": "Удалить строку",
+        "addN": "Добавить {count, plural, =0 {сотрудников} one {# сотрудника} few {# сотрудника} many {# сотрудников} other {# сотрудника}}",
+        "errorLimit": "Превышен лимит сотрудников вашего плана",
+        "errorInvalid": "Проверьте заполненные строки — есть ошибки",
+        "errorGeneric": "Не удалось добавить сотрудников"
+      }
     },
     "employees": {
       "title": "Сотрудники",

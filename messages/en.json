@@ -10,7 +10,8 @@
     "back": "Back",
     "next": "Next",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "close": "Close"
   },
   "nav": {
     "dashboard": "Schedule",
@@ -2000,7 +2001,22 @@
       "statusVacShort": "Vac",
       "statusSickShort": "Sick",
       "statusOffShort": "Off",
-      "statusLateShort": "Late"
+      "statusLateShort": "Late",
+      "bulkAdd": {
+        "title": "Add your employees",
+        "colName": "Full name",
+        "colDept": "Department",
+        "colPosition": "Position",
+        "colEmail": "Email",
+        "colPhone": "Phone",
+        "namePlaceholder": "First & Last Name",
+        "noDept": "No department",
+        "removeRow": "Remove row",
+        "addN": "Add {count, plural, =0 {employees} one {# employee} other {# employees}}",
+        "errorLimit": "Your plan employee limit would be exceeded",
+        "errorInvalid": "Check the filled rows — there are errors",
+        "errorGeneric": "Could not add employees"
+      }
     },
     "employees": {
       "title": "Employees",
