@@ -7,7 +7,6 @@ export default async function DashboardPage() {
 
   return (
     <>
-      <h1 className="mb-6 text-2xl font-semibold text-foreground">{t('title')}</h1>
       <EmptyState
         icon={<LayoutDashboard className="h-6 w-6" />}
         title={t('emptyTitle')}

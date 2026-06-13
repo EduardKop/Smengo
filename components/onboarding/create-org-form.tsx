@@ -1,10 +1,15 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { Building2, Upload } from 'lucide-react'
 import { createOrgAction } from '@/lib/actions/org'
+import { compressAvatarImage } from '@/lib/schedule/avatar-compress'
 import { Button } from '@/components/ui/button'
 import { Link as LocaleLink } from '@/i18n/routing'
+
+/** Чипы кол-ва сотрудников (правка 7) — под позиционирование 15–300 */
+const TEAM_SIZES = ['1-15', '16-50', '51-150', '150+'] as const
 
 export interface OnboardingPrefill {
   firstName: string
@@ -45,13 +50,30 @@ export function CreateOrgForm({ userEmail, prefill }: Props) {
   const tAuth = useTranslations('auth')
   const [state, action, pending] = useActionState(createOrgAction, initialState)
 
-  return (
-    <div className="w-full max-w-md space-y-4 rounded-xl border bg-card px-7 py-6 shadow-sm">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{t('title')}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t('subtitle')}</p>
-      </div>
+  const [teamSize, setTeamSize] = useState<string>('')
+  const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const logoInputRef = useRef<HTMLInputElement>(null)
 
+  // Сжимаем лого на клиенте и подменяем файл в input — обычный form submit
+  // унесёт уже лёгкий JPEG (битый файл просто остаётся как есть: сервер
+  // отбросит его по магическим байтам, онбординг не блокируется)
+  async function handleLogoChange(input: HTMLInputElement) {
+    const file = input.files?.[0]
+    if (!file) return
+    try {
+      const blob = await compressAvatarImage(file)
+      const dt = new DataTransfer()
+      dt.items.add(new File([blob], 'logo.jpg', { type: 'image/jpeg' }))
+      input.files = dt.files
+    } catch {
+      // оставляем оригинальный файл
+    }
+    const preview = input.files?.[0]
+    if (preview) setLogoPreview(URL.createObjectURL(preview))
+  }
+
+  return (
+    <div className="w-full space-y-4 rounded-xl border bg-card px-7 py-6 shadow-sm">
       <form action={action} className="space-y-3">
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
@@ -108,6 +130,67 @@ export function CreateOrgForm({ userEmail, prefill }: Props) {
           {state?.errors?.name && (
             <p className="text-xs text-destructive">{state.errors.name[0]}</p>
           )}
+        </div>
+
+        {/* Кол-во сотрудников — чипы (правка 7) */}
+        <div className="space-y-1">
+          <span className="text-sm font-medium">
+            {t('teamSizeLabel')}{' '}
+            <span className="font-normal text-muted-foreground">{tAuth('sourceOptional')}</span>
+          </span>
+          <input type="hidden" name="team_size" value={teamSize} />
+          <div className="grid grid-cols-4 gap-2">
+            {TEAM_SIZES.map((size) => (
+              <button
+                key={size}
+                type="button"
+                aria-pressed={teamSize === size}
+                onClick={() => setTeamSize((cur) => (cur === size ? '' : size))}
+                className={[
+                  'cursor-pointer rounded-lg border px-2 py-2 text-sm font-medium transition-colors',
+                  teamSize === size
+                    ? 'border-accent bg-accent-soft text-foreground'
+                    : 'border-border bg-background text-muted-foreground hover:border-ring hover:text-foreground',
+                ].join(' ')}
+              >
+                {size}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Лого компании (правка 7) */}
+        <div className="space-y-1">
+          <span className="text-sm font-medium">
+            {t('logoLabel')}{' '}
+            <span className="font-normal text-muted-foreground">{tAuth('sourceOptional')}</span>
+          </span>
+          <div className="flex items-center gap-3">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-background">
+              {logoPreview ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={logoPreview} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <Building2 className="h-5 w-5 text-muted-foreground" strokeWidth={1.75} />
+              )}
+            </span>
+            <button
+              type="button"
+              onClick={() => logoInputRef.current?.click()}
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-muted/60"
+            >
+              <Upload className="h-3.5 w-3.5" />
+              {t('logoUpload')}
+            </button>
+            <input
+              ref={logoInputRef}
+              type="file"
+              name="logo"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={(e) => void handleLogoChange(e.target)}
+            />
+          </div>
         </div>
 
         <div className="space-y-1">

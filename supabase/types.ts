@@ -134,6 +134,7 @@ export type Database = {
       }
       employees: {
         Row: {
+          avatar_url: string | null
           birth_date: string | null
           created_at: string
           deleted_at: string | null
@@ -152,6 +153,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          avatar_url?: string | null
           birth_date?: string | null
           created_at?: string
           deleted_at?: string | null
@@ -170,6 +172,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          avatar_url?: string | null
           birth_date?: string | null
           created_at?: string
           deleted_at?: string | null
@@ -199,6 +202,35 @@ export type Database = {
             foreignKeyName: "employees_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grid_view_settings: {
+        Row: {
+          org_id: string
+          settings: Json
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          org_id: string
+          settings?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          org_id?: string
+          settings?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grid_view_settings_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
@@ -314,9 +346,11 @@ export type Database = {
           created_at: string
           default_locale: string
           id: string
+          logo_url: string | null
           name: string
           plan: Database["public"]["Enums"]["plan_tier"]
           slug: string
+          team_size: string | null
           timezone: string
           trial_ends_at: string | null
           updated_at: string
@@ -327,9 +361,11 @@ export type Database = {
           created_at?: string
           default_locale?: string
           id?: string
+          logo_url?: string | null
           name: string
           plan?: Database["public"]["Enums"]["plan_tier"]
           slug: string
+          team_size?: string | null
           timezone?: string
           trial_ends_at?: string | null
           updated_at?: string
@@ -340,9 +376,11 @@ export type Database = {
           created_at?: string
           default_locale?: string
           id?: string
+          logo_url?: string | null
           name?: string
           plan?: Database["public"]["Enums"]["plan_tier"]
           slug?: string
+          team_size?: string | null
           timezone?: string
           trial_ends_at?: string | null
           updated_at?: string
@@ -372,6 +410,32 @@ export type Database = {
           locale?: string | null
         }
         Relationships: []
+      }
+      schedule_change_marks: {
+        Row: {
+          last_change_at: string
+          month: string
+          org_id: string
+        }
+        Insert: {
+          last_change_at?: string
+          month: string
+          org_id: string
+        }
+        Update: {
+          last_change_at?: string
+          month?: string
+          org_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedule_change_marks_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       schedule_entries: {
         Row: {
@@ -436,6 +500,48 @@ export type Database = {
             columns: ["status_id"]
             isOneToOne: false
             referencedRelation: "status_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      schedule_publications: {
+        Row: {
+          id: string
+          month: string
+          notify: boolean
+          org_id: string
+          published_at: string
+          published_by: string
+        }
+        Insert: {
+          id?: string
+          month: string
+          notify?: boolean
+          org_id: string
+          published_at?: string
+          published_by: string
+        }
+        Update: {
+          id?: string
+          month?: string
+          notify?: boolean
+          org_id?: string
+          published_at?: string
+          published_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedule_publications_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schedule_publications_published_by_fkey"
+            columns: ["published_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

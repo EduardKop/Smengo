@@ -49,3 +49,7 @@ supabase/.temp/
 # supabase local temp files
 supabase/.temp/
 .gstack/
+
+# Council/strategy transcripts — локальные, в репозиторий не идут
+council-*.html
+council-*.md

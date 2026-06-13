@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useTranslations, useLocale } from 'next-intl'
-import { Search, X } from 'lucide-react'
+import { Search, X, Pencil } from 'lucide-react'
 import {
   DndContext,
   DragOverlay,
@@ -18,18 +18,25 @@ import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-ki
 
 import type { UserRole } from '@/supabase/types'
 import type { MonthData, GridMode, ScheduleEntryRow, StatusTypeRow } from '@/lib/schedule/types'
+import type { GridViewSettings } from '@/lib/validation/grid-view'
 import { monthDays } from '@/lib/schedule/month'
-import { buildScheduleMap } from '@/lib/schedule/map'
+import { buildScheduleMap, coverageByDay, aggregateMinPresent, shortageByDay } from '@/lib/schedule/map'
+import { nameColumnWidth, deptColor, AppleHScrollbar } from './grid-visual'
 import { can } from '@/lib/permissions'
 import { useScheduleData, useUpsertEntry, useClearEntry } from './use-schedule'
 import type { UpsertInput } from './use-schedule'
 import { scheduleKey } from './use-schedule'
 import { useQueryClient } from '@tanstack/react-query'
-import { GridHeader } from './grid-header'
-import { GroupRow, EmployeeGridRow, NAME_COL_WIDTH } from './grid-row'
-import { CoverageRow } from './coverage-row'
+import { GridHeader, TOTALS_OFF_W, TOTALS_HRS_W } from './grid-header'
+import { GroupRow, EmployeeGridRow, AddEmployeeRow } from './grid-row'
+import type { GridRowLabels, CellRect } from './grid-row'
+import { OnShiftRow } from './on-shift-row'
+import { DisplaySettingsButton, type DisplayToggle } from './display-settings'
+import { useGridView, type GridViewToggles } from './use-grid-view'
+import { useSiteTone } from './card-visual-chip'
 import { AlertsForm } from './settings/alerts-form'
 import { StatusManager } from './settings/status-manager'
+import { VisualEditor } from './settings/visual-editor'
 import { CellEditor } from './cell-editor'
 import type { CellEditorAnchor } from './cell-editor'
 import { ToastViewport, useToasts } from './toast'
@@ -41,30 +48,33 @@ import { QuickStart, QuickStartBanner } from './quick-start'
 import { DeptModal } from './dept-modal'
 import type { DeptModalState } from './dept-modal'
 import { EmployeeModal } from './employee-modal'
+import { BulkEmployeeModal } from './bulk-employee-modal'
+import { PublishButton } from './publish-button'
 import type { EmployeeModalState } from './employee-modal'
 import type { EmployeeRow } from '@/lib/schedule/types'
 import { reorderEmployeesAction } from '@/lib/actions/employees'
-import { EmployeesTab } from './employees-tab'
-import type { EmployeeView } from './employees-tab'
 import { EmployeeOverlay } from './employees-tab/employee-overlay'
 
-// ── Row height by mode ──────────────────────────────────────────────
+// ── Row height by mode (сняты с живого демо: compact 43.5, detail 56.6, ext 79.8) ──
 
 const ROW_HEIGHT: Record<GridMode, number> = {
-  compact: 36,
-  detail: 52,
-  extended: 84,
+  compact: 44,
+  detail: 57,
+  extended: 80,
 }
 
-// ── Cell width by mode (deterministic — header and rows must use the same value) ──
+// ── Cell width by mode (демо: compact dayMinW 44, detail colW 56, extended colW 86) ──
+// detail расширен 56 → 72 (правка 4 основателя): в продукте, в отличие от демо,
+// в detail-ячейки попадают длинные лейблы (кастомные «Визуалы», названия статусов)
+// — на 56px они обрезались.
 
 export const CELL_WIDTH: Record<GridMode, number> = {
-  compact: 36,
-  detail: 48,
-  extended: 84,
+  compact: 44,
+  detail: 72,
+  extended: 86,
 }
 
-const GROUP_ROW_HEIGHT = 36
+const GROUP_ROW_HEIGHT = 28
 
 // ── Constants ───────────────────────────────────────────────────────
 
@@ -72,13 +82,32 @@ const NO_DEPT_KEY = '__no_dept__'
 /** Sentinel value used in URL ?dept= param to mean "no department" group */
 const NO_DEPT_FILTER = 'null'
 
+/**
+ * Пустой набор проблемных дней — стабильная ссылка для режима просмотра.
+ * Вне «Правки» строки и «НА СМЕНЕ» не тонируются и не рисуют dashed-чипы;
+ * красными остаются только число дня в шапке и счётчик «НА СМЕНЕ».
+ */
+const NO_PROBLEM_DAYS: ReadonlySet<string> = new Set()
+
+// ── Display settings ────────────────────────────────────────────────
+// Шесть тумблеров «Отображения» живут в сохраняемом «Виде» организации
+// (use-grid-view.ts, таблица grid_view_settings). strongWeekend остаётся
+// личной настройкой в localStorage — его нет в схеме вида.
+
+const DISPLAY_SETTINGS_KEY = 'smengo:app:gridDisplay'
+
 // ── Virtual row types ───────────────────────────────────────────────
 
 type VirtualRow =
   | { kind: 'group'; deptId: string | null; deptName: string; count: number }
   | { kind: 'employee'; employeeId: string }
+  /** Ghost-плашка «+ Добавить сотрудника» под заголовком пустого отдела */
+  | { kind: 'addEmployee'; deptId: string }
 
-// ── Props (signature is frozen — do NOT change) ─────────────────────
+/** Высота ghost-плашки пустого отдела (во всех режимах одинаковая) */
+const ADD_EMPLOYEE_ROW_HEIGHT = 42
+
+// ── Props ───────────────────────────────────────────────────────────
 
 export interface ScheduleGridProps {
   orgId: string
@@ -89,15 +118,31 @@ export interface ScheduleGridProps {
   /** YYYY-MM-DD in organization timezone */
   today: string
   initialData: MonthData
+  /** Сохранённый «Вид» грида организации (grid_view_settings, может быть пустым) */
+  initialView: GridViewSettings
 }
 
 // ── Main component ──────────────────────────────────────────────────
 
-export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, initialData }: ScheduleGridProps) {
+export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, initialData, initialView }: ScheduleGridProps) {
   const t = useTranslations('app.schedule')
   const locale = useLocale()
-  const hourSuffix = t('hourSuffix')
-  const nightBadge = t('nightBadge')
+
+  // Лейблы чипов/строк — собираются один раз, без useTranslations на ячейку
+  const rowLabels = useMemo((): GridRowLabels => ({
+    shiftMorning: t('shiftMorning'),
+    shiftEvening: t('shiftEvening'),
+    shiftNight: t('shiftNight'),
+    unassigned: t('statusUncovered'),
+    vacShort: t('statusVacShort'),
+    sickShort: t('statusSickShort'),
+    offShort: t('statusOffShort'),
+    lateShort: t('statusLateShort'),
+    hourSuffix: t('hourSuffix'),
+    telegramLabel: t('telegramBtn'),
+    colOffDays: t('colOffDays'),
+    colWorkHrs: t('colWorkHrs'),
+  }), [t])
 
   // ── URL state (dept, q, mode) ───────────────────────────────────
   const searchParams = useSearchParams()
@@ -107,11 +152,8 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
   const mode: GridMode = (['compact', 'detail', 'extended'].includes(searchParams.get('mode') ?? '')
     ? (searchParams.get('mode') as GridMode)
     : 'detail')
-
-  // Tab: schedule | employees
-  const activeTab = searchParams.get('tab') === 'employees' ? 'employees' : 'schedule'
-  // Employee tab view: cards | list
-  const empView: EmployeeView = searchParams.get('view') === 'list' ? 'list' : 'cards'
+  // NOTE: устаревший параметр ?tab= (вкладка «Сотрудники») игнорируется —
+  // раздел сотрудников живёт на /employees.
 
   // Local search input state — debounced 200ms before pushing to URL
   const [searchInput, setSearchInput] = useState(searchParams.get('q') ?? '')
@@ -148,6 +190,33 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchInput])
 
+  // ── Display: личный strongWeekend (localStorage) + edit mode ─────
+  const [strongWeekend, setStrongWeekendState] = useState(false)
+  const [showTelegram, setShowTelegram] = useState(false)
+  const [editMode, setEditMode] = useState(false)
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DISPLAY_SETTINGS_KEY)
+      if (!raw) return
+      const parsed = JSON.parse(raw) as Record<string, unknown>
+      // Старый формат хранил все тумблеры — берём только strongWeekend
+      if (typeof parsed.strongWeekend === 'boolean') setStrongWeekendState(parsed.strongWeekend)
+    } catch { /* ignore */ }
+  }, [])
+
+  const setStrongWeekend = useCallback((value: boolean) => {
+    setStrongWeekendState(value)
+    try {
+      localStorage.setItem(DISPLAY_SETTINGS_KEY, JSON.stringify({ strongWeekend: value }))
+    } catch { /* ignore */ }
+  }, [])
+
+  const weekendBg = strongWeekend ? 'var(--accent-soft)' : 'var(--grid-weekend)'
+
+  // Тема сайта (класс dark на <html>) — для рендера cardVisuals
+  const tone = useSiteTone()
+
   // ── Data ────────────────────────────────────────────────────────
   const { data } = useScheduleData(orgId, year, month, initialData)
 
@@ -176,6 +245,7 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
         'invalid_value', 'empty_list',
         'plan_limit_employees', 'invalid_id',
         'unauthorized', 'no_org', 'org_not_found', 'status_in_use',
+        'avatar_invalid_type', 'avatar_too_large', 'avatar_upload_failed',
       ] as const
       type KnownCode = typeof knownCodes[number]
       const isKnown = (knownCodes as readonly string[]).includes(errorCode)
@@ -189,12 +259,26 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
   const upsertMutation = useUpsertEntry(orgId, year, month)
   const clearMutation = useClearEntry(orgId, year, month)
 
+  // ── Сохраняемый «Вид» грида (тумблеры + визуалы карточек) ────────
+  const canCustomize = !isReadOnly && can(role, 'customize_view')
+
+  const handleViewSaveError = useCallback(
+    (code: string) => pushToast(resolveErrorMessage(code)),
+    [pushToast, resolveErrorMessage],
+  )
+
+  const { view, setToggle, setCardVisual } = useGridView(initialView, canCustomize, handleViewSaveError)
+
   // ── Editor state ────────────────────────────────────────────────
   /**
    * Tracks which cell has the editor open.
    * We store anchor data computed from the cell element rect vs scroll container.
    */
   const [editorAnchor, setEditorAnchor] = useState<CellEditorAnchor | null>(null)
+
+  // Счётчик локальных правок ячеек (правка 7): кнопка «Опубликовать график»
+  // появляется сразу после первой мутации, не дожидаясь рефетча метки
+  const [dirtySignal, setDirtySignal] = useState(0)
 
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
@@ -215,12 +299,11 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
   }, [])
 
   const handleCellClick = useCallback(
-    (employeeId: string, dateISO: string, cellEl: HTMLElement) => {
+    (employeeId: string, dateISO: string, cellRect: CellRect) => {
       if (!canEdit) return
       const container = scrollContainerRef.current
       if (!container) return
 
-      const cellRect = cellEl.getBoundingClientRect()
       const containerRect = container.getBoundingClientRect()
 
       // Convert to coordinates relative to the scroll container content area
@@ -245,6 +328,7 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
 
   const handleUpsert = useCallback(
     (input: UpsertInput) => {
+      setDirtySignal((n) => n + 1)
       upsertMutation.mutate(input, {
         onError: (err) => {
           pushToast(resolveErrorMessage(err.message))
@@ -256,6 +340,7 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
 
   const handleClear = useCallback(() => {
     if (!editorAnchor) return
+    setDirtySignal((n) => n + 1)
     clearMutation.mutate(
       { employee_id: editorAnchor.employeeId, entry_date: editorAnchor.dateISO },
       {
@@ -270,6 +355,8 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
 
   const [deptModal, setDeptModal] = useState<DeptModalState | null>(null)
   const [employeeModal, setEmployeeModal] = useState<EmployeeModalState | null>(null)
+  // Bulk-добавление таблицей (правка 7): null = закрыто, deptId — предвыбранный отдел
+  const [bulkAdd, setBulkAdd] = useState<{ deptId: string | null } | null>(null)
   // Employee overlay (click on name in grid → sheet)
   const [overlayEmployee, setOverlayEmployee] = useState<EmployeeRow | null>(null)
 
@@ -283,7 +370,38 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
   // ── Computed widths ──────────────────────────────────────────────
 
   const cellW = CELL_WIDTH[mode]
-  const totalWidth = NAME_COL_WIDTH + days.length * cellW
+  // Колонка сотрудника: число (compact) или CSS clamp-строка (detail/ext),
+  // как в демо — резолвится чистым CSS без замера window.innerWidth.
+  const nameColW = nameColumnWidth(mode, {
+    showEmployeeRole: view.showEmployeeRole,
+    showEmployeeDepartment: view.showEmployeeDepartment,
+    showEmployeeDot: view.showEmployeeDot,
+    showTelegram,
+  })
+  const totalsW = mode === 'compact' ? 0 : TOTALS_OFF_W + TOTALS_HRS_W
+  // Полная ширина контента: px-число или calc() поверх clamp-строки.
+  // Одно и то же выражение во всех трёх слоях → пиксельное выравнивание.
+  const dayRegionW = days.length * cellW + totalsW
+  const totalWidth: number | string = typeof nameColW === 'number'
+    ? nameColW + dayRegionW
+    : `calc(${nameColW} + ${dayRegionW}px)`
+
+  // ── Проблемные колонки: дефицит покрытия ниже порога alert_configs ──
+
+  const problemDays = useMemo((): ReadonlySet<string> => {
+    const scopeDept = deptFilter !== NO_DEPT_FILTER ? deptFilter : null
+    const coverage = coverageByDay(data.entries, data.employees, data.statusTypes, scopeDept)
+    const minPresent = aggregateMinPresent(data.alertConfigs, scopeDept)
+    const shortage = shortageByDay(coverage, minPresent, days.map((d) => d.dateISO))
+    const out = new Set<string>()
+    for (const [dateISO, deficit] of shortage) {
+      if (deficit > 0) out.add(dateISO)
+    }
+    return out
+  }, [data.entries, data.employees, data.statusTypes, data.alertConfigs, deptFilter, days])
+
+  // Полные демо-визуалы проблемных колонок (тонировка + dashed-чипы) — только в «Правке»
+  const problemDaysVisual = editMode ? problemDays : NO_PROBLEM_DAYS
 
   // ── Grouping ─────────────────────────────────────────────────────
 
@@ -303,18 +421,23 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
     return m
   }, [data.departments])
 
-  // Filter employees by search query (and dept filter for the Employees tab).
-  // NOTE: the schedule-tab groups useMemo applies dept filtering independently,
-  // so we only add dept filtering here — filteredEmployees is used by EmployeesTab.
+  // Порог min_present по отделу (для подписи «· мин {n}/день» в строке группы)
+  const minByDept = useMemo(() => {
+    const m = new Map<string, number>()
+    for (const c of data.alertConfigs) {
+      if (c.min_present > 0) m.set(c.department_id, c.min_present)
+    }
+    return m
+  }, [data.alertConfigs])
+
+  // Filter employees by search query + dept filter.
+  // The groups useMemo below buckets filteredEmployees by dept without
+  // re-applying the dept filter (it is already applied here).
   const filteredEmployees = useMemo(() => {
     let list = data.employees
     if (qFilter) {
       list = list.filter((e) => e.full_name.toLowerCase().includes(qFilter))
     }
-    // Dept filter — applied here so EmployeesTab respects it too.
-    // The schedule-tab groups useMemo below also filters by dept directly
-    // (it operates on filteredEmployees which already has q-filter applied),
-    // so we must NOT add dept-filtering there again.
     if (deptFilter === NO_DEPT_FILTER) {
       list = list.filter((e) => e.dept_id === null)
     } else if (deptFilter) {
@@ -343,10 +466,18 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
 
     const result: DeptGroup[] = []
 
-    // Named departments (in sort order)
+    // Named departments (in sort order). Пустой отдел тоже попадает в грид
+    // (группа + плашка «Добавить сотрудника»), кроме случаев: активен поиск
+    // (ищем сотрудников — пустые группы только шумят) или dept-фильтр
+    // указывает на другой отдел / «без отдела».
     for (const deptId of sortedDeptIds) {
       const employees = byDept.get(deptId)
-      if (!employees || employees.length === 0) continue
+      if (!employees || employees.length === 0) {
+        if (qFilter) continue
+        if (deptFilter && deptFilter !== deptId) continue
+        result.push({ deptId, deptName: deptMap.get(deptId) ?? deptId, employees: [] })
+        continue
+      }
       result.push({ deptId, deptName: deptMap.get(deptId) ?? deptId, employees })
     }
 
@@ -357,7 +488,28 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
     }
 
     return result
-  }, [filteredEmployees, sortedDeptIds, deptMap, t])
+  }, [filteredEmployees, sortedDeptIds, deptMap, t, qFilter, deptFilter])
+
+  // ── «НА СМЕНЕ»: охват и счётчики по дням ─────────────────────────
+  const [onShiftScope, setOnShiftScope] = useState('all')
+
+  const onShiftEmployees = useMemo(() => {
+    if (onShiftScope === 'all') return filteredEmployees
+    if (onShiftScope === NO_DEPT_KEY) return filteredEmployees.filter((e) => e.dept_id === null)
+    return filteredEmployees.filter((e) => e.dept_id === onShiftScope)
+  }, [filteredEmployees, onShiftScope])
+
+  const onShiftCounts = useMemo(
+    () => coverageByDay(data.entries, onShiftEmployees, data.statusTypes, null),
+    [data.entries, onShiftEmployees, data.statusTypes],
+  )
+
+  const onShiftScopeOptions = useMemo(
+    () => groups
+      .filter((g) => g.employees.length > 0)
+      .map((g) => ({ key: g.deptId ?? NO_DEPT_KEY, name: g.deptName })),
+    [groups],
+  )
 
   // ── Collapsible groups ───────────────────────────────────────────
   const [collapsedDepts, setCollapsedDepts] = useState<Set<string>>(new Set())
@@ -378,17 +530,31 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
   // ── Flat virtual row list ─────────────────────────────────────────
   const virtualRows = useMemo((): VirtualRow[] => {
     const rows: VirtualRow[] = []
+    // Единый список без отделов («все в одном графике»): только строки
+    // сотрудников в том же порядке (отдел→sort_order), без заголовков групп.
+    if (!view.groupByDept) {
+      for (const group of groups) {
+        for (const emp of group.employees) {
+          rows.push({ kind: 'employee', employeeId: emp.id })
+        }
+      }
+      return rows
+    }
     for (const group of groups) {
       rows.push({ kind: 'group', deptId: group.deptId, deptName: group.deptName, count: group.employees.length })
       if (!isDeptCollapsed(group.deptId)) {
         for (const emp of group.employees) {
           rows.push({ kind: 'employee', employeeId: emp.id })
         }
+        // Пустой отдел: ghost-плашка «+ Добавить сотрудника» (только с правом crud)
+        if (group.employees.length === 0 && group.deptId && canCrudEmployees) {
+          rows.push({ kind: 'addEmployee', deptId: group.deptId })
+        }
       }
     }
     return rows
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [groups, collapsedDepts])
+  }, [groups, collapsedDepts, canCrudEmployees, view.groupByDept])
 
   // Employee lookup map for O(1) access in render
   const empById = useMemo(() => {
@@ -463,7 +629,9 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
     getScrollElement: () => scrollContainerRef.current,
     estimateSize: (i) => {
       const row = virtualRows[i]
-      return row?.kind === 'group' ? GROUP_ROW_HEIGHT : rowHeight
+      if (row?.kind === 'group') return GROUP_ROW_HEIGHT
+      if (row?.kind === 'addEmployee') return ADD_EMPLOYEE_ROW_HEIGHT
+      return rowHeight
     },
     overscan: 10,
   })
@@ -490,181 +658,209 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
   const isFullyEmpty = data.departments.length === 0 && data.employees.length === 0
   const hasDeptsNoEmployees = data.departments.length > 0 && data.employees.length === 0
 
+  // ── Тумблеры поповера «Отображение» (порядок и disabled — как в демо) ──
+  // strongWeekend — личный (localStorage); остальные — общий «Вид» организации:
+  // без права customize_view они задизейблены, сервер всё равно fail-closed.
+  const displayToggles: DisplayToggle[] = [
+    { key: 'strongWeekend', label: t('highlightWeekendsLabel'), value: strongWeekend },
+    { key: 'showTimes', label: t('showTimesLabel'), value: view.showTimes, disabled: !canCustomize },
+    { key: 'merged', label: t('mergedLabel'), value: view.merged, disabled: !canCustomize },
+    { key: 'showGrid', label: t('gridLabel'), value: view.showGrid, disabled: !canCustomize },
+    { key: 'groupByDept', label: t('groupByDeptLabel'), value: view.groupByDept, disabled: !canCustomize },
+    { key: 'showEmployeeDepartment', label: t('showEmployeeDepartmentLabel'), value: view.showEmployeeDepartment, disabled: !canCustomize || mode === 'compact' },
+    { key: 'showEmployeeRole', label: t('showEmployeeRoleLabel'), value: view.showEmployeeRole, disabled: !canCustomize || mode === 'compact' },
+    { key: 'showEmployeeDot', label: t('showEmployeeDotLabel'), value: view.showEmployeeDot, disabled: !canCustomize },
+  ]
+
+  const handleDisplayToggle = useCallback((key: string, value: boolean) => {
+    if (key === 'strongWeekend') {
+      setStrongWeekend(value)
+      return
+    }
+    setToggle(key as keyof GridViewToggles, value)
+  }, [setStrongWeekend, setToggle])
+
   // ── Render ───────────────────────────────────────────────────────
+  // Заголовок страницы — в шапке шелла («Организация / Планирование»).
   return (
     <div className="flex flex-col">
 
-      {/* Tab switcher — always visible */}
-      <div role="tablist" className="mb-3 flex items-center gap-1 border-b border-border pb-0">
-        {(['schedule', 'employees'] as const).map((tab) => (
-          <button
-            key={tab}
-            type="button"
-            role="tab"
-            aria-selected={activeTab === tab}
-            onClick={() => setShallowParam('tab', tab === 'schedule' ? null : tab)}
-            className={[
-              'px-3 py-2 text-[13px] font-medium transition-colors border-b-2 -mb-px',
-              activeTab === tab
-                ? 'border-primary text-foreground'
-                : 'border-transparent text-muted-foreground hover:text-foreground',
-            ].join(' ')}
-          >
-            {tab === 'schedule' ? t('scheduleTab') : t('employeesTab')}
-          </button>
-        ))}
-      </div>
-
-      {/* Toolbar — hidden when fully empty (month/filters are meaningless) */}
-      {!isFullyEmpty && (
-      <div className="mb-3 flex flex-wrap items-center gap-2" data-slot="toolbar">
-        {/* Mode switcher — grid tab only */}
-        {activeTab === 'schedule' && (
-          <ModeSwitcher value={mode} onChange={handleModeChange} />
-        )}
-
-        {/* Month nav — grid tab only, centered */}
-        {activeTab === 'schedule' && (
-          <div className="flex flex-1 justify-center">
-            <MonthNav year={year} month={month} />
-          </div>
-        )}
-
-        {/* Dept filter — shared on both tabs */}
-        <DeptFilter
-          departments={data.departments}
-          employees={data.employees}
-          value={deptFilter}
-          onChange={handleDeptChange}
-        />
-
-        {/* Search input — shared on both tabs */}
-        <div className="relative flex items-center">
-          <Search
-            size={13}
-            className="pointer-events-none absolute left-2.5 text-muted-foreground"
-          />
-          <input
-            type="text"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.currentTarget.value)}
-            placeholder={t('searchPlaceholder')}
-            aria-label={t('searchPlaceholder')}
-            className="h-8 rounded-md border border-border bg-background pl-8 pr-7 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-            style={{ minWidth: 160 }}
-          />
-          {searchInput && (
-            <button
-              type="button"
-              aria-label={t('clearSearch')}
-              onClick={() => setSearchInput('')}
-              className="absolute right-2 text-muted-foreground hover:text-foreground"
-            >
-              <X size={13} />
-            </button>
-          )}
-        </div>
-
-        {/* CRUD buttons — rightmost before alerts */}
-        {canCrudEmployees && (
-          <button
-            type="button"
-            onClick={() => setEmployeeModal({ mode: 'create' })}
-            className="h-8 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-          >
-            {t('addEmployee')}
-          </button>
-        )}
-        {canManageDepts && activeTab === 'schedule' && (
-          <button
-            type="button"
-            onClick={() => setDeptModal({ mode: 'create' })}
-            className="h-8 rounded-md border border-border px-3 text-sm font-medium text-foreground hover:bg-muted"
-          >
-            {t('addDepartment')}
-          </button>
-        )}
-
-        {/* Alerts / coverage thresholds — grid tab only */}
-        {activeTab === 'schedule' && (
-          <AlertsForm
-            orgId={orgId}
-            year={year}
-            month={month}
-            role={role}
-            departments={data.departments}
-            alertConfigs={data.alertConfigs}
-          />
-        )}
-
-        {/* Custom status manager — grid tab only */}
-        {activeTab === 'schedule' && (
-          <StatusManager
-            orgId={orgId}
-            year={year}
-            month={month}
-            role={role}
-            statusTypes={data.statusTypes}
-          />
-        )}
-      </div>
-      )}
-
-      {/* Employees tab content */}
-      {activeTab === 'employees' && (
-        <EmployeesTab
-          employees={filteredEmployees}
-          departments={data.departments}
-          today={today}
-          view={empView}
-          onViewChange={(v) => setShallowParam('view', v === 'cards' ? null : v)}
-          onEdit={canCrudEmployees ? (emp) => setEmployeeModal({ mode: 'edit', employee: emp }) : undefined}
-        />
-      )}
-
-      {/* Schedule tab content */}
-      {activeTab === 'schedule' && (
-      <>
       {/* Fully empty state — QuickStart replaces the grid entirely */}
       {isFullyEmpty ? (
         <QuickStart
           departmentsCount={data.departments.length}
           employeesCount={data.employees.length}
           onCreateDepartment={canManageDepts ? () => setDeptModal({ mode: 'create' }) : undefined}
-          onAddEmployee={canCrudEmployees ? () => setEmployeeModal({ mode: 'create' }) : undefined}
+          onAddEmployee={canCrudEmployees ? () => setBulkAdd({ deptId: null }) : undefined}
         />
       ) : (
         <>
           {/* Mini-banner: depts exist but no employees yet */}
           {hasDeptsNoEmployees && (
             <QuickStartBanner
-              onAddEmployee={canCrudEmployees ? () => setEmployeeModal({ mode: 'create' }) : undefined}
+              onAddEmployee={canCrudEmployees ? () => setBulkAdd({ deptId: null }) : undefined}
             />
           )}
+
+          {/* Тулбар вынесен НАД карточку (правка основателя): месяц/отдел +
+              все действия + «Опубликовать график» — сверху, где раньше была шапка */}
+          <div
+            data-grid-topbar
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              flexWrap: 'wrap', marginBottom: 12,
+            }}
+          >
+            {/* Month switcher */}
+            <MonthNav year={year} month={month} />
+
+            {/* Dept dropdown */}
+            <DeptFilter
+              departments={data.departments}
+              employees={data.employees}
+              value={deptFilter}
+              onChange={handleDeptChange}
+            />
+
+            {/* Mode segmented */}
+            <ModeSwitcher value={mode} onChange={handleModeChange} />
+
+            <div style={{ flex: 1 }} />
+
+            {/* Search */}
+            <div className="relative flex items-center max-sm:hidden">
+              <Search
+                size={13}
+                className="pointer-events-none absolute left-2.5 text-muted-foreground"
+              />
+              <input
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.currentTarget.value)}
+                placeholder={t('searchPlaceholder')}
+                aria-label={t('searchPlaceholder')}
+                className="smengo-tool"
+                style={{ minWidth: 150, cursor: 'text', justifyContent: 'flex-start', paddingLeft: 30, paddingRight: 26 }}
+              />
+              {searchInput && (
+                <button
+                  type="button"
+                  aria-label={t('clearSearch')}
+                  onClick={() => setSearchInput('')}
+                  className="absolute right-2 text-muted-foreground hover:text-foreground"
+                >
+                  <X size={13} />
+                </button>
+              )}
+            </div>
+
+            {/* Add department (аналог «+ Секция» демо) */}
+            {canManageDepts && (
+              <button
+                type="button"
+                onClick={() => setDeptModal({ mode: 'create' })}
+                className="smengo-tool max-sm:hidden"
+              >
+                {t('addDepartment')}
+              </button>
+            )}
+
+            {/* Edit toggle */}
+            {canEdit && (
+              <button
+                type="button"
+                onClick={() => setEditMode((v) => !v)}
+                className="smengo-tool"
+                data-active={editMode}
+              >
+                <Pencil style={{ width: 11, height: 11 }} />
+                {editMode ? t('editDone') : t('editBtn')}
+              </button>
+            )}
+
+            {/* Export — реализация экспорта в этапе 1.5, пока тост */}
+            <button
+              type="button"
+              onClick={() => pushToast(t('toastExported'))}
+              className="smengo-tool"
+            >
+              {t('exportBtn')}
+            </button>
+
+            {/* Пороги покрытия (⚙) / статусы / визуал (палитра) / отображение */}
+            <AlertsForm
+              orgId={orgId}
+              year={year}
+              month={month}
+              role={role}
+              departments={data.departments}
+              alertConfigs={data.alertConfigs}
+            />
+            <StatusManager
+              orgId={orgId}
+              year={year}
+              month={month}
+              role={role}
+              statusTypes={data.statusTypes}
+            />
+            <VisualEditor
+              role={role}
+              statusTypes={data.statusTypes}
+              cardVisuals={view.cardVisuals}
+              tone={tone}
+              onChange={setCardVisual}
+            />
+            <DisplaySettingsButton
+              toggles={displayToggles}
+              onToggle={handleDisplayToggle}
+            />
+
+            {/* Add employee */}
+            {canCrudEmployees && (
+              <button
+                type="button"
+                onClick={() => setBulkAdd({ deptId: null })}
+                className="smengo-tool smengo-tool--primary"
+              >
+                {t('addEmployee')}
+              </button>
+            )}
+          </div>
+
+          {/* Карточка грида: скролл-контейнер («окно» демо от тулбара вниз) */}
+          <div
+            style={{
+              background: 'var(--grid-cell)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius)',
+              overflow: 'hidden',
+            }}
+          >
+          {/* macOS-style оверлей-скроллбар над гридом (demo AppleHScrollbar) */}
+          <AppleHScrollbar
+            scrollerRef={scrollContainerRef}
+            style={{ marginLeft: nameColW, marginRight: 6 }}
+          />
 
           {/* Scroll container */}
           <div
             ref={scrollContainerRef}
-            className="overflow-auto rounded-lg border border-border"
-            style={{ height: 'max(calc(100vh - 220px), 400px)' }}
+            className="overflow-auto"
+            style={{ height: 'max(calc(100vh - 270px), 400px)' }}
           >
             {/* Sticky header — same totalWidth as spacer guarantees alignment */}
             <GridHeader
               days={days}
               today={today}
-              nameColWidth={NAME_COL_WIDTH}
+              mode={mode}
+              nameColWidth={nameColW}
               cellW={cellW}
-            />
-
-            {/* Coverage row — sticky below header */}
-            <CoverageRow
-              days={days}
-              entries={data.entries}
-              employees={data.employees}
-              statusTypes={data.statusTypes}
-              alertConfigs={data.alertConfigs}
-              deptId={deptFilter !== NO_DEPT_FILTER ? deptFilter : null}
-              cellW={cellW}
+              totalWidth={totalWidth}
+              weekendBg={weekendBg}
+              problemDays={problemDays}
+              problemTint={editMode}
+              showTelegram={showTelegram}
+              onToggleProjects={() => setShowTelegram((v) => !v)}
             />
 
             {/* Virtual rows spacer — explicit width drives horizontal scroll */}
@@ -679,7 +875,10 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
                 items={data.employees.map((e) => e.id)}
                 strategy={verticalListSortingStrategy}
               >
-                <div style={{ height: totalHeight, width: totalWidth, position: 'relative' }}>
+                {/* width+minWidth: спейсер тянется до clientWidth скроллера,
+                    как шапка/«НА СМЕНЕ» (minWidth 100%) — иначе на широких
+                    экранах строки компактного режима не растягивались бы. */}
+                <div style={{ height: totalHeight, width: totalWidth, minWidth: '100%', position: 'relative' }}>
                   {items.map((virtualItem) => {
                     const row = virtualRows[virtualItem.index]
                     if (!row) return null
@@ -687,6 +886,7 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
                     if (row.kind === 'group') {
                       const collapsed = isDeptCollapsed(row.deptId)
                       const dept = row.deptId ? deptById.get(row.deptId) : undefined
+                      const min = row.deptId ? minByDept.get(row.deptId) : undefined
                       return (
                         <div
                           key={`group-${row.deptId ?? 'null'}`}
@@ -700,12 +900,14 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
                         >
                           <GroupRow
                             deptName={row.deptName}
-                            count={row.count}
+                            accent={deptColor(row.deptId)}
+                            minLabel={min ? t('minDay', { n: min }) : undefined}
                             collapsed={collapsed}
                             onToggle={() => toggleDept(row.deptId)}
-                            employeesCountLabel={t('employeesCount', { count: row.count })}
+                            nameColWidth={nameColW}
+                            mode={mode}
                             onAddEmployee={canCrudEmployees
-                              ? () => setEmployeeModal({ mode: 'create', deptId: row.deptId })
+                              ? () => setBulkAdd({ deptId: row.deptId })
                               : undefined}
                             onRenameDept={canManageDepts && dept
                               ? () => setDeptModal({ mode: 'rename', dept })
@@ -713,6 +915,27 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
                             onDeleteDept={canManageDepts && dept
                               ? () => setDeptModal({ mode: 'delete', dept })
                               : undefined}
+                          />
+                        </div>
+                      )
+                    }
+
+                    if (row.kind === 'addEmployee') {
+                      return (
+                        <div
+                          key={`add-emp-${row.deptId}`}
+                          style={{
+                            position: 'absolute',
+                            top: virtualItem.start,
+                            left: 0,
+                            right: 0,
+                            height: virtualItem.size,
+                          }}
+                        >
+                          <AddEmployeeRow
+                            label={t('emptyDeptAddEmployee')}
+                            nameColWidth={nameColW}
+                            onClick={() => setBulkAdd({ deptId: row.deptId })}
                           />
                         </div>
                       )
@@ -734,23 +957,34 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
                       >
                         <EmployeeGridRow
                           employee={emp}
+                          deptName={emp.dept_id ? (deptMap.get(emp.dept_id) ?? t('deptNoDept')) : t('deptNoDept')}
+                          deptAccent={deptColor(emp.dept_id)}
                           days={days}
-                          today={today}
                           rowHeight={virtualItem.size}
+                          nameColWidth={nameColW}
                           cellW={cellW}
                           mode={mode}
                           locale={locale}
-                          hourSuffix={hourSuffix}
-                          nightBadge={nightBadge}
-                          scheduleMap={scheduleMap}
+                          labels={rowLabels}
+                          weekendBg={weekendBg}
+                          problemDays={problemDaysVisual}
+                          showGrid={view.showGrid}
+                          showTimes={view.showTimes}
+                          merged={view.merged}
+                          showTelegram={showTelegram}
+                          showEmployeeDepartment={view.showEmployeeDepartment}
+                          showEmployeeRole={view.showEmployeeRole}
+                          showEmployeeDot={view.showEmployeeDot}
+                          cardVisuals={view.cardVisuals}
+                          tone={tone}
                           statusById={statusById}
                           entriesForEmployee={scheduleMap.get(emp.id)}
-                          onCellClick={canEdit ? handleCellClick : undefined}
+                          onCellClick={canEdit && editMode ? handleCellClick : undefined}
                           onEmployeeClick={
                             // All roles can see overlay (read-only content); edit button inside is guarded
                             (e) => setOverlayEmployee(e)
                           }
-                          draggable={canCrudEmployees && !qFilter}
+                          draggable={canCrudEmployees && !qFilter && editMode}
                         />
                       </div>
                     )
@@ -780,16 +1014,34 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
                   : t('emptyTitle')}
               </div>
             )}
+
+            {/* «НА СМЕНЕ» — нижняя строка как tfoot демо */}
+            {virtualRows.length > 0 && (
+              <OnShiftRow
+                days={days}
+                mode={mode}
+                nameColWidth={nameColW}
+                cellW={cellW}
+                totalWidth={totalWidth}
+                weekendBg={weekendBg}
+                problemDays={problemDaysVisual}
+                showGrid={view.showGrid}
+                counts={onShiftCounts}
+                total={onShiftEmployees.length}
+                scope={onShiftScope}
+                onScopeChange={setOnShiftScope}
+                scopeOptions={onShiftScopeOptions}
+              />
+            )}
+          </div>
+          {/* конец карточки грида */}
           </div>
 
           {/* Legend — status chips below grid */}
           <Legend statusTypes={data.statusTypes} />
         </>
       )}
-      {/* end schedule tab: isFullyEmpty ternary */}
-      </>
-      )}
-      {/* end activeTab === 'schedule' */}
+      {/* end isFullyEmpty ternary */}
 
       {/* Cell editor popover */}
       {editorAnchor && (
@@ -798,6 +1050,7 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
           entry={editorEntry}
           statusTypes={data.statusTypes}
           workStatus={workStatus}
+          employeeName={empById.get(editorAnchor.employeeId)?.full_name ?? ''}
           onUpsert={handleUpsert}
           onClear={handleClear}
           onClose={handleEditorClose}
@@ -812,6 +1065,16 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
           orgId={orgId}
           onClose={() => setDeptModal(null)}
           onError={handleModalError}
+        />
+      )}
+
+      {/* Bulk add modal (create); одиночная модалка остаётся для редактирования */}
+      {bulkAdd && (
+        <BulkEmployeeModal
+          orgId={orgId}
+          departments={data.departments}
+          preselectedDeptId={bulkAdd.deptId}
+          onClose={() => setBulkAdd(null)}
         />
       )}
 
@@ -841,6 +1104,18 @@ export function ScheduleGrid({ orgId, role, isReadOnly, year, month, today, init
           onClose={() => setOverlayEmployee(null)}
         />
       )}
+
+      {/* Плавающая «Опубликовать график» внизу справа: появляется после первой
+          правки текущей сессии (serverDirty намеренно false — правка основателя:
+          плажка висит после изменения, а не статично при заходе на страницу) */}
+      <PublishButton
+        year={year}
+        month={month}
+        canEdit={canEdit}
+        serverDirty={false}
+        dirtySignal={dirtySignal}
+        onToast={pushToast}
+      />
 
       {/* Toast notifications */}
       <ToastViewport toasts={toasts} onDismiss={dismissToast} />

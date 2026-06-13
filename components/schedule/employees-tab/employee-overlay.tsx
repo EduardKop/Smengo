@@ -6,6 +6,7 @@ import { useTranslations, useLocale } from 'next-intl'
 import type { EmployeeRow, DepartmentRow, ScheduleEntryRow, StatusTypeRow } from '@/lib/schedule/types'
 import type { MonthDay } from '@/lib/schedule/month'
 import { daysUntilBirthday, yearsOfService } from '@/lib/schedule/month'
+import { Avatar } from '../grid-visual'
 import { statusStyle, statusLabel } from '../status-style'
 
 interface EmployeeOverlayProps {
@@ -107,13 +108,7 @@ export function EmployeeOverlay({
         <div className="px-4 pt-4 pb-3 border-b border-border/60 shrink-0">
           {/* Avatar + name */}
           <div className="flex items-start gap-3 mb-3">
-            <div
-              className="shrink-0 rounded-full bg-primary/10 text-primary font-semibold flex items-center justify-center text-[15px]"
-              style={{ width: 44, height: 44 }}
-              aria-hidden="true"
-            >
-              {employee.full_name.charAt(0).toUpperCase()}
-            </div>
+            <Avatar name={employee.full_name} src={employee.avatar_url} size={44} />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-semibold text-[15px] text-foreground">{employee.full_name}</span>

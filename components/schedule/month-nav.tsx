@@ -1,8 +1,12 @@
 'use client'
 
+/**
+ * Месяц-свитчер — пилюля smengo-tool из топбара демо
+ * (grid-preview.tsx 3050–3075): ‹ месяц › внутри одной пилюли.
+ */
+
 import { useCallback } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useTranslations, useLocale } from 'next-intl'
 
 /** ±24 months from today's month */
@@ -65,29 +69,27 @@ export function MonthNav({ year, month }: MonthNavProps) {
   )
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="smengo-tool" style={{ padding: '0 4px', gap: 2, cursor: 'default' }}>
       <button
         type="button"
-        aria-label={t('prevMonth')}
-        disabled={!canGoPrev}
         onClick={() => navigate(prevYear, prevMonth)}
-        className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+        disabled={!canGoPrev}
+        className="inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-md transition-colors hover:bg-muted disabled:cursor-default disabled:opacity-30 disabled:hover:bg-transparent"
+        aria-label={t('prevMonth')}
+        style={{ background: 'transparent', border: 0, color: 'var(--muted-foreground)', fontSize: 14, lineHeight: 1 }}
       >
-        <ChevronLeft size={15} />
+        ‹
       </button>
-
-      <span className="min-w-[130px] text-center text-sm font-medium tabular-nums">
-        {label}
-      </span>
-
+      <span style={{ minWidth: 86, textAlign: 'center', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{label}</span>
       <button
         type="button"
-        aria-label={t('nextMonth')}
-        disabled={!canGoNext}
         onClick={() => navigate(nextYear, nextMonth)}
-        className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+        disabled={!canGoNext}
+        className="inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-md transition-colors hover:bg-muted disabled:cursor-default disabled:opacity-30 disabled:hover:bg-transparent"
+        aria-label={t('nextMonth')}
+        style={{ background: 'transparent', border: 0, color: 'var(--muted-foreground)', fontSize: 14, lineHeight: 1 }}
       >
-        <ChevronRight size={15} />
+        ›
       </button>
     </div>
   )

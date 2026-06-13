@@ -8,6 +8,8 @@ import { nanoid } from 'nanoid'
 import { z } from 'zod'
 import { CreateOrgSchema } from '@/lib/validation/org'
 import { slugify } from '@/lib/utils'
+import { AVATAR_MAX_BYTES, sniffImageMime } from '@/lib/schedule/avatar'
+import { ORG_LOGO_BUCKET, orgLogoStoragePath } from '@/lib/app/avatars'
 
 export type OrgFormState =
   | {
@@ -29,6 +31,7 @@ export async function createOrgAction(
     last_name: formData.get('last_name'),
     acquisition_source: formData.get('acquisition_source') ?? '',
     terms: formData.get('terms') ?? undefined,
+    team_size: formData.get('team_size'),
   })
   if (!parsed.success) {
     return { errors: parsed.error.flatten().fieldErrors }
@@ -56,7 +59,7 @@ export async function createOrgAction(
   const slug = `${slugify(parsed.data.name)}-${nanoid(6)}`
 
   // RPC calls the security-definer PG function — transactional, bypasses RLS
-  const { error } = await supabase.rpc('create_organization', {
+  const { data: orgId, error } = await supabase.rpc('create_organization', {
     p_name: parsed.data.name,
     p_slug: slug,
     p_billing_email: parsed.data.billing_email,
@@ -66,6 +69,28 @@ export async function createOrgAction(
   })
 
   if (error) return { message: error.message }
+
+  // Кол-во сотрудников (правка 7): отдельным UPDATE — создатель уже owner,
+  // RLS org_update + колоночный grant пропускают
+  if (orgId && parsed.data.team_size) {
+    await supabase.from('organizations').update({ team_size: parsed.data.team_size }).eq('id', orgId)
+  }
+
+  // Лого компании (правка 7): best-effort — битый файл не блокирует онбординг
+  const logo = formData.get('logo')
+  if (orgId && logo instanceof File && logo.size > 0 && logo.size <= AVATAR_MAX_BYTES) {
+    const head = new Uint8Array(await logo.slice(0, 16).arrayBuffer())
+    const mime = sniffImageMime(head)
+    if (mime) {
+      const path = orgLogoStoragePath(orgId, mime)
+      const { error: uploadError } = await supabase.storage
+        .from(ORG_LOGO_BUCKET)
+        .upload(path, logo, { contentType: mime })
+      if (!uploadError) {
+        await supabase.from('organizations').update({ logo_url: path }).eq('id', orgId)
+      }
+    }
+  }
 
   // Persist identity details; profile row exists via handle_new_user trigger
   await supabase.auth.updateUser({
@@ -79,7 +104,8 @@ export async function createOrgAction(
   })
   await supabase.from('profiles').update({ full_name: fullName }).eq('id', user.id)
 
-  redirect('/dashboard')
+  // Правка 7: после онбординга — сразу в график
+  redirect('/schedule')
 }
 
 export async function switchOrgAction(formData: FormData): Promise<void> {

@@ -5,6 +5,7 @@ import { Phone, Send, Mail, Copy, Check } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import type { EmployeeRow, DepartmentRow } from '@/lib/schedule/types'
 import { daysUntilBirthday, yearsOfService } from '@/lib/schedule/month'
+import { Avatar } from '../grid-visual'
 
 interface EmployeeCardProps {
   employee: EmployeeRow
@@ -58,14 +59,8 @@ export function EmployeeCard({ employee, departments, today, onEdit }: EmployeeC
     >
       {/* Header */}
       <div className="flex items-start gap-3 px-4 pt-4 pb-3">
-        {/* Avatar initials */}
-        <div
-          className="shrink-0 rounded-full bg-primary/10 text-primary font-semibold text-sm flex items-center justify-center"
-          style={{ width: 40, height: 40, fontSize: 14 }}
-          aria-hidden="true"
-        >
-          {employee.full_name.charAt(0).toUpperCase()}
-        </div>
+        {/* Avatar: фото или инициалы на градиенте */}
+        <Avatar name={employee.full_name} src={employee.avatar_url} size={40} />
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">

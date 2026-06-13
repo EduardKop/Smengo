@@ -18,4 +18,8 @@ export interface MonthData {
   statusTypes: StatusTypeRow[]
   entries: ScheduleEntryRow[]
   alertConfigs: AlertConfigRow[]
+  /** Последняя правка месяца (schedule_change_marks) — для кнопки публикации */
+  lastChangeAt: string | null
+  /** Последняя публикация месяца (schedule_publications) */
+  lastPublishedAt: string | null
 }

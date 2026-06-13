@@ -27,7 +27,7 @@ export async function loginAction(
   const { error } = await supabase.auth.signInWithPassword(parsed.data)
   if (error) return { message: error.message }
 
-  redirect('/dashboard')
+  redirect('/schedule')
 }
 
 export async function registerAction(
@@ -121,13 +121,14 @@ export async function resetPasswordAction(
   const { error } = await supabase.auth.updateUser({ password: parsed.data })
   if (error) return { message: error.message }
 
-  redirect('/dashboard')
+  redirect('/schedule')
 }
 
 export async function logoutAction(): Promise<void> {
   const supabase = await createClient()
   await supabase.auth.signOut()
-  redirect('/login')
+  // После выхода — на главную (лендинг), а не на /login (правка основателя)
+  redirect('/')
 }
 
 export async function loginWithGoogleAction(): Promise<void> {

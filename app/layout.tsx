@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { cookies } from 'next/headers'
-import { Inter, Source_Serif_4, Geist, Caveat, Press_Start_2P, VT323, JetBrains_Mono } from 'next/font/google'
+import { Inter, Source_Serif_4, Geist, Caveat, Press_Start_2P, VT323, JetBrains_Mono, Manrope } from 'next/font/google'
 import './globals.css'
 import { cn } from "@/lib/utils"
 import { NextIntlClientProvider } from 'next-intl'
@@ -47,6 +47,14 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin', 'cyrillic'],
   display: 'swap',
   weight: ['400', '500', '600', '700'],
+})
+
+// Шрифт продукт-зоны (правка 4: минимализм в духе sona.ai). Sora из референса
+// без кириллицы — Manrope ближайший геометрический гротеск с полной ru/uk.
+const manrope = Manrope({
+  variable: '--font-manrope',
+  subsets: ['latin', 'cyrillic'],
+  display: 'swap',
 })
 
 export const metadata: Metadata = {
@@ -99,7 +107,7 @@ export default async function RootLayout({
     <html
       lang={locale}
       suppressHydrationWarning
-      className={cn("h-full", "antialiased", inter.variable, sourceSerif.variable, caveat.variable, "font-sans", geist.variable, pressStart.variable, vt323.variable, jetbrainsMono.variable, theme === 'dark' && 'dark')}
+      className={cn("h-full", "antialiased", inter.variable, sourceSerif.variable, caveat.variable, "font-sans", geist.variable, pressStart.variable, vt323.variable, jetbrainsMono.variable, manrope.variable, theme === 'dark' && 'dark')}
       style={theme ? { colorScheme: theme } : undefined}
     >
       <head>

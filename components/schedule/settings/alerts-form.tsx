@@ -24,6 +24,11 @@ export function AlertsForm({ orgId, year, month, role, departments, alertConfigs
   const qc = useQueryClient()
   const key = scheduleKey(orgId, year, month)
   const [open, setOpen] = useState(false)
+  /**
+   * Куда раскрывать панель: при переносе тулбара кнопка может оказаться слева,
+   * и right-0-панель срезается overflow:hidden карточки грида.
+   */
+  const [alignLeft, setAlignLeft] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
 
 
@@ -57,8 +62,15 @@ export function AlertsForm({ orgId, year, month, role, departments, alertConfigs
         type="button"
         aria-label={t('alertsSettingsLabel')}
         aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-        className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        onClick={(e) => {
+          // Не хватает места слева от кнопки (панель 288px) — раскрываем вправо
+          const btnRect = e.currentTarget.getBoundingClientRect()
+          const card = e.currentTarget.closest('[data-grid-topbar]')?.parentElement
+          const boundary = card ? card.getBoundingClientRect().left : 0
+          setAlignLeft(btnRect.right - 288 < boundary + 8)
+          setOpen((v) => !v)
+        }}
+        className="smengo-tool smengo-tool--icon"
       >
         <Settings size={15} />
       </button>
@@ -72,28 +84,36 @@ export function AlertsForm({ orgId, year, month, role, departments, alertConfigs
             onClick={() => setOpen(false)}
           />
 
-          {/* Panel */}
+          {/* Panel — демо-язык: .smengo-pop + .smengo-pop-label + инпуты h28/r9 */}
           <div
             ref={panelRef}
             role="dialog"
             aria-label={t('alertsSettingsLabel')}
-            className="absolute right-0 top-10 z-40 w-72 rounded-lg border border-border bg-background p-4 shadow-lg"
+            className={`smengo-pop absolute top-10 z-40 w-72 p-2.5 ${alignLeft ? 'left-0' : 'right-0'}`}
+            style={{ ['--pop-origin' as string]: alignLeft ? 'top left' : 'top right' }}
           >
-            <p className="mb-3 text-[12px] font-semibold text-foreground">
-              {t('alertsSettingsLabel')}
-            </p>
-            <p className="mb-3 text-[11px] text-muted-foreground">
+            <div className="smengo-pop-label">{t('alertsSettingsLabel')}</div>
+            <p className="mb-2 px-1" style={{ fontSize: 11, lineHeight: 1.4, color: 'var(--muted-foreground)' }}>
               {t('alertsSettingsHint')}
             </p>
 
             {departments.length === 0 && (
-              <p className="text-[11px] text-muted-foreground">{t('alertsNoDepts')}</p>
+              <p className="px-1" style={{ fontSize: 11, color: 'var(--muted-foreground)' }}>
+                {t('alertsNoDepts')}
+              </p>
             )}
 
-            <ul className="space-y-2">
+            <ul className="flex flex-col gap-1.5">
               {departments.map((dept) => (
-                <li key={dept.id} className="flex items-center justify-between gap-3">
-                  <span className="min-w-0 flex-1 truncate text-[12px] text-foreground">
+                <li
+                  key={dept.id}
+                  className="flex items-center justify-between gap-3"
+                  style={{ padding: '2px 4px', borderRadius: 9 }}
+                >
+                  <span
+                    className="min-w-0 flex-1 truncate"
+                    style={{ fontSize: 12, fontWeight: 550, color: 'var(--foreground)' }}
+                  >
                     {dept.name}
                   </span>
                   <input
@@ -106,13 +126,28 @@ export function AlertsForm({ orgId, year, month, role, departments, alertConfigs
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') { e.currentTarget.blur() }
                     }}
-                    className="h-7 w-16 rounded border border-border bg-background px-2 text-right text-[12px] tabular-nums focus:outline-none focus:ring-1 focus:ring-ring"
+                    className="smengo-custom-input"
+                    style={{
+                      width: 56,
+                      height: 28,
+                      borderRadius: 9,
+                      border: '1px solid var(--pop-border)',
+                      background: 'var(--grid-cell)',
+                      color: 'var(--foreground)',
+                      padding: '0 8px',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      textAlign: 'right',
+                      fontVariantNumeric: 'tabular-nums',
+                      outline: 'none',
+                    }}
                   />
                 </li>
               ))}
             </ul>
 
-            <p className="mt-3 text-[10px] text-muted-foreground">
+            <div className="smengo-pop-sep" />
+            <p className="px-1 pb-0.5" style={{ fontSize: 10, lineHeight: 1.4, color: 'var(--muted-foreground)' }}>
               {t('alertsZeroHint')}
             </p>
           </div>

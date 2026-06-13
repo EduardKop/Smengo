@@ -1,17 +1,29 @@
-import { Users } from 'lucide-react'
-import { getTranslations } from 'next-intl/server'
-import { EmptyState } from '@/components/app/empty-state'
+import { createClient } from '@/lib/supabase/server'
+import { getAppContext } from '@/lib/auth/context'
+import { todayISOInTz } from '@/lib/schedule/month'
+import { fetchMonthData } from '@/lib/schedule/fetch-month'
+import { EmployeesView } from '@/components/schedule/employees-tab/employees-view'
 
 export default async function EmployeesPage() {
-  const t = await getTranslations('app.employees')
+  const ctx = await getAppContext()
+  const supabase = await createClient()
+
+  // Текущий месяц организации — записи нужны для мини-календаря оверлея
+  const today = todayISOInTz(ctx.org.timezone ?? 'Europe/Kyiv')
+  const year = Number(today.slice(0, 4))
+  const month = Number(today.slice(5, 7))
+  const initialData = await fetchMonthData(supabase, year, month)
 
   return (
     <>
-      <h1 className="mb-6 text-2xl font-semibold text-foreground">{t('title')}</h1>
-      <EmptyState
-        icon={<Users className="h-6 w-6" />}
-        title={t('emptyTitle')}
-        text={t('emptyText')}
+      <EmployeesView
+        orgId={ctx.org.id}
+        role={ctx.role}
+        isReadOnly={ctx.isReadOnly}
+        year={year}
+        month={month}
+        today={today}
+        initialData={initialData}
       />
     </>
   )

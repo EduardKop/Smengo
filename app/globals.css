@@ -49,6 +49,14 @@ html {
   --destructive-foreground: #ffffff;
   --success: #4a9b6f;
   --warning: #e09b3a;
+  --info: #4a83c7;
+  /* Биллинг — левая «вермильоновая» панель (одинаково ярка в обеих темах,
+     меняется только цвет текста на ней) */
+  --billing-hero-bg: #f5421e;
+  --billing-hero-fg: #ffffff;
+  /* Аккаунт — левая тёмная панель (как на скриншоте) */
+  --account-hero-bg: #1b1916;
+  --account-hero-fg: #f3f1ea;
 
   /* Radius — 12px */
   --radius: 0.75rem;
@@ -157,6 +165,10 @@ html {
   --chip-s-bg: #fcecea; --chip-s-fg: #b84030;
   --chip-d-bg: #f3f4f6; --chip-d-fg: #7a8290;
   --chip-l-bg: #f9eff9; --chip-l-fg: #9e5a97;
+
+  /* Card icon accents (mirror demo DEFAULT_VISUAL_ICON_COLORS) */
+  --grid-icon-vacation: #ffffff;
+  --grid-icon-sick: #ffffff;
 }
 
 /* ─── Tailwind v4 Theme ─────────────────────────────────────────── */
@@ -183,6 +195,7 @@ html {
   --color-destructive-foreground: var(--destructive-foreground);
   --color-success: var(--success);
   --color-warning: var(--warning);
+  --color-accent-soft: var(--accent-soft);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -220,12 +233,39 @@ html {
   /* Fonts */
   --font-sans: var(--font-inter);
   --font-serif: var(--font-lora);
+  /* Продукт-зона (app shell): Manrope — правка 4, минимализм sona.ai */
+  --font-app: var(--font-manrope), var(--font-inter), system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, "Cascadia Code", monospace;
 
   /* Animations */
   --animate-gradient: gradient 4s ease-in-out infinite alternate;
   --animate-marquee: marquee var(--duration) infinite linear;
   --animate-marquee-vertical: marquee-vertical var(--duration) linear infinite;
+  /* Shimmer button (magicui) — var(--speed) задаётся на самой кнопке */
+  --animate-shimmer-slide: shimmer-slide var(--speed) ease-in-out infinite alternate;
+  --animate-spin-around: spin-around calc(var(--speed) * 2) infinite linear;
+}
+
+@keyframes shimmer-slide {
+  to { transform: translate(calc(100cqw - 100%), 0); }
+}
+@keyframes spin-around {
+  0% { transform: translateZ(0) rotate(0); }
+  15%, 35% { transform: translateZ(0) rotate(90deg); }
+  65%, 85% { transform: translateZ(0) rotate(270deg); }
+  100% { transform: translateZ(0) rotate(360deg); }
+}
+/* Появление плавающей кнопки «Опубликовать график» (внизу справа) */
+@keyframes publish-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.96); }
+  to   { opacity: 1; transform: none; }
+}
+.animate-publish-in { animation: publish-in 280ms cubic-bezier(0.32, 0.72, 0, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-shimmer-slide,
+  .animate-spin-around,
+  .animate-publish-in { animation: none !important; }
 }
 
 @keyframes gradient {
@@ -650,6 +690,10 @@ tr[data-employee-row]:hover td {
 tr:hover > .smengo-schedule-cell::before {
   opacity: 1;
 }
+/* App grid uses flex rows ([role=row]) instead of <tr> — same crosshair. */
+[role="row"]:hover .smengo-schedule-cell::before {
+  opacity: 1;
+}
 .smengo-schedule-chip {
   position: relative;
   overflow: hidden;
@@ -721,7 +765,9 @@ tr:hover > .smengo-schedule-cell::before {
 }
 /* Wide merged runs (vacation/sick blocks) lift without the zoom. */
 .smengo-schedule-cell[colspan]:not([colspan="1"]):hover .smengo-schedule-chip,
-.smengo-schedule-cell[colspan]:not([colspan="1"]):focus-within .smengo-schedule-chip {
+.smengo-schedule-cell[colspan]:not([colspan="1"]):focus-within .smengo-schedule-chip,
+.smengo-schedule-cell[data-span]:not([data-span="1"]):hover .smengo-schedule-chip,
+.smengo-schedule-cell[data-span]:not([data-span="1"]):focus-within .smengo-schedule-chip {
   transform: translateY(-2px) scale(1.012) !important;
 }
 .smengo-schedule-cell:hover .smengo-schedule-chip::after,
@@ -1032,6 +1078,13 @@ tr:hover > .smengo-schedule-cell::before {
   --border: #242a36;
   --input: #242a36;
   --accent-soft: #3a2620;
+  --info: #6ba3e5;
+  /* Биллинг: ярче и с тёмным текстом (как на скриншоте тёмной темы) */
+  --billing-hero-bg: #ff5a2c;
+  --billing-hero-fg: #16130f;
+  /* Аккаунт: чуть темнее фона страницы — приподнятая чёрная панель */
+  --account-hero-bg: #06070a;
+  --account-hero-fg: #f3f1ea;
   --sidebar: #141821;
   --sidebar-foreground: #e8e7e3;
   --sidebar-accent: #242a36;
@@ -1122,6 +1175,10 @@ tr:hover > .smengo-schedule-cell::before {
   --chip-s-bg: rgba(248, 113, 113, 0.10); --chip-s-fg: #fca5a5;
   --chip-d-bg: rgba(148, 163, 184, 0.13); --chip-d-fg: #a9b4c2;
   --chip-l-bg: rgba(216, 180, 254, 0.10); --chip-l-fg: #d8b4fe;
+
+  /* Card icon accents (mirror demo DEFAULT_VISUAL_ICON_COLORS, dark) */
+  --grid-icon-vacation: #ffd9a8;
+  --grid-icon-sick: #fca5a5;
 }
 
 /* ─── ScrollMorphGrid locked state ─────────────────────────────── */
