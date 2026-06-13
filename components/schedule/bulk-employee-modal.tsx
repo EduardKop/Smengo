@@ -1,10 +1,12 @@
 'use client'
 
 /**
- * Bulk-добавление сотрудников таблицей (правка 7, референс — 7shifts
- * «Add your employees»): строки Имя* · Отдел · Должность · Email · Телефон,
+ * Bulk-добавление сотрудников таблицей (правка 7, референс — 7shifts):
+ * строки Имя* · Отдел · Должность · Email · Телефон · Telegram · Уровень доступа,
  * новая строка добавляется сама при вводе имени в последней. Вся пачка
  * вставляется одним server action'ом (лимит плана — на сервере).
+ * Отдел и уровень доступа — кастомные выпадающие списки; должность — с
+ * подсказками-плажками уже введённых/существующих должностей.
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -13,6 +15,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { Trash2, X } from 'lucide-react'
 import { bulkCreateEmployeesAction } from '@/lib/actions/employees'
 import type { DepartmentRow } from '@/lib/schedule/types'
+import { CustomSelect, PositionInput, type SelectOption } from './bulk-fields'
 
 interface RowDraft {
   full_name: string
@@ -20,6 +23,7 @@ interface RowDraft {
   position: string
   email: string
   phone: string
+  telegram: string
   /** '' = без доступа (просто строка графика); admin/manager/viewer = приглашение по email */
   access_role: string
 }
@@ -30,6 +34,7 @@ const emptyRow = (deptId: string): RowDraft => ({
   position: '',
   email: '',
   phone: '',
+  telegram: '',
   access_role: '',
 })
 
@@ -38,10 +43,12 @@ interface BulkEmployeeModalProps {
   departments: DepartmentRow[]
   /** Предвыбранный отдел (ghost-плашка пустого отдела) */
   preselectedDeptId?: string | null
+  /** Уже существующие должности в организации — для подсказок */
+  existingPositions?: string[]
   onClose: () => void
 }
 
-export function BulkEmployeeModal({ orgId, departments, preselectedDeptId, onClose }: BulkEmployeeModalProps) {
+export function BulkEmployeeModal({ orgId, departments, preselectedDeptId, existingPositions, onClose }: BulkEmployeeModalProps) {
   const t = useTranslations('app.schedule.bulkAdd')
   const tc = useTranslations('common')
   const tr = useTranslations('app.roles')
@@ -68,6 +75,34 @@ export function BulkEmployeeModal({ orgId, departments, preselectedDeptId, onClo
 
   const filledCount = useMemo(() => rows.filter((r) => r.full_name.trim() !== '').length, [rows])
 
+  const deptOptions = useMemo<SelectOption[]>(
+    () => [{ value: '', label: t('noDept') }, ...departments.map((d) => ({ value: d.id, label: d.name }))],
+    [departments, t],
+  )
+  const accessOptions = useMemo<SelectOption[]>(
+    () => [
+      { value: '', label: t('noAccess') },
+      { value: 'admin', label: tr('admin') },
+      { value: 'manager', label: tr('manager') },
+      { value: 'viewer', label: tr('viewer') },
+    ],
+    [t, tr],
+  )
+
+  // Пул должностей для подсказок: существующие в орг. + введённые в этой сессии
+  const positionPool = useMemo(() => {
+    const set = new Set<string>()
+    for (const p of existingPositions ?? []) {
+      const v = p.trim()
+      if (v) set.add(v)
+    }
+    for (const r of rows) {
+      const v = r.position.trim()
+      if (v) set.add(v)
+    }
+    return [...set]
+  }, [existingPositions, rows])
+
   function setField(idx: number, field: keyof RowDraft, value: string) {
     setRows((prev) => {
       const next = prev.map((r, i) => (i === idx ? { ...r, [field]: value } : r))
@@ -92,6 +127,7 @@ export function BulkEmployeeModal({ orgId, departments, preselectedDeptId, onClo
         position: r.position,
         email: r.email,
         phone: r.phone,
+        telegram: r.telegram || null,
         access_role: r.access_role || null,
       }))
     if (payload.length === 0) return
@@ -116,7 +152,7 @@ export function BulkEmployeeModal({ orgId, departments, preselectedDeptId, onClo
   }
 
   const cellInput =
-    'w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-sm text-foreground outline-none transition-colors focus:border-ring'
+    'w-full rounded-xl border border-border bg-[var(--surface)] px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-accent focus:ring-2 focus:ring-accent/20'
 
   return (
     <div
@@ -125,7 +161,7 @@ export function BulkEmployeeModal({ orgId, departments, preselectedDeptId, onClo
         if (e.target === e.currentTarget) onClose()
       }}
     >
-      <div className="relative flex w-full max-w-4xl flex-col rounded-xl border border-border bg-card shadow-lg">
+      <div className="relative flex max-h-[90vh] w-full max-w-6xl flex-col rounded-2xl border border-border bg-card shadow-lg">
         <div className="flex items-start justify-between border-b border-border px-6 py-4">
           <div className="min-w-0">
             <h2 className="text-base font-semibold text-foreground">{t('title')}</h2>
@@ -141,8 +177,8 @@ export function BulkEmployeeModal({ orgId, departments, preselectedDeptId, onClo
           </button>
         </div>
 
-        <div className="max-h-[55vh] overflow-y-auto px-6 py-4">
-          <table className="w-full border-separate" style={{ borderSpacing: '0 6px' }}>
+        <div className="max-h-[58vh] overflow-auto px-6 py-4">
+          <table className="w-full min-w-[1040px] border-separate" style={{ borderSpacing: '0 8px' }}>
             <thead>
               <tr className="text-left text-xs font-semibold text-muted-foreground">
                 <th className="pb-1 pr-2">{t('colName')} *</th>
@@ -150,6 +186,7 @@ export function BulkEmployeeModal({ orgId, departments, preselectedDeptId, onClo
                 <th className="pb-1 pr-2">{t('colPosition')}</th>
                 <th className="pb-1 pr-2">{t('colEmail')}</th>
                 <th className="pb-1 pr-2">{t('colPhone')}</th>
+                <th className="pb-1 pr-2">{t('colTelegram')}</th>
                 <th className="pb-1 pr-2">{t('colAccess')}</th>
                 <th className="pb-1 w-8" />
               </tr>
@@ -168,30 +205,22 @@ export function BulkEmployeeModal({ orgId, departments, preselectedDeptId, onClo
                       className={cellInput}
                     />
                   </td>
-                  <td className="pr-2" style={{ minWidth: 130 }}>
-                    <select
+                  <td className="pr-2" style={{ minWidth: 150 }}>
+                    <CustomSelect
                       value={row.dept_id}
-                      onChange={(e) => setField(idx, 'dept_id', e.target.value)}
-                      className={cellInput}
-                    >
-                      <option value="">{t('noDept')}</option>
-                      {departments.map((d) => (
-                        <option key={d.id} value={d.id}>
-                          {d.name}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="pr-2" style={{ minWidth: 120 }}>
-                    <input
-                      type="text"
-                      value={row.position}
-                      maxLength={120}
-                      onChange={(e) => setField(idx, 'position', e.target.value)}
-                      className={cellInput}
+                      options={deptOptions}
+                      onChange={(v) => setField(idx, 'dept_id', v)}
+                      ariaLabel={t('colDept')}
                     />
                   </td>
                   <td className="pr-2" style={{ minWidth: 150 }}>
+                    <PositionInput
+                      value={row.position}
+                      onChange={(v) => setField(idx, 'position', v)}
+                      suggestions={positionPool}
+                    />
+                  </td>
+                  <td className="pr-2" style={{ minWidth: 160 }}>
                     <input
                       type="email"
                       value={row.email}
@@ -200,7 +229,7 @@ export function BulkEmployeeModal({ orgId, departments, preselectedDeptId, onClo
                       className={cellInput}
                     />
                   </td>
-                  <td className="pr-2" style={{ minWidth: 110 }}>
+                  <td className="pr-2" style={{ minWidth: 120 }}>
                     <input
                       type="tel"
                       value={row.phone}
@@ -210,21 +239,26 @@ export function BulkEmployeeModal({ orgId, departments, preselectedDeptId, onClo
                     />
                   </td>
                   <td className="pr-2" style={{ minWidth: 140 }}>
-                    <select
-                      value={row.access_role}
-                      onChange={(e) => setField(idx, 'access_role', e.target.value)}
-                      aria-label={t('colAccess')}
+                    <input
+                      type="text"
+                      value={row.telegram}
+                      placeholder={t('telegramPlaceholder')}
+                      maxLength={33}
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      onChange={(e) => setField(idx, 'telegram', e.target.value)}
                       className={cellInput}
-                      style={row.access_role && !row.email.trim() ? { borderColor: 'var(--warning)' } : undefined}
-                      title={row.access_role && !row.email.trim() ? t('accessNeedsEmail') : undefined}
-                    >
-                      <option value="">{t('noAccess')}</option>
-                      <option value="admin">{tr('admin')}</option>
-                      <option value="manager">{tr('manager')}</option>
-                      <option value="viewer">{tr('viewer')}</option>
-                    </select>
+                    />
                   </td>
-                  <td className="w-8">
+                  <td className="pr-2" style={{ minWidth: 150 }}>
+                    <CustomSelect
+                      value={row.access_role}
+                      options={accessOptions}
+                      onChange={(v) => setField(idx, 'access_role', v)}
+                      ariaLabel={t('colAccess')}
+                    />
+                  </td>
+                  <td className="w-8 align-middle">
                     {rows.length > 1 && (
                       <button
                         type="button"
@@ -256,7 +290,7 @@ export function BulkEmployeeModal({ orgId, departments, preselectedDeptId, onClo
               type="button"
               disabled={isPending || filledCount === 0}
               onClick={handleSubmit}
-              className="cursor-pointer rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90 disabled:opacity-50"
+              className="cursor-pointer rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition-colors hover:bg-[var(--accent-hover)] disabled:opacity-50"
             >
               {t('addN', { count: filledCount })}
             </button>

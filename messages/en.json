@@ -2032,7 +2032,9 @@
         "noAccess": "No access",
         "accessHint": "Setting an access level emails the employee an invitation to sign in.",
         "accessNeedsEmail": "Email required to invite",
-        "errorForbiddenInvite": "You don't have permission to invite users"
+        "errorForbiddenInvite": "You don't have permission to invite users",
+        "colTelegram": "Telegram",
+        "telegramPlaceholder": "@username"
       },
       "publish": {
         "button": "Publish schedule",

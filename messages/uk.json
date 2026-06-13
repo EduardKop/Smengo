@@ -2031,7 +2031,9 @@
         "noAccess": "Без доступу",
         "accessHint": "Рівень доступу надішле співробітнику запрошення в систему на email.",
         "accessNeedsEmail": "Потрібен email для запрошення",
-        "errorForbiddenInvite": "У вас немає прав запрошувати користувачів"
+        "errorForbiddenInvite": "У вас немає прав запрошувати користувачів",
+        "colTelegram": "Telegram",
+        "telegramPlaceholder": "@username"
       },
       "publish": {
         "button": "Опублікувати розклад",
