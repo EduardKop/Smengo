@@ -26,8 +26,13 @@ export type OrgLogoResult =
   | { ok: false; error: string }
 
 function isValidTimezone(tz: string): boolean {
+  // Через конструктор DateTimeFormat, а не supportedValuesOf().includes():
+  // список зон у Node и браузера расходится (напр. Europe/Kyiv ↔ Europe/Kiev),
+  // из-за чего валидная зона из браузера отвергалась на сервере. DateTimeFormat
+  // принимает и канонические имена, и алиасы, а на мусоре бросает RangeError.
   try {
-    return (Intl.supportedValuesOf('timeZone') as string[]).includes(tz)
+    new Intl.DateTimeFormat('en-US', { timeZone: tz })
+    return true
   } catch {
     return false
   }
